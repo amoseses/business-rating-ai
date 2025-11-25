@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+transformers>=4.28.0
+sentencepiece
+torch
+peft
+datasets
+accelerate
+safetensors
+tiktoken
+pdfminer.six
+python-dotenv
