@@ -1,0 +1,7 @@
+Company: FastFarm Inc.
+One-liner: SaaS platform that automates crop yield forecasting for small to mid-size farms using satellite imagery and IoT sensors.
+Team: 3 founders (agronomy PhD, ML engineer, product lead), two advisors with industry experience.
+Traction: Pilot with 12 farms, $6k MRR in pilot services.
+Ask: $750k pre-seed for 12 months runway to build sales and scale pilots.
+Financials: Current burn $40k/mo, gross margin target 70% with SaaS.
+Market: US specialty agriculture market, TAM estimated $3B (serviceable $200M).
