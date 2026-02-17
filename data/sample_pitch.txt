@@ -1,4 +1,0 @@
-Company: Example
-One-liner: Example product
-Team: 3 founders
-Traction: none
