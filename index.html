@@ -703,7 +703,7 @@
             <div class="feature-card">
                 <div class="feature-icon">📊</div>
                 <h3>Context-Aware Insights</h3>
-                <p>Pro plan analyzes your pitch against specific companies and stocks, providing tailored recommendations based on real market data.</p>
+                <p>Pro plan analyzes your pitch against specific companies and stocks, adds a conviction score, and benchmarks your fundamentals against market data.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🔒</div>
@@ -735,7 +735,7 @@
                 </div>
                 <div class="plan-option" data-plan="pro">
                     <h4>Pro</h4>
-                    <p>AI-Powered + Context Analysis</p>
+                    <p>AI + Conviction + Fundamentals</p>
                 </div>
             </div>
 
@@ -797,11 +797,13 @@
                 <ul class="plan-features">
                     <li>Everything in Basic</li>
                     <li>Advanced AI-powered analysis</li>
+                    <li>Conviction evaluator (approval likelihood)</li>
                     <li>Company-specific insights</li>
                     <li>Stock market context</li>
+                    <li>Financial fundamentals stress test</li>
                     <li>Competitive comparison</li>
                     <li>Industry benchmarking</li>
-                    <li>Real-time market data integration</li>
+                    <li>Paid API integration (premium data)</li>
                     <li>Detailed improvement roadmap</li>
                     <li>Priority support</li>
                 </ul>
@@ -904,6 +906,79 @@
             return { score, scoreClass, scoreLabel, recommendations };
         }
 
+        // Conviction evaluator (confidence + approval likelihood + financial fundamentals)
+        function evaluateConviction(text) {
+            const lowerText = text.toLowerCase();
+
+            const thesisSignals = ['evidence', 'proof', 'traction', 'validated', 'pilot', 'conversion', 'retention', 'growth'];
+            const riskSignals = ['risk', 'mitigation', 'regulation', 'competition', 'execution', 'downside', 'assumption'];
+            const financeSignals = ['revenue', 'gross margin', 'ebitda', 'cash flow', 'burn', 'runway', 'cac', 'ltv', 'unit economics'];
+            const approvalSignals = ['milestone', 'go-to-market', 'team', 'timeline', 'ask', 'use of funds', 'kpi', 'roadmap'];
+
+            const thesisHits = thesisSignals.filter(signal => lowerText.includes(signal)).length;
+            const riskHits = riskSignals.filter(signal => lowerText.includes(signal)).length;
+            const financeHits = financeSignals.filter(signal => lowerText.includes(signal)).length;
+            const approvalHits = approvalSignals.filter(signal => lowerText.includes(signal)).length;
+
+            const sentenceCount = text.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0).length;
+            const hasNumbers = /\d/.test(text);
+
+            const confidenceScore = Math.min(100,
+                Math.round(
+                    thesisHits * 10 +
+                    riskHits * 8 +
+                    financeHits * 12 +
+                    approvalHits * 8 +
+                    (hasNumbers ? 10 : 0) +
+                    Math.min(12, sentenceCount)
+                )
+            );
+
+            const approvalLikelihood = Math.min(95,
+                Math.round(
+                    confidenceScore * 0.55 +
+                    financeHits * 6 +
+                    riskHits * 4 +
+                    approvalHits * 5
+                )
+            );
+
+            const correctnessLikelihood = Math.min(95,
+                Math.round(
+                    confidenceScore * 0.6 +
+                    thesisHits * 7 +
+                    (hasNumbers ? 8 : 0)
+                )
+            );
+
+            const fundamentalsStatus = financeHits >= 6 ? 'Strong' : financeHits >= 3 ? 'Moderate' : 'Weak';
+
+            const missingFundamentals = [];
+            if (!lowerText.includes('revenue')) missingFundamentals.push('Add a revenue growth bridge (current vs. projected).');
+            if (!lowerText.includes('margin')) missingFundamentals.push('Include gross margin assumptions and sensitivity ranges.');
+            if (!lowerText.includes('burn') && !lowerText.includes('runway')) missingFundamentals.push('Show burn rate and runway under base/downside scenarios.');
+            if (!lowerText.includes('cac') || !lowerText.includes('ltv')) missingFundamentals.push('Quantify CAC/LTV and payback period to prove unit economics.');
+
+            return {
+                confidenceScore,
+                approvalLikelihood,
+                correctnessLikelihood,
+                fundamentalsStatus,
+                missingFundamentals
+            };
+        }
+
+        async function getProApiInsights(companyName, text) {
+            // Non-free API placeholder (replace with your paid endpoint)
+            // Example: POST https://api.astrapitch.ai/v1/pro/conviction with bearer token billing enabled
+            return {
+                provider: 'AstraPitch Premium API (simulated)',
+                marketSignal: `${companyName} comps show healthy demand pockets, but investors are penalizing weak cash discipline in this cycle.`,
+                diligenceSignal: 'Approval probability rises when downside case, capital efficiency, and milestone gating are explicit.',
+                actionSignal: 'Strengthen investor confidence by adding scenario-based fundamentals and assumptions traceability.'
+            };
+        }
+
         // Main analyze function
         async function analyzePitch() {
             const pitchText = document.getElementById('pitchText').value.trim();
@@ -939,19 +1014,29 @@
                 }
                 
                 result = analyzeBasicPitch(textToAnalyze);
+                const conviction = evaluateConviction(textToAnalyze);
                 
                 resultContent.innerHTML = `
                     <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary); margin-bottom: 1rem;">Analysis Complete</h3>
                     <div class="score-badge ${result.scoreClass}">Score: ${result.score}/100 - ${result.scoreLabel}</div>
+
+                    <div class="recommendation-section">
+                        <h3>Conviction Evaluator</h3>
+                        <div class="recommendation-item"><strong>Confidence in pitch thesis:</strong> ${conviction.confidenceScore}%</div>
+                        <div class="recommendation-item"><strong>Likelihood pitch is correct:</strong> ${conviction.correctnessLikelihood}%</div>
+                        <div class="recommendation-item"><strong>Estimated approval likelihood:</strong> ${conviction.approvalLikelihood}%</div>
+                        <div class="recommendation-item"><strong>Financial fundamentals strength:</strong> ${conviction.fundamentalsStatus}</div>
+                    </div>
                     
                     <div class="recommendation-section">
                         <h3>Recommendations</h3>
                         ${result.recommendations.map(rec => `<div class="recommendation-item">${rec}</div>`).join('')}
+                        ${conviction.missingFundamentals.map(item => `<div class="recommendation-item">${item}</div>`).join('')}
                     </div>
                     
                     <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(124, 58, 237, 0.1); border-radius: 12px; border-left: 3px solid var(--secondary);">
                         <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">💎 Upgrade to Pro</h4>
-                        <p style="color: var(--text-dim);">Get AI-powered insights, company-specific analysis, and market context to take your pitch to the next level.</p>
+                        <p style="color: var(--text-dim);">Unlock paid API-backed conviction modeling with deeper market and fundamental diligence.</p>
                     </div>
                 `;
             } else {
@@ -961,15 +1046,26 @@
                     loading.style.display = 'none';
                     return;
                 }
+
+                const proInsights = await getProApiInsights(companyName, pitchText);
+                const conviction = evaluateConviction(pitchText);
                 
                 resultContent.innerHTML = `
                     <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary); margin-bottom: 1rem;">Pro Analysis Complete</h3>
                     <div class="score-badge score-excellent">Score: 87/100 - Excellent</div>
                     
                     <div class="recommendation-section">
+                        <h3>Conviction Evaluator (Premium)</h3>
+                        <div class="recommendation-item"><strong>Pitch confidence:</strong> ${conviction.confidenceScore}%</div>
+                        <div class="recommendation-item"><strong>Likelihood of correctness:</strong> ${conviction.correctnessLikelihood}%</div>
+                        <div class="recommendation-item"><strong>Likelihood of investor approval:</strong> ${conviction.approvalLikelihood}%</div>
+                        <div class="recommendation-item"><strong>Fundamentals verdict:</strong> ${conviction.fundamentalsStatus}</div>
+                    </div>
+
+                    <div class="recommendation-section">
                         <h3>AI-Powered Insights for ${companyName}</h3>
                         <div class="recommendation-item">
-                            <strong>Market Context:</strong> Your pitch aligns well with current ${companyName} market trends. The sector is experiencing 23% YoY growth.
+                            <strong>Market Context:</strong> ${proInsights.marketSignal}
                         </div>
                         <div class="recommendation-item">
                             <strong>Competitive Position:</strong> Similar to ${companyName}'s early positioning, but consider emphasizing differentiation more clearly.
@@ -978,13 +1074,16 @@
                             <strong>Financial Projections:</strong> Your revenue model is realistic compared to ${companyName}'s trajectory. Consider adding unit economics.
                         </div>
                         <div class="recommendation-item">
-                            <strong>Risk Assessment:</strong> Market risks are well-addressed. Add more detail on operational scaling challenges.
+                            <strong>Risk Assessment:</strong> ${proInsights.diligenceSignal}
+                        </div>
+                        <div class="recommendation-item">
+                            <strong>Premium API Source:</strong> ${proInsights.provider}
                         </div>
                     </div>
                     
                     <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(0, 212, 255, 0.1); border-radius: 12px;">
                         <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Next Steps</h4>
-                        <p style="color: var(--text-dim);">Based on ${companyName}'s investor preferences, focus on: scalability metrics, customer acquisition costs, and long-term competitive moats.</p>
+                        <p style="color: var(--text-dim);">${proInsights.actionSignal}</p>
                     </div>
                 `;
             }
