@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import json
-import math
 import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -34,6 +33,54 @@ STOPWORDS = {
     "be", "are", "it", "from", "at", "you", "your", "can", "will", "have", "has", "their", "they", "but", "not", "into"
 }
 
+FIX_LIBRARY = {
+    "problem_definition": {
+        "priority": "high",
+        "fix": "State one clear customer pain and quantify it (time/money loss).",
+        "example": "'Finance teams lose 11 hours/week reconciling payouts manually.'"
+    },
+    "solution_quality": {
+        "priority": "high",
+        "fix": "Explain exactly how your product solves that pain in one workflow.",
+        "example": "'Our engine auto-matches payouts to ledger entries with 96% precision.'"
+    },
+    "market_strength": {
+        "priority": "high",
+        "fix": "Include TAM/SAM/SOM and ideal customer profile.",
+        "example": "'TAM $9.4B, SAM $1.3B, targeting 2k mid-market fintech firms.'"
+    },
+    "business_model": {
+        "priority": "medium",
+        "fix": "Add pricing model, gross margin assumption, and sales cycle.",
+        "example": "'$6k/month base + usage, 78% gross margin, 45-day sales cycle.'"
+    },
+    "traction": {
+        "priority": "high",
+        "fix": "Show momentum metrics across time (growth, retention, conversion).",
+        "example": "'MRR grew from $18k to $38k in 4 months with 94% gross retention.'"
+    },
+    "competition_moat": {
+        "priority": "medium",
+        "fix": "Compare against alternatives and define your defensible moat.",
+        "example": "'Only platform with real-time fraud graph + bank-grade audit trail.'"
+    },
+    "fundraise_clarity": {
+        "priority": "high",
+        "fix": "Specify raise amount, runway target, and milestone outcomes.",
+        "example": "'Raising $2.5M for 24 months runway to reach $150k MRR and SOC2.'"
+    },
+    "risk_awareness": {
+        "priority": "medium",
+        "fix": "Name top execution risks and mitigation actions.",
+        "example": "'Regulatory risk mitigated via quarterly external compliance audits.'"
+    },
+    "sector_alignment": {
+        "priority": "medium",
+        "fix": "Use sector-specific language and metrics investors expect.",
+        "example": "'For SaaS include CAC, LTV, churn, expansion revenue.'"
+    },
+}
+
 
 def clamp(value, low=0, high=100):
     return max(low, min(high, round(value)))
@@ -43,7 +90,7 @@ def tokenize(text):
     return re.findall(r"[a-zA-Z][a-zA-Z\-']+", text.lower())
 
 
-def top_keywords(text, n=8):
+def top_keywords(text, n=10):
     freq = {}
     for tok in tokenize(text):
         if len(tok) < 4 or tok in STOPWORDS:
@@ -72,84 +119,143 @@ def extract_numeric_signals(text):
     return len(matches), perc, money
 
 
+def get_size_band(words):
+    if words < 60:
+        return "very_short"
+    if words < 180:
+        return "short"
+    if words <= 650:
+        return "standard"
+    if words <= 1500:
+        return "long"
+    return "very_long"
+
+
+def size_adjustment(words):
+    band = get_size_band(words)
+    if band == "very_short":
+        return -16
+    if band == "short":
+        return -6
+    if band == "standard":
+        return 6
+    if band == "long":
+        return 2
+    return -8
+
+
 def category_score(text, terms, words):
     hits = count_matches(text, terms)
-    density_bonus = min(20, words / 22)
-    return clamp(25 + hits * 13 + density_bonus)
+    density_bonus = min(20, words / 24)
+    return clamp(22 + hits * 12 + density_bonus)
 
 
 def accuracy_checker(text, category_scores):
     words, sents, avg_words = sentence_stats(text)
     numeric, perc, money = extract_numeric_signals(text)
+    size_band = get_size_band(words)
 
-    structure = 55
-    if words > 160:
-        structure += 12
-    if sents > 8:
+    structure = 52
+    if words > 120:
         structure += 10
-    if 12 <= avg_words <= 28:
+    if sents > 6:
+        structure += 8
+    if 11 <= avg_words <= 28:
         structure += 10
+    structure += size_adjustment(words)
 
-    evidence = 35 + min(35, numeric * 4) + min(10, perc * 2) + min(8, money * 2)
-    consistency = 40 + (sum(category_scores.values()) / len(category_scores)) * 0.45
-    caution_penalty = 8 if "guarantee" in text.lower() or "no risk" in text.lower() else 0
+    evidence = 30 + min(40, numeric * 4) + min(10, perc * 2) + min(10, money * 2)
+    consistency = 38 + (sum(category_scores.values()) / len(category_scores)) * 0.5
 
-    confidence = clamp((structure * 0.3) + (evidence * 0.35) + (consistency * 0.35) - caution_penalty)
+    flags = []
+    if "guarantee" in text.lower() or "no risk" in text.lower():
+        flags.append("Avoid absolute claims like 'guarantee' or 'no risk'.")
+    if size_band in ("very_short", "short"):
+        flags.append("Pitch is short for investment diligence; add market, moat, and fundraise details.")
+    if size_band in ("long", "very_long"):
+        flags.append("Pitch is long; tighten narrative and lead with strongest proof first.")
+
+    confidence = clamp((structure * 0.33) + (evidence * 0.34) + (consistency * 0.33) - (8 if "guarantee" in text.lower() else 0))
     return {
         "confidence": confidence,
+        "size_band": size_band,
         "detail": {
             "structure": clamp(structure),
             "evidence": clamp(evidence),
             "consistency": clamp(consistency),
-            "flags": ["Avoid absolute claims like 'guarantee' or 'no risk'."] if caution_penalty else []
+            "flags": flags
         }
     }
 
 
-def build_actions(lowest_categories):
-    fixes = {
-        "problem_definition": "Open with one painful customer moment and quantify the pain in dollars or time.",
-        "solution_quality": "Add a before/after workflow and one proof of why your approach works better.",
-        "market_strength": "Include TAM/SAM/SOM with source and a clear ICP definition.",
-        "business_model": "Show pricing tiers, gross margin assumptions, and sales cycle.",
-        "traction": "Add retention, conversion, and growth trend over at least 3 periods.",
-        "competition_moat": "Use a competitor matrix and define your moat in one sentence.",
-        "fundraise_clarity": "State the exact raise amount, runway, and milestone outcomes.",
-        "risk_awareness": "Name top 3 risks and your mitigation plan with owners.",
+def build_fix_plan(categories, words):
+    ordered = sorted(categories.items(), key=lambda kv: kv[1])
+    must_fix = []
+    improve_next = []
+    polish = []
+
+    for name, score in ordered:
+        entry = FIX_LIBRARY.get(name)
+        if not entry:
+            continue
+        item = {
+            "area": name,
+            "score": score,
+            "priority": entry["priority"],
+            "fix": entry["fix"],
+            "example": entry["example"],
+        }
+        if len(must_fix) < 3 and (score < 50 or entry["priority"] == "high"):
+            must_fix.append(item)
+        elif len(improve_next) < 3:
+            improve_next.append(item)
+        elif len(polish) < 2:
+            polish.append(item)
+
+    size_guidance = {
+        "size_band": get_size_band(words),
+        "word_count": words,
+        "recommendation": (
+            "Expand to 180-450 words for stronger investor signal." if words < 180 else
+            "Good length for most investor intros." if words <= 650 else
+            "Consider a shorter investor version (250-600 words) plus appendix."
+        )
     }
-    return [fixes.get(cat, "Improve clarity and proof density.") for cat in lowest_categories]
+
+    return {
+        "must_fix_first": must_fix,
+        "improve_next": improve_next,
+        "polish_last": polish,
+        "size_guidance": size_guidance,
+    }
 
 
 def analyze_text(payload):
-    text = payload.get("text", "").strip()
+    text = (payload.get("text") or "").strip()
     sector = (payload.get("sector") or "general").lower()
     stage = (payload.get("stage") or "early").lower()
     words, _, _ = sentence_stats(text)
     numeric, _, _ = extract_numeric_signals(text)
 
-    categories = {
-        key: category_score(text, terms, words)
-        for key, terms in CATEGORY_TERMS.items()
-    }
+    categories = {k: category_score(text, v, words) for k, v in CATEGORY_TERMS.items()}
 
     sector_terms = SECTOR_KEYWORDS.get(sector, SECTOR_KEYWORDS["general"])
-    sector_alignment = clamp(30 + count_matches(text, sector_terms) * 10)
-    categories["sector_alignment"] = sector_alignment
+    categories["sector_alignment"] = clamp(25 + count_matches(text, sector_terms) * 10)
 
     if stage == "idea":
-        categories["traction"] = max(categories["traction"] - 10, 20)
+        categories["traction"] = max(categories["traction"] - 8, 18)
     if stage == "growth":
         categories["business_model"] = clamp(categories["business_model"] + 8)
 
-    overall = clamp(sum(categories.values()) / len(categories))
     checker = accuracy_checker(text, categories)
+    overall = clamp((sum(categories.values()) / len(categories)) + size_adjustment(words) * 0.5)
 
     ordered = sorted(categories.items(), key=lambda kv: kv[1], reverse=True)
     strengths = [f"{k.replace('_', ' ').title()}: {v}/100" for k, v in ordered[:4]]
     risks = [f"{k.replace('_', ' ').title()}: {v}/100" for k, v in ordered[-4:]]
 
     if numeric < 4:
-        risks.insert(0, "Low quantitative evidence. Add more concrete metrics.")
+        risks.insert(0, "Low quantitative evidence. Add concrete metrics (% growth, revenue, retention, CAC/LTV).")
 
     return {
         "mode": "text",
@@ -159,45 +265,42 @@ def analyze_text(payload):
         "strengths": strengths,
         "risks": risks,
         "training_keywords": top_keywords(text),
-        "actions": build_actions([k for k, _ in ordered[-3:]]),
+        "fix_plan": build_fix_plan(categories, words),
     }
 
 
 def analyze_video(payload):
-    transcript = payload.get("transcript", "").strip()
+    transcript = (payload.get("transcript") or "").strip()
     base = analyze_text({
         "text": transcript,
         "sector": payload.get("sector", "general"),
         "stage": payload.get("stage", "early"),
     })
+
     metrics = payload.get("image_metrics") or {}
-
     brightness = float(metrics.get("brightness", 0.55))
-    contrast = float(metrics.get("contrast", 0.5))
-    sharpness = float(metrics.get("sharpness", 0.5))
-    text_density = float(metrics.get("text_density", 0.5))
-    stability = float(metrics.get("stability", 0.5))
-
-    visual_categories = {
-        "visual_clarity": clamp(40 + (sharpness * 40) + (contrast * 20)),
-        "slide_readability": clamp(35 + (text_density * 25) + (contrast * 20)),
-        "camera_stability": clamp(30 + stability * 60),
-        "lighting_quality": clamp(30 + brightness * 50),
-    }
+    contrast = float(metrics.get("contrast", 0.50))
+    sharpness = float(metrics.get("sharpness", 0.50))
+    text_density = float(metrics.get("text_density", 0.50))
+    stability = float(metrics.get("stability", 0.50))
 
     delivery = payload.get("delivery") or {}
     energy = float(delivery.get("energy", 0.7))
     pace = float(delivery.get("pace", 0.7))
-    presence = clamp(40 + energy * 35 + pace * 20)
-    visual_categories["delivery_presence"] = presence
+
+    visual_categories = {
+        "visual_clarity": clamp(35 + sharpness * 45 + contrast * 15),
+        "slide_readability": clamp(30 + text_density * 35 + contrast * 15),
+        "camera_stability": clamp(30 + stability * 60),
+        "lighting_quality": clamp(30 + brightness * 55),
+        "delivery_presence": clamp(38 + energy * 38 + pace * 18),
+    }
 
     merged = dict(base["categories"])
     merged.update(visual_categories)
-    overall = clamp(sum(merged.values()) / len(merged))
-
     base["mode"] = "video"
     base["categories"] = merged
-    base["overall_score"] = overall
+    base["overall_score"] = clamp((base["overall_score"] * 0.72) + ((sum(visual_categories.values()) / len(visual_categories)) * 0.28))
     base["visual_metrics"] = {
         "brightness": round(brightness, 3),
         "contrast": round(contrast, 3),
@@ -205,9 +308,23 @@ def analyze_video(payload):
         "text_density": round(text_density, 3),
         "stability": round(stability, 3),
     }
-    base["actions"] = base["actions"] + [
-        "Tighten slide contrast and increase font size for readability.",
-        "Stabilize camera framing and maintain consistent lighting.",
+
+    # Add clear visual fixes for video mode.
+    base["fix_plan"]["improve_next"] = base["fix_plan"].get("improve_next", []) + [
+        {
+            "area": "slide_readability",
+            "score": visual_categories["slide_readability"],
+            "priority": "medium",
+            "fix": "Increase slide font size and boost contrast for readability.",
+            "example": "Use dark text on light background, with max 6 lines per slide."
+        },
+        {
+            "area": "camera_stability",
+            "score": visual_categories["camera_stability"],
+            "priority": "medium",
+            "fix": "Keep framing stable and centered during key points.",
+            "example": "Use tripod or fixed laptop position to reduce frame shake."
+        }
     ]
     return base
 
@@ -248,25 +365,32 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/analyze/free/text":
             text = (payload.get("text") or "").strip()
-            if len(text) < 40:
-                return self._json_response({"error": "Please provide at least 40 characters."}, 400)
+            if len(text) < 12:
+                return self._json_response({
+                    "error": "Pitch is too short to analyze.",
+                    "fix": "Provide at least 12 characters (preferably 180+ words for quality analysis)."
+                }, 400)
             return self._json_response(analyze_text(payload))
 
         if parsed.path == "/api/analyze/free/video":
             transcript = (payload.get("transcript") or "").strip()
-            if len(transcript) < 40:
-                return self._json_response({"error": "Please provide a transcript with at least 40 characters."}, 400)
+            if len(transcript) < 12:
+                return self._json_response({
+                    "error": "Transcript is too short to analyze.",
+                    "fix": "Provide at least 12 characters (preferably 180+ words for quality analysis)."
+                }, 400)
             return self._json_response(analyze_video(payload))
 
         if parsed.path == "/api/analyze/pro":
             # TODO: Pro backend hookup placeholder.
             # 1) Validate customer API key + subscription tier.
-            # 2) Call your hosted LLM/video intelligence endpoint.
-            # 3) Merge external model output with local reliability checks.
-            # 4) Return final schema matching free endpoints.
+            # 2) Route to your hosted LLM/video-model endpoint.
+            # 3) Merge paid model result with local reliability + fix_plan output.
+            # 4) Return same schema as free endpoints for UI compatibility.
             return self._json_response({
                 "error": "Pro API backend is not connected yet.",
-                "todo": "Wire this endpoint to your paid model service when ready."
+                "todo": "Wire this endpoint to your paid model service when ready.",
+                "fix": "Use free endpoints now; keep same response schema when enabling Pro."
             }, 501)
 
         self._json_response({"error": "Not found"}, 404)

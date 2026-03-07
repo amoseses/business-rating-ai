@@ -1,497 +1,501 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstraPitch AI - Pitch Intelligence Platform</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --primary: #00d4ff;
-            --secondary: #7c3aed;
-            --accent: #f97316;
-            --ok: #10b981;
-            --warn: #f59e0b;
-            --bad: #ef4444;
-            --dark: #0a0e1a;
-            --dark-2: #141824;
-            --dark-3: #1e2337;
-            --text: #e2e8f0;
-            --text-dim: #94a3b8;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AstraPitch AI - Investment Pitch Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0f1f;
+      --panel: #141d35;
+      --panel-2: #1b2745;
+      --line: rgba(0, 212, 255, 0.24);
+      --primary: #00d4ff;
+      --secondary: #7c3aed;
+      --text: #e2e8f0;
+      --dim: #9db0ca;
+      --good: #10b981;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
 
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: radial-gradient(ellipse at top, #17203f, #0a0e1a 60%);
-            color: var(--text);
-            line-height: 1.6;
-            padding-top: 88px;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #162344, var(--bg) 65%);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
 
-        .container { max-width: 1160px; margin: 0 auto; padding: 0 1.25rem; }
+    .shell { max-width: 1200px; margin: 0 auto; padding: 1rem 1.2rem 2.5rem; }
+    .top {
+      position: sticky; top: 0; z-index: 15;
+      backdrop-filter: blur(10px);
+      background: rgba(10, 15, 31, 0.8);
+      border-bottom: 1px solid var(--line);
+      margin: 0 -1.2rem; padding: .9rem 1.2rem;
+    }
 
-        nav {
-            position: fixed; top: 0; width: 100%; z-index: 200;
-            background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(0, 212, 255, 0.18);
-        }
-        .nav-inner { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; }
-        .logo {
-            font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 1.5px;
-            background: linear-gradient(135deg, #fff, var(--primary), var(--secondary));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
+    .brand { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 1px; font-size: 1.2rem;
+      background: linear-gradient(130deg, white, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .hero { padding: 3rem 0 2rem; }
-        .hero h1 { font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 5vw, 3.6rem); margin-bottom: .75rem; }
-        .hero p { color: var(--text-dim); max-width: 760px; }
+    .hero { margin-top: 1.2rem; display: grid; gap: .5rem; }
+    .hero h1 { font-family: 'Orbitron', sans-serif; font-size: clamp(1.6rem, 4vw, 2.8rem); }
+    .hero p { color: var(--dim); max-width: 850px; }
 
-        .panel {
-            background: linear-gradient(145deg, rgba(30, 35, 55, 0.88), rgba(18, 24, 36, 0.92));
-            border: 1px solid rgba(0, 212, 255, 0.16);
-            border-radius: 18px;
-            padding: 1.1rem;
-            margin-top: 1rem;
-        }
+    .grid { display: grid; gap: 1rem; }
+    .grid.two { grid-template-columns: 1.2fr 1fr; }
+    @media (max-width: 950px){ .grid.two { grid-template-columns: 1fr; } }
 
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-        @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+    .card {
+      margin-top: 1rem;
+      background: linear-gradient(150deg, rgba(20,29,53,.95), rgba(27,39,69,.95));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1rem;
+    }
 
-        label { display: block; font-weight: 600; margin-bottom: .35rem; }
-        input, textarea, select {
-            width: 100%; background: rgba(17, 23, 36, 0.92); color: var(--text);
-            border: 1px solid rgba(0, 212, 255, .28); border-radius: 12px; padding: .8rem .9rem;
-            font-family: inherit;
-        }
-        textarea { min-height: 170px; resize: vertical; }
-        .hint { font-size: .9rem; color: var(--text-dim); margin-top: .25rem; }
+    .card h2, .card h3 { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 1rem; margin-bottom: .7rem; }
+    .muted { color: var(--dim); font-size: .92rem; }
 
-        .mode-row, .plan-row { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: .8rem; }
-        .chip {
-            padding: .7rem 1rem; border-radius: 11px; border: 1px solid rgba(0,212,255,.32);
-            cursor: pointer; background: rgba(17,23,36,.6); font-weight: 600;
-        }
-        .chip.active { background: linear-gradient(135deg, rgba(0,212,255,.23), rgba(124,58,237,.23)); border-color: var(--primary); }
+    .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
+    .chip {
+      border: 1px solid var(--line); background: #111a30; color: var(--text);
+      border-radius: 999px; padding: .5rem .85rem; cursor: pointer; font-weight: 600;
+    }
+    .chip.active { background: linear-gradient(120deg, rgba(0,212,255,.3), rgba(124,58,237,.3)); border-color: var(--primary); }
 
-        .btn {
-            border: none; border-radius: 12px; padding: .85rem 1.15rem; cursor: pointer;
-            font-weight: 700; font-family: inherit;
-        }
-        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
-        .btn-secondary { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+    label { font-size: .9rem; font-weight: 600; display: block; margin-bottom: .35rem; }
+    input, textarea, select {
+      width: 100%; border-radius: 10px; border: 1px solid var(--line);
+      background: #10182d; color: var(--text); font-family: inherit; padding: .72rem .8rem;
+    }
+    textarea { min-height: 190px; resize: vertical; }
 
-        .headline { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; margin-bottom: .7rem; color: var(--primary); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+    @media (max-width: 750px){ .row { grid-template-columns: 1fr; } }
 
-        .score-wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-        .score {
-            font-size: 2rem; font-family: 'Orbitron', sans-serif; font-weight: 900;
-            padding: .4rem .95rem; border-radius: 12px;
-        }
-        .score.good { background: rgba(16,185,129,.19); color: #68f0bd; }
-        .score.mid { background: rgba(245,158,11,.2); color: #ffd57d; }
-        .score.low { background: rgba(239,68,68,.18); color: #ff8c8c; }
+    .btns { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
+    button.action {
+      border: 0; border-radius: 10px; padding: .7rem 1rem; font-weight: 700; cursor: pointer;
+      color: #fff; background: linear-gradient(130deg, var(--primary), var(--secondary));
+    }
+    button.secondary { background: transparent; border: 1px solid var(--line); color: var(--primary); }
 
-        .kpi-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .6rem; margin-top: .8rem; }
-        .kpi { background: rgba(0,212,255,.06); border: 1px solid rgba(0,212,255,.16); border-radius: 12px; padding: .6rem .75rem; }
-        .kpi b { display: block; font-size: 1.05rem; }
+    .result-head { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; }
+    .score {
+      font-family: 'Orbitron', sans-serif; font-size: 1.7rem; font-weight: 900;
+      border-radius: 10px; padding: .35rem .75rem;
+    }
+    .score.good { background: rgba(16,185,129,.2); color: #8ef5cc; }
+    .score.mid { background: rgba(245,158,11,.25); color: #ffd48d; }
+    .score.low { background: rgba(239,68,68,.2); color: #ff9c9c; }
 
-        .bar-row { margin-bottom: .55rem; }
-        .bar-label { display:flex; justify-content: space-between; font-size: .95rem; margin-bottom: .2rem; }
-        .bar { background: rgba(148,163,184,.18); border-radius: 999px; height: 10px; overflow:hidden; }
-        .bar > span { display:block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+    .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:.55rem; margin-top:.8rem; }
+    .kpi { background: rgba(0,212,255,.06); border:1px solid var(--line); border-radius:10px; padding:.6rem .7rem; }
+    .kpi b { display:block; margin-top: .2rem; }
 
-        .list { display: grid; gap: .55rem; }
-        .list-item {
-            padding: .65rem .8rem; border-radius: 10px;
-            background: rgba(0,212,255,.06); border-left: 3px solid var(--primary);
-        }
+    .bar { margin-bottom: .5rem; }
+    .barline { height: 8px; background: rgba(148,163,184,.2); border-radius: 999px; overflow:hidden; }
+    .barline span { display:block; height:100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
 
-        .api-box { display: none; }
-        .api-box.show { display: block; }
+    .three { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem; margin-top:.8rem; }
+    @media (max-width: 900px){ .three { grid-template-columns: 1fr; } }
+    .list { display:grid; gap:.5rem; }
+    .item { background: rgba(0,212,255,.06); border-left:3px solid var(--primary); border-radius:8px; padding:.55rem .65rem; font-size:.94rem; }
 
-        .small { font-size: .86rem; color: var(--text-dim); }
-    </style>
+    .hidden { display:none; }
+    code { color: #94e9ff; }
+  </style>
 </head>
 <body>
-<nav>
-    <div class="container nav-inner">
-        <div class="logo">ASTRAPITCH AI</div>
-        <div class="small">Text + Video Pitch Intelligence</div>
-    </div>
-</nav>
+  <div class="shell">
+    <div class="top"><div class="brand">ASTRAPITCH AI · BACKEND + ANALYSIS ENGINE</div></div>
 
-<main class="container">
     <section class="hero">
-        <h1>Make Your Pitch Investor-Ready</h1>
-        <p>Upgraded analysis engine for both text and video pitches: deeper structure scoring, persuasion diagnostics, risk flags, and a paid API mode for advanced team workflows.</p>
+      <h1>Text + Video Investment Pitch Analysis (Free + Pro API Placeholder)</h1>
+      <p>Free mode now runs strong keyword-trained scoring, transcript analysis, frame-level visual signals, and an accuracy checker. Pro mode is wired as a backend placeholder so you can plug in your paid API later.</p>
     </section>
 
-    <section class="panel">
-        <div class="plan-row" id="planSelector">
-            <button class="chip active" data-plan="free">Free Analyzer</button>
-            <button class="chip" data-plan="pro">Pro + API Mode</button>
+    <section class="card">
+      <h2>Choose Plan + Analysis Type</h2>
+      <div class="chips" id="planChips">
+        <button class="chip active" data-plan="free">Free</button>
+        <button class="chip" data-plan="pro">Pro (API later)</button>
+      </div>
+      <div class="chips" id="modeChips">
+        <button class="chip active" data-mode="text">Text Analysis</button>
+        <button class="chip" data-mode="video">Video Analysis</button>
+      </div>
+      <p class="muted">Sectors and stage are used in scoring for both text and video.</p>
+
+      <div class="row" style="margin-top:.8rem;">
+        <div>
+          <label for="sector">Sector</label>
+          <select id="sector">
+            <option value="general">General</option>
+            <option value="saas">SaaS</option>
+            <option value="fintech">FinTech</option>
+            <option value="healthtech">HealthTech</option>
+            <option value="ai">AI</option>
+            <option value="consumer">Consumer</option>
+          </select>
         </div>
-
-        <div class="mode-row" id="modeSelector">
-            <button class="chip active" data-mode="text">Text Pitch</button>
-            <button class="chip" data-mode="video">Video Pitch</button>
+        <div>
+          <label for="stage">Stage</label>
+          <select id="stage">
+            <option value="idea">Idea</option>
+            <option value="mvp">MVP</option>
+            <option value="early" selected>Early Revenue</option>
+            <option value="growth">Growth</option>
+          </select>
         </div>
-
-        <div class="grid-2">
-            <div>
-                <label for="pitchText">Pitch content / transcript</label>
-                <textarea id="pitchText" placeholder="Paste your business pitch, investor memo, or your video transcript here..."></textarea>
-                <div class="hint">Tip: Include problem, solution, business model, traction, and ask.</div>
-            </div>
-            <div>
-                <label for="sector">Sector</label>
-                <input id="sector" placeholder="e.g. FinTech, AI SaaS, HealthTech">
-
-                <div style="height:.6rem"></div>
-                <label for="stage">Company stage</label>
-                <select id="stage">
-                    <option value="idea">Idea / Pre-product</option>
-                    <option value="mvp">MVP / Pilot</option>
-                    <option value="early">Early Revenue</option>
-                    <option value="growth">Growth Stage</option>
-                </select>
-
-                <div id="videoInputs" class="panel" style="margin-top:.8rem; display:none; padding:.8rem;">
-                    <div class="headline">Video context inputs</div>
-                    <div class="grid-3">
-                        <div>
-                            <label for="videoDuration">Duration (min)</label>
-                            <input id="videoDuration" type="number" min="1" max="20" value="4">
-                        </div>
-                        <div>
-                            <label for="slideCount">Slides used</label>
-                            <input id="slideCount" type="number" min="0" max="60" value="10">
-                        </div>
-                        <div>
-                            <label for="deliveryEnergy">Delivery energy (1-10)</label>
-                            <input id="deliveryEnergy" type="number" min="1" max="10" value="7">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="apiBox" class="panel api-box">
-            <div class="headline">Paid API Integration</div>
-            <div class="grid-2">
-                <div>
-                    <label for="apiUrl">API base URL</label>
-                    <input id="apiUrl" placeholder="https://api.astrapitch.ai">
-                </div>
-                <div>
-                    <label for="apiKey">API key</label>
-                    <input id="apiKey" type="password" placeholder="sk_live_xxx">
-                </div>
-            </div>
-            <div class="hint">In Pro mode the app will call <code>/v1/pitch/analyze</code>. If unavailable, it falls back to local advanced analysis.</div>
-        </div>
-
-        <div style="display:flex; gap:.7rem; margin-top:1rem;">
-            <button class="btn btn-primary" id="analyzeBtn">Run Deep Analysis</button>
-            <button class="btn btn-secondary" id="clearBtn">Clear</button>
-        </div>
+      </div>
     </section>
 
-    <section class="panel" id="results" style="display:none; margin-bottom:2rem;">
-        <div class="score-wrap">
-            <div>
-                <div class="headline" id="resultTitle">Analysis</div>
-                <div class="small" id="resultSubtitle"></div>
-            </div>
-            <div class="score" id="overallScore">0/100</div>
-        </div>
+    <section class="grid two">
+      <div class="card" id="textCard">
+        <h3>Text Investment Pitch Analyzer</h3>
+        <label for="pitchText">Pitch text</label>
+        <textarea id="pitchText" placeholder="Paste your investment pitch text here..."></textarea>
+        <p class="muted">Include: problem, solution, traction, numbers, competitors, and fundraise ask.</p>
+      </div>
 
-        <div class="kpi-list" id="kpis"></div>
+      <div class="card hidden" id="videoCard">
+        <h3>Video Investment Pitch Analyzer</h3>
+        <label for="videoFile">Upload video (used for frame-level image analysis)</label>
+        <input id="videoFile" type="file" accept="video/*" />
+        <p class="muted" id="videoMetricHint">After upload, we'll sample frames for brightness, contrast, sharpness, text density, and stability.</p>
+        <div style="margin-top:.7rem;"></div>
+        <label for="videoTranscript">Video transcript</label>
+        <textarea id="videoTranscript" placeholder="Paste transcript of the video pitch..."></textarea>
 
-        <div class="panel" style="margin-top:.9rem;">
-            <div class="headline">Category Breakdown</div>
-            <div id="categoryBars"></div>
+        <div class="row" style="margin-top:.7rem;">
+          <div>
+            <label for="energy">Delivery energy (1-10)</label>
+            <input id="energy" type="number" min="1" max="10" value="7" />
+          </div>
+          <div>
+            <label for="pace">Delivery pace quality (1-10)</label>
+            <input id="pace" type="number" min="1" max="10" value="7" />
+          </div>
         </div>
-
-        <div class="grid-2" style="margin-top:.9rem;">
-            <div class="panel" style="margin-top:0;">
-                <div class="headline">Top Strengths</div>
-                <div class="list" id="strengths"></div>
-            </div>
-            <div class="panel" style="margin-top:0;">
-                <div class="headline">Critical Risks</div>
-                <div class="list" id="risks"></div>
-            </div>
-        </div>
-
-        <div class="panel" style="margin-top:.9rem;">
-            <div class="headline">Action Plan</div>
-            <div class="grid-3" id="actionPlan"></div>
-        </div>
+      </div>
     </section>
-</main>
+
+    <section class="card hidden" id="proCard">
+      <h3>Pro API Placeholder</h3>
+      <p class="muted">You said you'll set this up later. We keep inputs ready and call backend placeholder endpoint <code>/api/analyze/pro</code>.</p>
+      <div class="row" style="margin-top:.5rem;">
+        <div>
+          <label for="proApiKey">API key (saved locally only)</label>
+          <input id="proApiKey" type="password" placeholder="sk_live_xxx" />
+        </div>
+        <div>
+          <label for="proEndpoint">Future model endpoint URL</label>
+          <input id="proEndpoint" placeholder="https://your-api-domain/v1/pitch/analyze" />
+        </div>
+      </div>
+      <p class="muted" style="margin-top:.4rem;">Backend has TODO comments showing where to wire your paid model.</p>
+    </section>
+
+    <section class="card">
+      <div class="btns">
+        <button class="action" id="runBtn">Run Analysis</button>
+        <button class="action secondary" id="demoBtn">Load Demo Pitch</button>
+      </div>
+      <p class="muted" id="status" style="margin-top:.6rem;">Ready.</p>
+    </section>
+
+    <section class="card hidden" id="results">
+      <div class="result-head">
+        <div>
+          <h3 id="resultTitle">Analysis Result</h3>
+          <p class="muted" id="resultSubtitle"></p>
+        </div>
+        <div class="score" id="score">0/100</div>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="card" style="margin-top:.7rem;">
+        <h3>Category Breakdown</h3>
+        <div id="bars"></div>
+      </div>
+
+      <div class="three">
+        <div class="card" style="margin-top:0;">
+          <h3>Strengths</h3>
+          <div class="list" id="strengths"></div>
+        </div>
+        <div class="card" style="margin-top:0;">
+          <h3>Risks</h3>
+          <div class="list" id="risks"></div>
+        </div>
+        <div class="card" style="margin-top:0;">
+          <h3>Fix First (Backend Guidance)</h3>
+          <div class="list" id="fixFirst"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:.7rem;">
+        <h3>Improve Next</h3>
+        <div class="list" id="improveNext"></div>
+      </div>
+    </section>
+  </div>
 
 <script>
-    const state = { plan: 'free', mode: 'text' };
+const state = {
+  plan: 'free',
+  mode: 'text',
+  imageMetrics: null
+};
 
-    const planSelector = document.getElementById('planSelector');
-    const modeSelector = document.getElementById('modeSelector');
-    const apiBox = document.getElementById('apiBox');
-    const videoInputs = document.getElementById('videoInputs');
+const $ = (id) => document.getElementById(id);
 
-    initSavedConfig();
+$('planChips').addEventListener('click', (e) => {
+  if (!e.target.dataset.plan) return;
+  state.plan = e.target.dataset.plan;
+  [...$('planChips').querySelectorAll('.chip')].forEach(c => c.classList.toggle('active', c.dataset.plan === state.plan));
+  $('proCard').classList.toggle('hidden', state.plan !== 'pro');
+});
 
-    planSelector.addEventListener('click', (e) => {
-        if (!e.target.dataset.plan) return;
-        state.plan = e.target.dataset.plan;
-        [...planSelector.querySelectorAll('.chip')].forEach(btn => btn.classList.toggle('active', btn.dataset.plan === state.plan));
-        apiBox.classList.toggle('show', state.plan === 'pro');
+$('modeChips').addEventListener('click', (e) => {
+  if (!e.target.dataset.mode) return;
+  state.mode = e.target.dataset.mode;
+  [...$('modeChips').querySelectorAll('.chip')].forEach(c => c.classList.toggle('active', c.dataset.mode === state.mode));
+  $('textCard').classList.toggle('hidden', state.mode !== 'text');
+  $('videoCard').classList.toggle('hidden', state.mode !== 'video');
+});
+
+$('videoFile').addEventListener('change', async () => {
+  const file = $('videoFile').files?.[0];
+  if (!file) return;
+  $('status').textContent = 'Processing video frames for image quality signals...';
+  try {
+    state.imageMetrics = await extractVideoMetrics(file);
+    $('videoMetricHint').textContent = `Frame metrics ready: brightness ${state.imageMetrics.brightness.toFixed(2)}, contrast ${state.imageMetrics.contrast.toFixed(2)}, sharpness ${state.imageMetrics.sharpness.toFixed(2)}, text density ${state.imageMetrics.text_density.toFixed(2)}, stability ${state.imageMetrics.stability.toFixed(2)}.`;
+    $('status').textContent = 'Video frame metrics extracted.';
+  } catch (err) {
+    console.error(err);
+    state.imageMetrics = null;
+    $('status').textContent = 'Video frame processing failed. You can still run transcript analysis.';
+  }
+});
+
+$('runBtn').addEventListener('click', runAnalysis);
+$('demoBtn').addEventListener('click', loadDemo);
+
+function loadDemo() {
+  const demo = `We are building an AI compliance copilot for mid-market fintech teams. Today onboarding and transaction monitoring are manual and expensive. We reduce review time by 62% with a workflow model trained on historical decisions. In 8 pilots, false positives dropped 31% and analysts process 2.1x more alerts per day. TAM is a $9.4B market and our SAM is $1.3B in US and UK mid-market institutions. We charge $6,000 per month plus volume usage. We currently have $38k MRR growing 18% month over month with 94% gross retention. We are raising $2.5M to extend runway to 24 months, hire two GTM reps, and complete SOC2 plus key model auditing milestones.`;
+  $('pitchText').value = demo;
+  $('videoTranscript').value = demo;
+  $('status').textContent = 'Demo loaded.';
+}
+
+async function runAnalysis() {
+  const sector = $('sector').value;
+  const stage = $('stage').value;
+  $('status').textContent = 'Running analysis...';
+
+  let endpoint = '/api/analyze/free/text';
+  let payload = { sector, stage };
+
+  if (state.plan === 'pro') {
+    endpoint = '/api/analyze/pro';
+    payload = {
+      mode: state.mode,
+      sector,
+      stage,
+      // TODO (future): backend should validate this API key server-side.
+      api_key: $('proApiKey').value.trim(),
+      // TODO (future): backend should call this endpoint or mapped provider route.
+      external_endpoint: $('proEndpoint').value.trim(),
+      text: $('pitchText').value.trim(),
+      transcript: $('videoTranscript').value.trim(),
+      image_metrics: state.imageMetrics
+    };
+  } else if (state.mode === 'video') {
+    endpoint = '/api/analyze/free/video';
+    payload = {
+      transcript: $('videoTranscript').value.trim(),
+      sector,
+      stage,
+      image_metrics: state.imageMetrics,
+      delivery: {
+        energy: Number($('energy').value || 7) / 10,
+        pace: Number($('pace').value || 7) / 10
+      }
+    };
+  } else {
+    endpoint = '/api/analyze/free/text';
+    payload = {
+      text: $('pitchText').value.trim(),
+      sector,
+      stage
+    };
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Analysis failed');
+    render(data);
+    $('status').textContent = 'Analysis complete.';
+  } catch (err) {
+    $('status').textContent = `Error: ${err.message}`;
+  }
+}
 
-    modeSelector.addEventListener('click', (e) => {
-        if (!e.target.dataset.mode) return;
-        state.mode = e.target.dataset.mode;
-        [...modeSelector.querySelectorAll('.chip')].forEach(btn => btn.classList.toggle('active', btn.dataset.mode === state.mode));
-        videoInputs.style.display = state.mode === 'video' ? 'block' : 'none';
-    });
+function render(data) {
+  $('results').classList.remove('hidden');
+  $('resultTitle').textContent = `${data.mode.toUpperCase()} Pitch Analysis`;
 
-    document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
-    document.getElementById('clearBtn').addEventListener('click', () => {
-        ['pitchText','sector','apiUrl','apiKey'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('results').style.display = 'none';
-    });
+  const checker = data.accuracy_checker?.detail || {};
+  $('resultSubtitle').textContent = `Accuracy checker: ${data.accuracy_checker?.confidence || 0}/100 · Structure ${checker.structure || 0} · Evidence ${checker.evidence || 0}`;
 
-    document.getElementById('apiUrl').addEventListener('blur', saveConfig);
-    document.getElementById('apiKey').addEventListener('blur', saveConfig);
+  const score = data.overall_score || 0;
+  $('score').textContent = `${score}/100`;
+  $('score').className = `score ${score >= 80 ? 'good' : score >= 60 ? 'mid' : 'low'}`;
 
-    function initSavedConfig() {
-        const saved = JSON.parse(localStorage.getItem('astrapitch-api') || '{}');
-        if (saved.url) document.getElementById('apiUrl').value = saved.url;
-        if (saved.key) document.getElementById('apiKey').value = saved.key;
+  const keywords = (data.training_keywords || []).join(', ') || 'n/a';
+  const visual = data.visual_metrics ? `Visual sharpness ${data.visual_metrics.sharpness}` : 'Visual metrics n/a';
+
+  $('kpis').innerHTML = `
+    <div class="kpi"><span class="muted">Overall score</span><b>${score}/100</b></div>
+    <div class="kpi"><span class="muted">Accuracy confidence</span><b>${data.accuracy_checker?.confidence || 0}/100</b></div>
+    <div class="kpi"><span class="muted">Keyword training signals</span><b>${(data.training_keywords || []).length}</b></div>
+    <div class="kpi"><span class="muted">Top keyword tokens</span><b>${keywords}</b></div>
+    <div class="kpi"><span class="muted">Mode</span><b>${data.mode}</b></div>
+    <div class="kpi"><span class="muted">Video image checks</span><b>${visual}</b></div>
+  `;
+
+  $('bars').innerHTML = Object.entries(data.categories || {}).map(([name, val]) => `
+      <div class="bar">
+        <div class="muted" style="display:flex;justify-content:space-between;margin-bottom:.2rem;"><span>${name.replaceAll('_',' ')}</span><span>${val}/100</span></div>
+        <div class="barline"><span style="width:${val}%"></span></div>
+      </div>
+  `).join('');
+
+  $('strengths').innerHTML = (data.strengths || []).map(s => `<div class="item">${s}</div>`).join('');
+  $('risks').innerHTML = (data.risks || []).map(r => `<div class="item">${r}</div>`).join('');
+  const fixFirst = data.fix_plan?.must_fix_first || [];
+  const improveNext = data.fix_plan?.improve_next || [];
+  const sizeGuidance = data.fix_plan?.size_guidance;
+
+  $('fixFirst').innerHTML = fixFirst.length
+    ? fixFirst.map(x => `<div class="item"><b>${x.area.replaceAll('_',' ')}</b> (${x.score}/100) · ${x.fix}<br><span class="muted">Example: ${x.example}</span></div>`).join('')
+    : '<div class="item">No critical fixes detected.</div>';
+
+  $('improveNext').innerHTML = [
+    ...(improveNext.map(x => `<div class="item"><b>${x.area.replaceAll('_',' ')}</b> (${x.score}/100) · ${x.fix}<br><span class="muted">Example: ${x.example}</span></div>`)),
+    ...(sizeGuidance ? [`<div class="item"><b>Pitch size guidance</b> · ${sizeGuidance.recommendation} <span class="muted">(words: ${sizeGuidance.word_count}, band: ${sizeGuidance.size_band})</span></div>`] : [])
+  ].join('');
+}
+
+async function extractVideoMetrics(file) {
+  const video = document.createElement('video');
+  video.crossOrigin = 'anonymous';
+  video.muted = true;
+  video.src = URL.createObjectURL(file);
+
+  await new Promise((resolve, reject) => {
+    video.onloadedmetadata = resolve;
+    video.onerror = reject;
+  });
+
+  const duration = Math.max(1, Math.floor(video.duration));
+  const samples = Math.min(8, duration);
+  const times = Array.from({ length: samples }, (_, i) => (duration / (samples + 1)) * (i + 1));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 320; canvas.height = 180;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  const brightnessList = [];
+  const contrastList = [];
+  const sharpnessList = [];
+  const textDensityList = [];
+  const frameHashes = [];
+
+  for (const t of times) {
+    await seekVideo(video, t);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = image.data;
+
+    let sum = 0;
+    let sq = 0;
+    let edgeCount = 0;
+    let brightPixels = 0;
+    const lum = new Float32Array(canvas.width * canvas.height);
+
+    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+      const l = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      lum[p] = l;
+      sum += l;
+      sq += l * l;
+      if (l > 200) brightPixels++;
     }
 
-    function saveConfig() {
-        localStorage.setItem('astrapitch-api', JSON.stringify({
-            url: document.getElementById('apiUrl').value.trim(),
-            key: document.getElementById('apiKey').value.trim()
-        }));
+    const mean = sum / lum.length;
+    const variance = (sq / lum.length) - (mean * mean);
+    const std = Math.sqrt(Math.max(0, variance));
+
+    for (let y = 1; y < canvas.height - 1; y++) {
+      for (let x = 1; x < canvas.width - 1; x++) {
+        const idx = y * canvas.width + x;
+        const gx = Math.abs(lum[idx + 1] - lum[idx - 1]);
+        const gy = Math.abs(lum[idx + canvas.width] - lum[idx - canvas.width]);
+        const grad = gx + gy;
+        if (grad > 36) edgeCount++;
+      }
     }
 
-    async function runAnalysis() {
-        const text = document.getElementById('pitchText').value.trim();
-        const sector = document.getElementById('sector').value.trim() || 'General';
-        const stage = document.getElementById('stage').value;
-        if (!text) return alert('Please add your pitch text or transcript first.');
+    const edgeDensity = edgeCount / lum.length;
+    brightnessList.push(mean / 255);
+    contrastList.push(std / 128);
+    sharpnessList.push(Math.min(1, edgeDensity * 6));
+    textDensityList.push(Math.min(1, (edgeDensity * 4) + (brightPixels / lum.length) * 0.5));
+    frameHashes.push(Math.round(mean / 6));
+  }
 
-        let result;
-        if (state.plan === 'pro') {
-            result = await proAnalyze({ text, sector, stage, mode: state.mode, video: collectVideoMeta() });
-        } else {
-            result = state.mode === 'video'
-                ? analyzeVideoPitch(text, sector, stage, collectVideoMeta())
-                : analyzeTextPitch(text, sector, stage);
-        }
+  URL.revokeObjectURL(video.src);
 
-        renderResults(result);
-    }
+  const stability = computeStability(frameHashes);
+  return {
+    brightness: avg(brightnessList),
+    contrast: avg(contrastList),
+    sharpness: avg(sharpnessList),
+    text_density: avg(textDensityList),
+    stability
+  };
+}
 
-    function collectVideoMeta() {
-        return {
-            duration: Number(document.getElementById('videoDuration').value || 4),
-            slides: Number(document.getElementById('slideCount').value || 10),
-            energy: Number(document.getElementById('deliveryEnergy').value || 7)
-        };
-    }
+function seekVideo(video, time) {
+  return new Promise((resolve, reject) => {
+    const done = () => { video.removeEventListener('seeked', done); resolve(); };
+    video.addEventListener('seeked', done, { once: true });
+    video.currentTime = Math.min(Math.max(0, time), video.duration || time);
+    setTimeout(() => reject(new Error('seek timeout')), 4000);
+  });
+}
 
-    function normalize(text) {
-        return text.toLowerCase().replace(/\s+/g, ' ').trim();
-    }
-
-    function scoreBand(value) {
-        if (value >= 80) return 'good';
-        if (value >= 55) return 'mid';
-        return 'low';
-    }
-
-    function computeCommonSignals(text) {
-        const t = normalize(text);
-        const words = t.split(' ').filter(Boolean).length;
-        const sents = text.split(/[.!?]+/).map(s => s.trim()).filter(Boolean).length || 1;
-        const avgSentLen = words / sents;
-
-        const count = (arr) => arr.reduce((n, token) => n + (t.includes(token) ? 1 : 0), 0);
-        const numMatches = (t.match(/\$?\d+(\.\d+)?(%|k|m|b|x)?/g) || []).length;
-
-        return {
-            words,
-            sents,
-            avgSentLen,
-            numMatches,
-            hasProblem: count(['problem', 'pain', 'challenge', 'friction']) > 0,
-            hasSolution: count(['solution', 'we built', 'platform', 'product']) > 0,
-            hasMarket: count(['market', 'tam', 'sam', 'som', 'segment', 'industry']) > 0,
-            hasBusiness: count(['revenue', 'pricing', 'subscription', 'margin', 'ltv', 'cac']) > 0,
-            hasTraction: count(['growth', 'users', 'customers', 'mrr', 'arr', 'retention', 'churn']) > 0,
-            hasCompetition: count(['competitor', 'competition', 'alternative', 'different']) > 0,
-            hasAsk: count(['raising', 'ask', 'funding', 'use of funds', 'investment']) > 0,
-            confidenceFlags: count(['will', 'proven', 'validated', 'repeatable']) - count(['maybe', 'probably', 'might', 'hopefully'])
-        };
-    }
-
-    function analyzeTextPitch(text, sector, stage) {
-        const s = computeCommonSignals(text);
-        const categories = {
-            Problem_Clarity: clamp((s.hasProblem ? 55 : 20) + Math.min(18, s.words / 18)),
-            Solution_Differentiation: clamp((s.hasSolution ? 45 : 18) + (s.hasCompetition ? 20 : 8) + Math.min(14, s.numMatches * 2)),
-            Market_Opportunity: clamp((s.hasMarket ? 52 : 18) + Math.min(24, s.numMatches * 2.2)),
-            Business_Model: clamp((s.hasBusiness ? 58 : 20) + (stage === 'growth' ? 8 : 0)),
-            Traction_Credibility: clamp((s.hasTraction ? 56 : 20) + Math.min(22, s.numMatches * 2)),
-            Financial_Thinking: clamp((s.numMatches > 5 ? 62 : 22) + (s.hasAsk ? 12 : 0)),
-            Narrative_Clarity: clamp(68 - Math.abs(18 - s.avgSentLen) * 2),
-            Investor_Readiness: clamp((s.hasAsk ? 62 : 30) + (s.confidenceFlags > 0 ? 12 : 0))
-        };
-
-        return finalizeResult({ categories, mode: 'Text', sector, s });
-    }
-
-    function analyzeVideoPitch(transcript, sector, stage, meta) {
-        const s = computeCommonSignals(transcript);
-        const wpm = Math.round(s.words / Math.max(meta.duration, 1));
-        const pacingScore = clamp(100 - Math.min(55, Math.abs(145 - wpm) * 0.6));
-        const slideDensity = meta.slides / Math.max(meta.duration, 1);
-        const visualScore = clamp(80 - Math.abs(2.2 - slideDensity) * 20);
-
-        const categories = {
-            Story_Arc: clamp((s.hasProblem && s.hasSolution ? 68 : 38) + (s.hasAsk ? 12 : 0)),
-            Delivery_Pacing: pacingScore,
-            Executive_Presence: clamp(42 + meta.energy * 5 + Math.max(-10, s.confidenceFlags * 2)),
-            Evidence_Density: clamp(25 + Math.min(55, s.numMatches * 5)),
-            Visual_Communication: visualScore,
-            Market_and_Business: clamp((s.hasMarket ? 26 : 0) + (s.hasBusiness ? 32 : 14) + (s.hasTraction ? 24 : 8)),
-            Objection_Handling: clamp((s.hasCompetition ? 58 : 28) + (s.hasAsk ? 8 : 0)),
-            Close_Quality: clamp((s.hasAsk ? 66 : 24) + (stage === 'growth' ? 8 : 0))
-        };
-
-        return finalizeResult({ categories, mode: 'Video', sector, s, extraKpis: [{ label: 'Pacing', value: `${wpm} wpm` }, { label: 'Slides / Min', value: slideDensity.toFixed(1) }] });
-    }
-
-    async function proAnalyze(payload) {
-        const url = document.getElementById('apiUrl').value.trim();
-        const key = document.getElementById('apiKey').value.trim();
-        saveConfig();
-
-        if (url && key) {
-            try {
-                const res = await fetch(`${url.replace(/\/$/, '')}/v1/pitch/analyze`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${key}`
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.categories) return data;
-                }
-            } catch (_) {
-                // local fallback below
-            }
-        }
-
-        const local = payload.mode === 'video'
-            ? analyzeVideoPitch(payload.text, payload.sector, payload.stage, payload.video)
-            : analyzeTextPitch(payload.text, payload.sector, payload.stage);
-
-        local.strengths.unshift('Pro mode fallback active: advanced local scoring used while API is unreachable.');
-        local.risks.unshift('Connect a live paid API endpoint to unlock benchmark datasets and custom model prompts.');
-        local.subtitle += ' • Pro Fallback';
-        return local;
-    }
-
-    function finalizeResult({ categories, mode, sector, s, extraKpis = [] }) {
-        const values = Object.values(categories);
-        const score = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-        const sorted = Object.entries(categories).sort((a,b) => b[1]-a[1]);
-
-        const strengths = sorted.slice(0, 3).map(([k,v]) => `${friendly(k)} is strong (${v}/100). Keep this as a signature advantage.`);
-        const weak = sorted.slice(-3);
-        const risks = weak.map(([k,v]) => `${friendly(k)} is a weak point (${v}/100). Investors will likely challenge this area first.`);
-
-        if (s.words < 120) risks.unshift('Pitch is short. Expand with proof points, market sizing, and concrete next milestones.');
-        if (!s.hasAsk) risks.unshift('No clear investment ask detected. Add amount, runway, and use-of-funds breakdown.');
-
-        const actionPlan = [
-            { title: 'Next 72 Hours', items: [
-                'Rewrite opening to define pain in one sentence + one hard metric.',
-                'Add a stronger "why now" supported by market timing evidence.',
-                'Create one slide or paragraph dedicated to competitive moat.'
-            ]},
-            { title: 'Next 2 Weeks', items: [
-                'Run 5 customer interviews and convert quotes into validation evidence.',
-                'Add unit economics: CAC, LTV assumptions, payback period.',
-                'Practice delivery with timed sections and recorded rehearsals.'
-            ]},
-            { title: 'Before Investor Meetings', items: [
-                'Prepare objection bank for pricing, GTM risk, and defensibility.',
-                'Build 3 scenario plan: base, upside, downside cash runway.',
-                'End with precise ask, milestones, and expected investor role.'
-            ]}
-        ];
-
-        return {
-            title: `${mode} Pitch Deep Analysis`,
-            subtitle: `${sector} sector • ${s.words} words • ${s.numMatches} quant signals`,
-            score,
-            categories,
-            strengths,
-            risks,
-            actionPlan,
-            kpis: [
-                { label: 'Word Count', value: String(s.words) },
-                { label: 'Data Signals', value: String(s.numMatches) },
-                { label: 'Sentence Clarity', value: `${Math.round(s.avgSentLen)} avg words` },
-                { label: 'Investor Readiness', value: `${Math.round(categories.Investor_Readiness || categories.Close_Quality || 0)}/100` },
-                ...extraKpis
-            ]
-        };
-    }
-
-    function renderResults(result) {
-        const results = document.getElementById('results');
-        results.style.display = 'block';
-        document.getElementById('resultTitle').textContent = result.title;
-        document.getElementById('resultSubtitle').textContent = result.subtitle;
-
-        const scoreEl = document.getElementById('overallScore');
-        scoreEl.textContent = `${result.score}/100`;
-        scoreEl.className = `score ${scoreBand(result.score)}`;
-
-        document.getElementById('kpis').innerHTML = result.kpis.map(k => `<div class="kpi"><span class="small">${k.label}</span><b>${k.value}</b></div>`).join('');
-
-        document.getElementById('categoryBars').innerHTML = Object.entries(result.categories).map(([key,val]) => `
-            <div class="bar-row">
-                <div class="bar-label"><span>${friendly(key)}</span><span>${Math.round(val)}/100</span></div>
-                <div class="bar"><span style="width:${Math.round(val)}%"></span></div>
-            </div>
-        `).join('');
-
-        document.getElementById('strengths').innerHTML = result.strengths.map(i => `<div class="list-item">${i}</div>`).join('');
-        document.getElementById('risks').innerHTML = result.risks.map(i => `<div class="list-item">${i}</div>`).join('');
-
-        document.getElementById('actionPlan').innerHTML = result.actionPlan.map(block => `
-            <div class="panel" style="margin-top:0;">
-                <div class="headline">${block.title}</div>
-                <div class="list">${block.items.map(i => `<div class="list-item">${i}</div>`).join('')}</div>
-            </div>
-        `).join('');
-    }
-
-    function friendly(v) { return v.replace(/_/g, ' '); }
-    function clamp(v) { return Math.max(0, Math.min(100, Math.round(v))); }
+function avg(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
+function computeStability(hashes) {
+  if (hashes.length < 2) return 0.6;
+  let delta = 0;
+  for (let i = 1; i < hashes.length; i++) delta += Math.abs(hashes[i] - hashes[i - 1]);
+  const meanDelta = delta / (hashes.length - 1);
+  return Math.max(0, Math.min(1, 1 - (meanDelta / 20)));
+}
 </script>
 </body>
 </html>
