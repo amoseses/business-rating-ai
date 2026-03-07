@@ -81,6 +81,25 @@ FIX_LIBRARY = {
     },
 }
 
+STAGE_EXPECTATIONS = {
+    "idea": ["problem", "solution", "market", "raise", "milestone"],
+    "mvp": ["pilot", "feedback", "pricing", "market", "raise"],
+    "early": ["revenue", "retention", "growth", "unit economics", "raise"],
+    "growth": ["expansion", "net retention", "efficiency", "pipeline", "moat"],
+}
+
+INVESTOR_SIGNAL_LIBRARY = {
+    "positive": {
+        "evidence": ["arr", "mrr", "retention", "conversion", "cohort", "gross margin", "payback"],
+        "clarity": ["we solve", "our customer", "we charge", "we are raising", "use of funds"],
+        "defensibility": ["proprietary", "data moat", "network effect", "switching cost", "regulatory edge"],
+    },
+    "negative": {
+        "hype": ["revolutionary", "disrupt everything", "guaranteed", "no competition", "world changing"],
+        "vague": ["huge market", "everyone", "all industries", "soon", "very fast"],
+    }
+}
+
 
 def clamp(value, low=0, high=100):
     return max(low, min(high, round(value)))
@@ -150,6 +169,34 @@ def category_score(text, terms, words):
     return clamp(22 + hits * 12 + density_bonus)
 
 
+def phrase_density_score(text, terms):
+    words, _, _ = sentence_stats(text)
+    hits = count_matches(text, terms)
+    density = (hits * 1000) / max(60, words)
+    return clamp(20 + (hits * 10) + density)
+
+
+def stage_alignment_score(text, stage):
+    expected = STAGE_EXPECTATIONS.get(stage, STAGE_EXPECTATIONS["early"])
+    lower = text.lower()
+    hits = sum(1 for term in expected if term in lower)
+    missing = [term for term in expected if term not in lower]
+    return clamp(30 + hits * 14), expected, missing
+
+
+def keyword_training_signals(text):
+    positive = INVESTOR_SIGNAL_LIBRARY["positive"]
+    negative = INVESTOR_SIGNAL_LIBRARY["negative"]
+    pos_hits = {bucket: count_matches(text, terms) for bucket, terms in positive.items()}
+    neg_hits = {bucket: count_matches(text, terms) for bucket, terms in negative.items()}
+    score = clamp(50 + sum(pos_hits.values()) * 8 - sum(neg_hits.values()) * 10)
+    return {
+        "score": score,
+        "positive_hits": pos_hits,
+        "negative_hits": neg_hits,
+    }
+
+
 def accuracy_checker(text, category_scores):
     words, sents, avg_words = sentence_stats(text)
     numeric, perc, money = extract_numeric_signals(text)
@@ -166,6 +213,8 @@ def accuracy_checker(text, category_scores):
 
     evidence = 30 + min(40, numeric * 4) + min(10, perc * 2) + min(10, money * 2)
     consistency = 38 + (sum(category_scores.values()) / len(category_scores)) * 0.5
+    specificity = clamp(28 + min(26, len(top_keywords(text)) * 2.6) + min(24, count_matches(text, ["tam", "sam", "som", "icp", "cohort", "retention"]) * 6))
+    balance = clamp(35 + min(35, count_matches(text, ["risk", "mitigation", "assumption", "dependency"]) * 8) + min(20, sents * 1.3))
 
     flags = []
     if "guarantee" in text.lower() or "no risk" in text.lower():
@@ -175,7 +224,18 @@ def accuracy_checker(text, category_scores):
     if size_band in ("long", "very_long"):
         flags.append("Pitch is long; tighten narrative and lead with strongest proof first.")
 
-    confidence = clamp((structure * 0.33) + (evidence * 0.34) + (consistency * 0.33) - (8 if "guarantee" in text.lower() else 0))
+    confidence = clamp((structure * 0.28) + (evidence * 0.30) + (consistency * 0.24) + (specificity * 0.10) + (balance * 0.08) - (8 if "guarantee" in text.lower() else 0))
+
+    reasons = []
+    if evidence < 60:
+        reasons.append("Low metric density detected; add concrete revenue/retention values.")
+    if structure < 60:
+        reasons.append("Structure is thin; add clearer problem, solution, and fundraise flow.")
+    if specificity < 60:
+        reasons.append("Specificity is weak; include market sizing and customer segment detail.")
+    if not reasons:
+        reasons.append("Strong signal quality for investor diligence review.")
+
     return {
         "confidence": confidence,
         "size_band": size_band,
@@ -183,8 +243,11 @@ def accuracy_checker(text, category_scores):
             "structure": clamp(structure),
             "evidence": clamp(evidence),
             "consistency": clamp(consistency),
+            "specificity": specificity,
+            "balance": balance,
             "flags": flags
-        }
+        },
+        "reasons": reasons,
     }
 
 
@@ -240,7 +303,11 @@ def analyze_text(payload):
     categories = {k: category_score(text, v, words) for k, v in CATEGORY_TERMS.items()}
 
     sector_terms = SECTOR_KEYWORDS.get(sector, SECTOR_KEYWORDS["general"])
-    categories["sector_alignment"] = clamp(25 + count_matches(text, sector_terms) * 10)
+    categories["sector_alignment"] = phrase_density_score(text, sector_terms)
+    stage_alignment, stage_terms, missing_stage_terms = stage_alignment_score(text, stage)
+    categories["stage_alignment"] = stage_alignment
+    trained = keyword_training_signals(text)
+    categories["keyword_training"] = trained["score"]
 
     if stage == "idea":
         categories["traction"] = max(categories["traction"] - 8, 18)
@@ -256,6 +323,8 @@ def analyze_text(payload):
 
     if numeric < 4:
         risks.insert(0, "Low quantitative evidence. Add concrete metrics (% growth, revenue, retention, CAC/LTV).")
+    if missing_stage_terms:
+        risks.insert(1, f"Stage mismatch for {stage}: missing {', '.join(missing_stage_terms[:3])} signals.")
 
     return {
         "mode": "text",
@@ -265,6 +334,9 @@ def analyze_text(payload):
         "strengths": strengths,
         "risks": risks,
         "training_keywords": top_keywords(text),
+        "stage_expectations": stage_terms,
+        "missing_stage_signals": missing_stage_terms,
+        "keyword_training_detail": trained,
         "fix_plan": build_fix_plan(categories, words),
     }
 
@@ -308,6 +380,9 @@ def analyze_video(payload):
         "text_density": round(text_density, 3),
         "stability": round(stability, 3),
     }
+
+    base["accuracy_checker"]["detail"]["visual_readiness"] = clamp(sum(visual_categories.values()) / len(visual_categories))
+    base["accuracy_checker"]["confidence"] = clamp(base["accuracy_checker"]["confidence"] * 0.78 + base["accuracy_checker"]["detail"]["visual_readiness"] * 0.22)
 
     # Add clear visual fixes for video mode.
     base["fix_plan"]["improve_next"] = base["fix_plan"].get("improve_next", []) + [
