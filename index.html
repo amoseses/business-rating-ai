@@ -512,7 +512,8 @@ function render(data) {
   $('resultTitle').textContent = `${data.mode.toUpperCase()} Pitch Analysis`;
 
   const checker = data.accuracy_checker?.detail || {};
-  $('resultSubtitle').textContent = `Accuracy checker: ${data.accuracy_checker?.confidence || 0}/100 · Structure ${checker.structure || 0} · Evidence ${checker.evidence || 0}`;
+  const checkerReasons = (data.accuracy_checker?.reasons || []).join(' | ');
+  $('resultSubtitle').textContent = `Accuracy checker: ${data.accuracy_checker?.confidence || 0}/100 · Structure ${checker.structure || 0} · Evidence ${checker.evidence || 0}${checker.specificity ? ` · Specificity ${checker.specificity}` : ''}${checkerReasons ? ` · ${checkerReasons}` : ''}`;
 
   const score = data.overall_score || 0;
   $('score').textContent = `${score}/100`;
@@ -520,13 +521,16 @@ function render(data) {
 
   const keywords = (data.training_keywords || []).join(', ') || 'n/a';
   const visual = data.visual_metrics ? `Visual sharpness ${data.visual_metrics.sharpness}` : 'Visual metrics n/a';
+  const stageMiss = (data.missing_stage_signals || []).length;
+  const trainedScore = data.keyword_training_detail?.score || data.categories?.keyword_training || 0;
 
   $('kpis').innerHTML = `
     <div class="kpi"><span class="muted">Overall score</span><b>${score}/100</b></div>
     <div class="kpi"><span class="muted">Accuracy confidence</span><b>${data.accuracy_checker?.confidence || 0}/100</b></div>
-    <div class="kpi"><span class="muted">Keyword training signals</span><b>${(data.training_keywords || []).length}</b></div>
+    <div class="kpi"><span class="muted">Keyword training signals</span><b>${(data.training_keywords || []).length} (score ${trainedScore}/100)</b></div>
     <div class="kpi"><span class="muted">Top keyword tokens</span><b>${keywords}</b></div>
     <div class="kpi"><span class="muted">Mode</span><b>${data.mode}</b></div>
+    <div class="kpi"><span class="muted">Stage signal gaps</span><b>${stageMiss}</b></div>
     <div class="kpi"><span class="muted">Video image checks</span><b>${visual}</b></div>
   `;
 
