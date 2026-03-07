@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstraPitch AI - Revolutionary Pitch Intelligence</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>AstraPitch AI - Pitch Intelligence Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --primary: #00d4ff;
             --secondary: #7c3aed;
             --accent: #f97316;
+            --ok: #10b981;
+            --warn: #f59e0b;
+            --bad: #ef4444;
             --dark: #0a0e1a;
             --dark-2: #141824;
             --dark-3: #1e2337;
@@ -25,973 +23,475 @@
 
         body {
             font-family: 'Outfit', sans-serif;
-            background: var(--dark);
+            background: radial-gradient(ellipse at top, #17203f, #0a0e1a 60%);
             color: var(--text);
-            overflow-x: hidden;
             line-height: 1.6;
+            padding-top: 88px;
         }
 
-        .bg-stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: radial-gradient(ellipse at bottom, #1e2337 0%, #0a0e1a 100%);
-        }
+        .container { max-width: 1160px; margin: 0 auto; padding: 0 1.25rem; }
 
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        .glow-orb {
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.2;
-            pointer-events: none;
-        }
-
-        .orb-1 {
-            background: var(--primary);
-            top: -200px;
-            right: -100px;
-            animation: float 15s infinite ease-in-out;
-        }
-
-        .orb-2 {
-            background: var(--secondary);
-            bottom: -200px;
-            left: -100px;
-            animation: float 20s infinite ease-in-out reverse;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(50px, 50px) scale(1.1); }
-        }
-
-        /* Navigation */
         nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            background: rgba(10, 14, 26, 0.8);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-            animation: slideDown 0.8s ease-out;
+            position: fixed; top: 0; width: 100%; z-index: 200;
+            background: rgba(10, 14, 26, 0.88); backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.18);
         }
-
-        @keyframes slideDown {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .nav-inner { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; }
         .logo {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 2px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2.5rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--primary);
-            transition: width 0.3s;
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 6rem 2rem 2rem;
-            position: relative;
-        }
-
-        .hero-content {
-            max-width: 900px;
-            animation: fadeInUp 1s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 4.5rem;
-            font-weight: 900;
-            margin-bottom: 1.5rem;
+            font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 1.5px;
             background: linear-gradient(135deg, #fff, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1.2;
-            animation: fadeInUp 1s ease-out 0.2s backwards;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        .hero p {
-            font-size: 1.4rem;
-            color: var(--text-dim);
-            margin-bottom: 3rem;
-            animation: fadeInUp 1s ease-out 0.4s backwards;
+        .hero { padding: 3rem 0 2rem; }
+        .hero h1 { font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 5vw, 3.6rem); margin-bottom: .75rem; }
+        .hero p { color: var(--text-dim); max-width: 760px; }
+
+        .panel {
+            background: linear-gradient(145deg, rgba(30, 35, 55, 0.88), rgba(18, 24, 36, 0.92));
+            border: 1px solid rgba(0, 212, 255, 0.16);
+            border-radius: 18px;
+            padding: 1.1rem;
+            margin-top: 1rem;
         }
 
-        .cta-buttons {
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            animation: fadeInUp 1s ease-out 0.6s backwards;
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        label { display: block; font-weight: 600; margin-bottom: .35rem; }
+        input, textarea, select {
+            width: 100%; background: rgba(17, 23, 36, 0.92); color: var(--text);
+            border: 1px solid rgba(0, 212, 255, .28); border-radius: 12px; padding: .8rem .9rem;
+            font-family: inherit;
         }
+        textarea { min-height: 170px; resize: vertical; }
+        .hint { font-size: .9rem; color: var(--text-dim); margin-top: .25rem; }
+
+        .mode-row, .plan-row { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: .8rem; }
+        .chip {
+            padding: .7rem 1rem; border-radius: 11px; border: 1px solid rgba(0,212,255,.32);
+            cursor: pointer; background: rgba(17,23,36,.6); font-weight: 600;
+        }
+        .chip.active { background: linear-gradient(135deg, rgba(0,212,255,.23), rgba(124,58,237,.23)); border-color: var(--primary); }
 
         .btn {
-            padding: 1rem 2.5rem;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
+            border: none; border-radius: 12px; padding: .85rem 1.15rem; cursor: pointer;
+            font-weight: 700; font-family: inherit;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .btn-secondary { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+
+        .headline { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; margin-bottom: .7rem; color: var(--primary); }
+
+        .score-wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+        .score {
+            font-size: 2rem; font-family: 'Orbitron', sans-serif; font-weight: 900;
+            padding: .4rem .95rem; border-radius: 12px;
+        }
+        .score.good { background: rgba(16,185,129,.19); color: #68f0bd; }
+        .score.mid { background: rgba(245,158,11,.2); color: #ffd57d; }
+        .score.low { background: rgba(239,68,68,.18); color: #ff8c8c; }
+
+        .kpi-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .6rem; margin-top: .8rem; }
+        .kpi { background: rgba(0,212,255,.06); border: 1px solid rgba(0,212,255,.16); border-radius: 12px; padding: .6rem .75rem; }
+        .kpi b { display: block; font-size: 1.05rem; }
+
+        .bar-row { margin-bottom: .55rem; }
+        .bar-label { display:flex; justify-content: space-between; font-size: .95rem; margin-bottom: .2rem; }
+        .bar { background: rgba(148,163,184,.18); border-radius: 999px; height: 10px; overflow:hidden; }
+        .bar > span { display:block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+
+        .list { display: grid; gap: .55rem; }
+        .list-item {
+            padding: .65rem .8rem; border-radius: 10px;
+            background: rgba(0,212,255,.06); border-left: 3px solid var(--primary);
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
-        }
+        .api-box { display: none; }
+        .api-box.show { display: block; }
 
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.5);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--primary);
-            color: var(--dark);
-            transform: translateY(-3px);
-        }
-
-        /* Features Section */
-        .features {
-            padding: 8rem 2rem;
-            position: relative;
-        }
-
-        .section-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
-            text-align: center;
-            margin-bottom: 4rem;
-            background: linear-gradient(135deg, var(--primary), white);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .features-grid {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: linear-gradient(135deg, rgba(30, 35, 55, 0.6), rgba(20, 24, 36, 0.6));
-            padding: 2.5rem;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.1);
-            backdrop-filter: blur(10px);
-            transition: all 0.4s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), transparent);
-            opacity: 0;
-            transition: opacity 0.4s;
-        }
-
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--primary);
-            box-shadow: 0 20px 50px rgba(0, 212, 255, 0.2);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-card h3 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        .feature-card p {
-            color: var(--text-dim);
-            line-height: 1.8;
-        }
-
-        /* Analyzer Section */
-        .analyzer {
-            padding: 8rem 2rem;
-            background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.03));
-        }
-
-        .analyzer-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .upload-area {
-            background: linear-gradient(135deg, rgba(30, 35, 55, 0.8), rgba(20, 24, 36, 0.8));
-            border: 2px dashed var(--primary);
-            border-radius: 20px;
-            padding: 4rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .upload-area::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent));
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: -1;
-            border-radius: 20px;
-        }
-
-        .upload-area:hover::before {
-            opacity: 0.2;
-        }
-
-        .upload-area:hover {
-            border-color: var(--secondary);
-            transform: scale(1.02);
-        }
-
-        .upload-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 200px;
-            background: rgba(30, 35, 55, 0.8);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 12px;
-            padding: 1.5rem;
-            color: var(--text);
-            font-family: 'Outfit', sans-serif;
-            font-size: 1rem;
-            resize: vertical;
-            margin-top: 2rem;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-        }
-
-        .plan-selector {
-            margin: 2rem 0;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .plan-option {
-            padding: 1rem 2rem;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 12px;
-            background: rgba(30, 35, 55, 0.6);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .plan-option.active {
-            border-color: var(--primary);
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.2));
-        }
-
-        .analysis-result {
-            margin-top: 3rem;
-            background: linear-gradient(135deg, rgba(30, 35, 55, 0.8), rgba(20, 24, 36, 0.8));
-            border-radius: 20px;
-            border: 1px solid var(--primary);
-            padding: 2rem;
-            display: none;
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .analysis-result.show {
-            display: block;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(0, 212, 255, 0.2);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Pricing Section */
-        .pricing {
-            padding: 8rem 2rem;
-        }
-
-        .pricing-grid {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-        }
-
-        .pricing-card {
-            background: linear-gradient(135deg, rgba(30, 35, 55, 0.8), rgba(20, 24, 36, 0.8));
-            border-radius: 24px;
-            padding: 3rem 2.5rem;
-            border: 2px solid rgba(0, 212, 255, 0.1);
-            transition: all 0.4s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .pricing-card.featured {
-            border-color: var(--primary);
-            transform: scale(1.05);
-        }
-
-        .pricing-card.featured::before {
-            content: 'POPULAR';
-            position: absolute;
-            top: 20px;
-            right: -35px;
-            background: linear-gradient(135deg, var(--accent), var(--secondary));
-            color: white;
-            padding: 0.5rem 3rem;
-            transform: rotate(45deg);
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .pricing-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            border-color: var(--primary);
-            box-shadow: 0 30px 60px rgba(0, 212, 255, 0.3);
-        }
-
-        .plan-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .plan-price {
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin: 1.5rem 0;
-            font-family: 'Orbitron', sans-serif;
-        }
-
-        .plan-price span {
-            font-size: 1.2rem;
-            color: var(--text-dim);
-        }
-
-        .plan-features {
-            list-style: none;
-            margin: 2rem 0;
-        }
-
-        .plan-features li {
-            padding: 1rem 0;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .plan-features li::before {
-            content: '✓';
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-
-        .plan-features li.con {
-            opacity: 0.5;
-        }
-
-        .plan-features li.con::before {
-            content: '✗';
-            color: var(--accent);
-        }
-
-        /* Footer */
-        footer {
-            background: rgba(10, 14, 26, 0.9);
-            padding: 3rem 2rem;
-            text-align: center;
-            border-top: 1px solid rgba(0, 212, 255, 0.1);
-        }
-
-        footer p {
-            color: var(--text-dim);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .hero p {
-                font-size: 1.1rem;
-            }
-
-            .cta-buttons {
-                flex-direction: column;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .features-grid,
-            .pricing-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .pricing-card.featured {
-                transform: scale(1);
-            }
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            margin-top: 1rem;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .file-label {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.2));
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-
-        .file-label:hover {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            transform: translateY(-2px);
-        }
-
-        .file-name {
-            margin-top: 1rem;
-            color: var(--primary);
-            font-size: 0.9rem;
-        }
-
-        .score-badge {
-            display: inline-block;
-            padding: 0.5rem 1.5rem;
-            border-radius: 25px;
-            font-weight: 700;
-            font-size: 1.2rem;
-            margin: 1rem 0;
-        }
-
-        .score-excellent {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-
-        .score-good {
-            background: linear-gradient(135deg, var(--primary), #0ea5e9);
-        }
-
-        .score-fair {
-            background: linear-gradient(135deg, #f59e0b, var(--accent));
-        }
-
-        .score-poor {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
-
-        .recommendation-section {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(0, 212, 255, 0.2);
-        }
-
-        .recommendation-section h3 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-
-        .recommendation-item {
-            background: rgba(0, 212, 255, 0.05);
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 0.5rem 0;
-            border-left: 3px solid var(--primary);
-        }
+        .small { font-size: .86rem; color: var(--text-dim); }
     </style>
 </head>
 <body>
-    <div class="bg-stars" id="stars"></div>
-    <div class="glow-orb orb-1"></div>
-    <div class="glow-orb orb-2"></div>
+<nav>
+    <div class="container nav-inner">
+        <div class="logo">ASTRAPITCH AI</div>
+        <div class="small">Text + Video Pitch Intelligence</div>
+    </div>
+</nav>
 
-    <!-- Navigation -->
-    <nav>
-        <div class="nav-container">
-            <div class="logo">ASTRAPITCH AI</div>
-            <ul class="nav-links">
-                <li><a href="#home">Home</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#analyzer">Analyzer</a></li>
-                <li><a href="#pricing">Pricing</a></li>
-            </ul>
+<main class="container">
+    <section class="hero">
+        <h1>Make Your Pitch Investor-Ready</h1>
+        <p>Upgraded analysis engine for both text and video pitches: deeper structure scoring, persuasion diagnostics, risk flags, and a paid API mode for advanced team workflows.</p>
+    </section>
+
+    <section class="panel">
+        <div class="plan-row" id="planSelector">
+            <button class="chip active" data-plan="free">Free Analyzer</button>
+            <button class="chip" data-plan="pro">Pro + API Mode</button>
         </div>
-    </nav>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="hero-content">
-            <h1>Revolutionary Pitch Intelligence</h1>
-            <p>Harness the power of advanced AI to analyze, optimize, and perfect your investment and business pitches with unparalleled precision.</p>
-            <div class="cta-buttons">
-                <a href="#analyzer" class="btn btn-primary">Analyze Your Pitch</a>
-                <a href="#pricing" class="btn btn-secondary">View Pricing</a>
+        <div class="mode-row" id="modeSelector">
+            <button class="chip active" data-mode="text">Text Pitch</button>
+            <button class="chip" data-mode="video">Video Pitch</button>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <label for="pitchText">Pitch content / transcript</label>
+                <textarea id="pitchText" placeholder="Paste your business pitch, investor memo, or your video transcript here..."></textarea>
+                <div class="hint">Tip: Include problem, solution, business model, traction, and ask.</div>
             </div>
+            <div>
+                <label for="sector">Sector</label>
+                <input id="sector" placeholder="e.g. FinTech, AI SaaS, HealthTech">
+
+                <div style="height:.6rem"></div>
+                <label for="stage">Company stage</label>
+                <select id="stage">
+                    <option value="idea">Idea / Pre-product</option>
+                    <option value="mvp">MVP / Pilot</option>
+                    <option value="early">Early Revenue</option>
+                    <option value="growth">Growth Stage</option>
+                </select>
+
+                <div id="videoInputs" class="panel" style="margin-top:.8rem; display:none; padding:.8rem;">
+                    <div class="headline">Video context inputs</div>
+                    <div class="grid-3">
+                        <div>
+                            <label for="videoDuration">Duration (min)</label>
+                            <input id="videoDuration" type="number" min="1" max="20" value="4">
+                        </div>
+                        <div>
+                            <label for="slideCount">Slides used</label>
+                            <input id="slideCount" type="number" min="0" max="60" value="10">
+                        </div>
+                        <div>
+                            <label for="deliveryEnergy">Delivery energy (1-10)</label>
+                            <input id="deliveryEnergy" type="number" min="1" max="10" value="7">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="apiBox" class="panel api-box">
+            <div class="headline">Paid API Integration</div>
+            <div class="grid-2">
+                <div>
+                    <label for="apiUrl">API base URL</label>
+                    <input id="apiUrl" placeholder="https://api.astrapitch.ai">
+                </div>
+                <div>
+                    <label for="apiKey">API key</label>
+                    <input id="apiKey" type="password" placeholder="sk_live_xxx">
+                </div>
+            </div>
+            <div class="hint">In Pro mode the app will call <code>/v1/pitch/analyze</code>. If unavailable, it falls back to local advanced analysis.</div>
+        </div>
+
+        <div style="display:flex; gap:.7rem; margin-top:1rem;">
+            <button class="btn btn-primary" id="analyzeBtn">Run Deep Analysis</button>
+            <button class="btn btn-secondary" id="clearBtn">Clear</button>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <h2 class="section-title">Why AstraPitch AI?</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🎯</div>
-                <h3>Precision Analysis</h3>
-                <p>Our AI evaluates every aspect of your pitch—from market potential to financial projections—with institutional-grade accuracy.</p>
+    <section class="panel" id="results" style="display:none; margin-bottom:2rem;">
+        <div class="score-wrap">
+            <div>
+                <div class="headline" id="resultTitle">Analysis</div>
+                <div class="small" id="resultSubtitle"></div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <h3>Instant Feedback</h3>
-                <p>Get comprehensive analysis in seconds, not days. Upload your pitch and receive actionable insights immediately.</p>
+            <div class="score" id="overallScore">0/100</div>
+        </div>
+
+        <div class="kpi-list" id="kpis"></div>
+
+        <div class="panel" style="margin-top:.9rem;">
+            <div class="headline">Category Breakdown</div>
+            <div id="categoryBars"></div>
+        </div>
+
+        <div class="grid-2" style="margin-top:.9rem;">
+            <div class="panel" style="margin-top:0;">
+                <div class="headline">Top Strengths</div>
+                <div class="list" id="strengths"></div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h3>Context-Aware Insights</h3>
-                <p>Pro plan analyzes your pitch against specific companies and stocks, providing tailored recommendations based on real market data.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔒</div>
-                <h3>Secure & Confidential</h3>
-                <p>Your pitches are encrypted and never shared. We maintain the highest standards of data security and privacy.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📄</div>
-                <h3>Multi-Format Support</h3>
-                <p>Upload text or PDF documents. Our AI seamlessly processes both formats with equal precision.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🚀</div>
-                <h3>Continuous Learning</h3>
-                <p>Our AI is trained on thousands of successful pitches and continuously improves to stay ahead of market trends.</p>
+            <div class="panel" style="margin-top:0;">
+                <div class="headline">Critical Risks</div>
+                <div class="list" id="risks"></div>
             </div>
         </div>
-    </section>
 
-    <!-- Analyzer Section -->
-    <section class="analyzer" id="analyzer">
-        <div class="analyzer-container">
-            <h2 class="section-title">Analyze Your Pitch</h2>
-            
-            <div class="plan-selector">
-                <div class="plan-option active" data-plan="basic">
-                    <h4>Basic (Free)</h4>
-                    <p>General Recommendations</p>
-                </div>
-                <div class="plan-option" data-plan="pro">
-                    <h4>Pro</h4>
-                    <p>AI-Powered + Context Analysis</p>
-                </div>
-            </div>
-
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📤</div>
-                <h3>Upload Your Pitch or Paste Text</h3>
-                <p style="color: var(--text-dim); margin-top: 1rem;">Supports PDF and text formats</p>
-                <div class="file-input-wrapper">
-                    <input type="file" id="fileInput" accept=".pdf,.txt">
-                    <label for="fileInput" class="file-label">Choose PDF File</label>
-                    <div class="file-name" id="fileName"></div>
-                </div>
-            </div>
-
-            <textarea id="pitchText" placeholder="Or paste your pitch text here..."></textarea>
-
-            <div id="companyInput" style="display: none; margin-top: 2rem;">
-                <input type="text" id="companyName" placeholder="Enter company/stock symbol (e.g., AAPL, Tesla)" 
-                    style="width: 100%; padding: 1rem; background: rgba(30, 35, 55, 0.8); border: 1px solid rgba(0, 212, 255, 0.2); border-radius: 12px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 1rem;">
-            </div>
-
-            <button class="btn btn-primary" style="width: 100%; margin-top: 2rem;" onclick="analyzePitch()">
-                Analyze Pitch
-            </button>
-
-            <div class="analysis-result" id="analysisResult">
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Analyzing your pitch with advanced AI...</p>
-                </div>
-                <div id="resultContent" style="display: none;"></div>
-            </div>
+        <div class="panel" style="margin-top:.9rem;">
+            <div class="headline">Action Plan</div>
+            <div class="grid-3" id="actionPlan"></div>
         </div>
     </section>
+</main>
 
-    <!-- Pricing Section -->
-    <section class="pricing" id="pricing">
-        <h2 class="section-title">Choose Your Plan</h2>
-        <div class="pricing-grid">
-            <div class="pricing-card">
-                <h3 class="plan-name">Basic</h3>
-                <div class="plan-price">FREE</div>
-                <ul class="plan-features">
-                    <li>Text & PDF upload support</li>
-                    <li>Core pitch analysis</li>
-                    <li>General recommendations</li>
-                    <li>Structure & clarity feedback</li>
-                    <li>Basic scoring system</li>
-                    <li class="con">No AI-powered insights</li>
-                    <li class="con">No company-specific analysis</li>
-                    <li class="con">No market context</li>
-                </ul>
-                <button class="btn btn-secondary" style="width: 100%;">Get Started Free</button>
-            </div>
+<script>
+    const state = { plan: 'free', mode: 'text' };
 
-            <div class="pricing-card featured">
-                <h3 class="plan-name">Pro</h3>
-                <div class="plan-price">COMING SOON</div>
-                <ul class="plan-features">
-                    <li>Everything in Basic</li>
-                    <li>Advanced AI-powered analysis</li>
-                    <li>Company-specific insights</li>
-                    <li>Stock market context</li>
-                    <li>Competitive comparison</li>
-                    <li>Industry benchmarking</li>
-                    <li>Real-time market data integration</li>
-                    <li>Detailed improvement roadmap</li>
-                    <li>Priority support</li>
-                </ul>
-                <button class="btn btn-primary" style="width: 100%; opacity: 0.7; cursor: not-allowed;">Coming Soon</button>
-            </div>
-        </div>
-    </section>
+    const planSelector = document.getElementById('planSelector');
+    const modeSelector = document.getElementById('modeSelector');
+    const apiBox = document.getElementById('apiBox');
+    const videoInputs = document.getElementById('videoInputs');
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 AstraPitch AI. Revolutionizing pitch analysis with artificial intelligence.</p>
-    </footer>
+    initSavedConfig();
 
-    <script>
-        // Generate stars
-        const starsContainer = document.getElementById('stars');
-        for (let i = 0; i < 100; i++) {
-            const star = document.createElement('div');
-            star.className = 'star';
-            star.style.left = Math.random() * 100 + '%';
-            star.style.top = Math.random() * 100 + '%';
-            star.style.animationDelay = Math.random() * 3 + 's';
-            starsContainer.appendChild(star);
+    planSelector.addEventListener('click', (e) => {
+        if (!e.target.dataset.plan) return;
+        state.plan = e.target.dataset.plan;
+        [...planSelector.querySelectorAll('.chip')].forEach(btn => btn.classList.toggle('active', btn.dataset.plan === state.plan));
+        apiBox.classList.toggle('show', state.plan === 'pro');
+    });
+
+    modeSelector.addEventListener('click', (e) => {
+        if (!e.target.dataset.mode) return;
+        state.mode = e.target.dataset.mode;
+        [...modeSelector.querySelectorAll('.chip')].forEach(btn => btn.classList.toggle('active', btn.dataset.mode === state.mode));
+        videoInputs.style.display = state.mode === 'video' ? 'block' : 'none';
+    });
+
+    document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        ['pitchText','sector','apiUrl','apiKey'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('results').style.display = 'none';
+    });
+
+    document.getElementById('apiUrl').addEventListener('blur', saveConfig);
+    document.getElementById('apiKey').addEventListener('blur', saveConfig);
+
+    function initSavedConfig() {
+        const saved = JSON.parse(localStorage.getItem('astrapitch-api') || '{}');
+        if (saved.url) document.getElementById('apiUrl').value = saved.url;
+        if (saved.key) document.getElementById('apiKey').value = saved.key;
+    }
+
+    function saveConfig() {
+        localStorage.setItem('astrapitch-api', JSON.stringify({
+            url: document.getElementById('apiUrl').value.trim(),
+            key: document.getElementById('apiKey').value.trim()
+        }));
+    }
+
+    async function runAnalysis() {
+        const text = document.getElementById('pitchText').value.trim();
+        const sector = document.getElementById('sector').value.trim() || 'General';
+        const stage = document.getElementById('stage').value;
+        if (!text) return alert('Please add your pitch text or transcript first.');
+
+        let result;
+        if (state.plan === 'pro') {
+            result = await proAnalyze({ text, sector, stage, mode: state.mode, video: collectVideoMeta() });
+        } else {
+            result = state.mode === 'video'
+                ? analyzeVideoPitch(text, sector, stage, collectVideoMeta())
+                : analyzeTextPitch(text, sector, stage);
         }
 
-        // Plan selector
-        document.querySelectorAll('.plan-option').forEach(option => {
-            option.addEventListener('click', function() {
-                document.querySelectorAll('.plan-option').forEach(o => o.classList.remove('active'));
-                this.classList.add('active');
-                const plan = this.dataset.plan;
-                const companyInput = document.getElementById('companyInput');
-                if (plan === 'pro') {
-                    companyInput.style.display = 'block';
-                } else {
-                    companyInput.style.display = 'none';
-                }
-            });
-        });
+        renderResults(result);
+    }
 
-        // File input
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const fileName = document.getElementById('fileName');
-            if (e.target.files.length > 0) {
-                fileName.textContent = '📄 ' + e.target.files[0].name;
-            } else {
-                fileName.textContent = '';
+    function collectVideoMeta() {
+        return {
+            duration: Number(document.getElementById('videoDuration').value || 4),
+            slides: Number(document.getElementById('slideCount').value || 10),
+            energy: Number(document.getElementById('deliveryEnergy').value || 7)
+        };
+    }
+
+    function normalize(text) {
+        return text.toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
+    function scoreBand(value) {
+        if (value >= 80) return 'good';
+        if (value >= 55) return 'mid';
+        return 'low';
+    }
+
+    function computeCommonSignals(text) {
+        const t = normalize(text);
+        const words = t.split(' ').filter(Boolean).length;
+        const sents = text.split(/[.!?]+/).map(s => s.trim()).filter(Boolean).length || 1;
+        const avgSentLen = words / sents;
+
+        const count = (arr) => arr.reduce((n, token) => n + (t.includes(token) ? 1 : 0), 0);
+        const numMatches = (t.match(/\$?\d+(\.\d+)?(%|k|m|b|x)?/g) || []).length;
+
+        return {
+            words,
+            sents,
+            avgSentLen,
+            numMatches,
+            hasProblem: count(['problem', 'pain', 'challenge', 'friction']) > 0,
+            hasSolution: count(['solution', 'we built', 'platform', 'product']) > 0,
+            hasMarket: count(['market', 'tam', 'sam', 'som', 'segment', 'industry']) > 0,
+            hasBusiness: count(['revenue', 'pricing', 'subscription', 'margin', 'ltv', 'cac']) > 0,
+            hasTraction: count(['growth', 'users', 'customers', 'mrr', 'arr', 'retention', 'churn']) > 0,
+            hasCompetition: count(['competitor', 'competition', 'alternative', 'different']) > 0,
+            hasAsk: count(['raising', 'ask', 'funding', 'use of funds', 'investment']) > 0,
+            confidenceFlags: count(['will', 'proven', 'validated', 'repeatable']) - count(['maybe', 'probably', 'might', 'hopefully'])
+        };
+    }
+
+    function analyzeTextPitch(text, sector, stage) {
+        const s = computeCommonSignals(text);
+        const categories = {
+            Problem_Clarity: clamp((s.hasProblem ? 55 : 20) + Math.min(18, s.words / 18)),
+            Solution_Differentiation: clamp((s.hasSolution ? 45 : 18) + (s.hasCompetition ? 20 : 8) + Math.min(14, s.numMatches * 2)),
+            Market_Opportunity: clamp((s.hasMarket ? 52 : 18) + Math.min(24, s.numMatches * 2.2)),
+            Business_Model: clamp((s.hasBusiness ? 58 : 20) + (stage === 'growth' ? 8 : 0)),
+            Traction_Credibility: clamp((s.hasTraction ? 56 : 20) + Math.min(22, s.numMatches * 2)),
+            Financial_Thinking: clamp((s.numMatches > 5 ? 62 : 22) + (s.hasAsk ? 12 : 0)),
+            Narrative_Clarity: clamp(68 - Math.abs(18 - s.avgSentLen) * 2),
+            Investor_Readiness: clamp((s.hasAsk ? 62 : 30) + (s.confidenceFlags > 0 ? 12 : 0))
+        };
+
+        return finalizeResult({ categories, mode: 'Text', sector, s });
+    }
+
+    function analyzeVideoPitch(transcript, sector, stage, meta) {
+        const s = computeCommonSignals(transcript);
+        const wpm = Math.round(s.words / Math.max(meta.duration, 1));
+        const pacingScore = clamp(100 - Math.min(55, Math.abs(145 - wpm) * 0.6));
+        const slideDensity = meta.slides / Math.max(meta.duration, 1);
+        const visualScore = clamp(80 - Math.abs(2.2 - slideDensity) * 20);
+
+        const categories = {
+            Story_Arc: clamp((s.hasProblem && s.hasSolution ? 68 : 38) + (s.hasAsk ? 12 : 0)),
+            Delivery_Pacing: pacingScore,
+            Executive_Presence: clamp(42 + meta.energy * 5 + Math.max(-10, s.confidenceFlags * 2)),
+            Evidence_Density: clamp(25 + Math.min(55, s.numMatches * 5)),
+            Visual_Communication: visualScore,
+            Market_and_Business: clamp((s.hasMarket ? 26 : 0) + (s.hasBusiness ? 32 : 14) + (s.hasTraction ? 24 : 8)),
+            Objection_Handling: clamp((s.hasCompetition ? 58 : 28) + (s.hasAsk ? 8 : 0)),
+            Close_Quality: clamp((s.hasAsk ? 66 : 24) + (stage === 'growth' ? 8 : 0))
+        };
+
+        return finalizeResult({ categories, mode: 'Video', sector, s, extraKpis: [{ label: 'Pacing', value: `${wpm} wpm` }, { label: 'Slides / Min', value: slideDensity.toFixed(1) }] });
+    }
+
+    async function proAnalyze(payload) {
+        const url = document.getElementById('apiUrl').value.trim();
+        const key = document.getElementById('apiKey').value.trim();
+        saveConfig();
+
+        if (url && key) {
+            try {
+                const res = await fetch(`${url.replace(/\/$/, '')}/v1/pitch/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.categories) return data;
+                }
+            } catch (_) {
+                // local fallback below
             }
-        });
-
-        // Smooth scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-
-        // Analysis function (Basic plan - rule-based)
-        function analyzeBasicPitch(text) {
-            const words = text.trim().split(/\s+/).length;
-            const hasProblem = text.toLowerCase().includes('problem') || text.toLowerCase().includes('issue');
-            const hasSolution = text.toLowerCase().includes('solution') || text.toLowerCase().includes('solve');
-            const hasMarket = text.toLowerCase().includes('market') || text.toLowerCase().includes('customer');
-            const hasFinancials = text.toLowerCase().includes('revenue') || text.toLowerCase().includes('profit') || text.toLowerCase().includes('$');
-            
-            let score = 0;
-            let recommendations = [];
-            
-            // Scoring
-            if (words >= 100) score += 20;
-            else recommendations.push('Expand your pitch to at least 100 words for better coverage');
-            
-            if (hasProblem) score += 20;
-            else recommendations.push('Clearly define the problem you\'re solving');
-            
-            if (hasSolution) score += 20;
-            else recommendations.push('Articulate your solution more explicitly');
-            
-            if (hasMarket) score += 20;
-            else recommendations.push('Include market size and target customer information');
-            
-            if (hasFinancials) score += 20;
-            else recommendations.push('Add financial projections or revenue model');
-            
-            // Additional checks
-            if (words < 50) recommendations.push('Pitch is too brief - add more detail about your business');
-            if (text.split('.').length < 5) recommendations.push('Use more complete sentences to improve clarity');
-            if (!text.includes('unique') && !text.includes('different')) recommendations.push('Highlight what makes you unique or different from competitors');
-            
-            let scoreClass = 'score-poor';
-            let scoreLabel = 'Needs Improvement';
-            if (score >= 80) { scoreClass = 'score-excellent'; scoreLabel = 'Excellent'; }
-            else if (score >= 60) { scoreClass = 'score-good'; scoreLabel = 'Good'; }
-            else if (score >= 40) { scoreClass = 'score-fair'; scoreLabel = 'Fair'; }
-            
-            return { score, scoreClass, scoreLabel, recommendations };
         }
 
-        // Main analyze function
-        async function analyzePitch() {
-            const pitchText = document.getElementById('pitchText').value.trim();
-            const fileInput = document.getElementById('fileInput');
-            const selectedPlan = document.querySelector('.plan-option.active').dataset.plan;
-            const companyName = document.getElementById('companyName').value.trim();
-            
-            if (!pitchText && fileInput.files.length === 0) {
-                alert('Please enter pitch text or upload a file');
-                return;
-            }
+        const local = payload.mode === 'video'
+            ? analyzeVideoPitch(payload.text, payload.sector, payload.stage, payload.video)
+            : analyzeTextPitch(payload.text, payload.sector, payload.stage);
 
-            // Show results section
-            const analysisResult = document.getElementById('analysisResult');
-            const loading = document.getElementById('loading');
-            const resultContent = document.getElementById('resultContent');
-            
-            analysisResult.classList.add('show');
-            loading.style.display = 'block';
-            resultContent.style.display = 'none';
+        local.strengths.unshift('Pro mode fallback active: advanced local scoring used while API is unreachable.');
+        local.risks.unshift('Connect a live paid API endpoint to unlock benchmark datasets and custom model prompts.');
+        local.subtitle += ' • Pro Fallback';
+        return local;
+    }
 
-            // Simulate processing time
-            await new Promise(resolve => setTimeout(resolve, 2000));
+    function finalizeResult({ categories, mode, sector, s, extraKpis = [] }) {
+        const values = Object.values(categories);
+        const score = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+        const sorted = Object.entries(categories).sort((a,b) => b[1]-a[1]);
 
-            let result;
-            
-            if (selectedPlan === 'basic') {
-                // Basic plan - rule-based analysis
-                let textToAnalyze = pitchText;
-                if (fileInput.files.length > 0) {
-                    // In a real implementation, you'd extract text from PDF here
-                    textToAnalyze = pitchText || 'PDF content would be extracted here...';
-                }
-                
-                result = analyzeBasicPitch(textToAnalyze);
-                
-                resultContent.innerHTML = `
-                    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary); margin-bottom: 1rem;">Analysis Complete</h3>
-                    <div class="score-badge ${result.scoreClass}">Score: ${result.score}/100 - ${result.scoreLabel}</div>
-                    
-                    <div class="recommendation-section">
-                        <h3>Recommendations</h3>
-                        ${result.recommendations.map(rec => `<div class="recommendation-item">${rec}</div>`).join('')}
-                    </div>
-                    
-                    <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(124, 58, 237, 0.1); border-radius: 12px; border-left: 3px solid var(--secondary);">
-                        <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">💎 Upgrade to Pro</h4>
-                        <p style="color: var(--text-dim);">Get AI-powered insights, company-specific analysis, and market context to take your pitch to the next level.</p>
-                    </div>
-                `;
-            } else {
-                // Pro plan - would use API here
-                if (!companyName) {
-                    alert('Please enter a company or stock symbol for Pro analysis');
-                    loading.style.display = 'none';
-                    return;
-                }
-                
-                resultContent.innerHTML = `
-                    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary); margin-bottom: 1rem;">Pro Analysis Complete</h3>
-                    <div class="score-badge score-excellent">Score: 87/100 - Excellent</div>
-                    
-                    <div class="recommendation-section">
-                        <h3>AI-Powered Insights for ${companyName}</h3>
-                        <div class="recommendation-item">
-                            <strong>Market Context:</strong> Your pitch aligns well with current ${companyName} market trends. The sector is experiencing 23% YoY growth.
-                        </div>
-                        <div class="recommendation-item">
-                            <strong>Competitive Position:</strong> Similar to ${companyName}'s early positioning, but consider emphasizing differentiation more clearly.
-                        </div>
-                        <div class="recommendation-item">
-                            <strong>Financial Projections:</strong> Your revenue model is realistic compared to ${companyName}'s trajectory. Consider adding unit economics.
-                        </div>
-                        <div class="recommendation-item">
-                            <strong>Risk Assessment:</strong> Market risks are well-addressed. Add more detail on operational scaling challenges.
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(0, 212, 255, 0.1); border-radius: 12px;">
-                        <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Next Steps</h4>
-                        <p style="color: var(--text-dim);">Based on ${companyName}'s investor preferences, focus on: scalability metrics, customer acquisition costs, and long-term competitive moats.</p>
-                    </div>
-                `;
-            }
+        const strengths = sorted.slice(0, 3).map(([k,v]) => `${friendly(k)} is strong (${v}/100). Keep this as a signature advantage.`);
+        const weak = sorted.slice(-3);
+        const risks = weak.map(([k,v]) => `${friendly(k)} is a weak point (${v}/100). Investors will likely challenge this area first.`);
 
-            loading.style.display = 'none';
-            resultContent.style.display = 'block';
-        }
-    </script>
+        if (s.words < 120) risks.unshift('Pitch is short. Expand with proof points, market sizing, and concrete next milestones.');
+        if (!s.hasAsk) risks.unshift('No clear investment ask detected. Add amount, runway, and use-of-funds breakdown.');
+
+        const actionPlan = [
+            { title: 'Next 72 Hours', items: [
+                'Rewrite opening to define pain in one sentence + one hard metric.',
+                'Add a stronger "why now" supported by market timing evidence.',
+                'Create one slide or paragraph dedicated to competitive moat.'
+            ]},
+            { title: 'Next 2 Weeks', items: [
+                'Run 5 customer interviews and convert quotes into validation evidence.',
+                'Add unit economics: CAC, LTV assumptions, payback period.',
+                'Practice delivery with timed sections and recorded rehearsals.'
+            ]},
+            { title: 'Before Investor Meetings', items: [
+                'Prepare objection bank for pricing, GTM risk, and defensibility.',
+                'Build 3 scenario plan: base, upside, downside cash runway.',
+                'End with precise ask, milestones, and expected investor role.'
+            ]}
+        ];
+
+        return {
+            title: `${mode} Pitch Deep Analysis`,
+            subtitle: `${sector} sector • ${s.words} words • ${s.numMatches} quant signals`,
+            score,
+            categories,
+            strengths,
+            risks,
+            actionPlan,
+            kpis: [
+                { label: 'Word Count', value: String(s.words) },
+                { label: 'Data Signals', value: String(s.numMatches) },
+                { label: 'Sentence Clarity', value: `${Math.round(s.avgSentLen)} avg words` },
+                { label: 'Investor Readiness', value: `${Math.round(categories.Investor_Readiness || categories.Close_Quality || 0)}/100` },
+                ...extraKpis
+            ]
+        };
+    }
+
+    function renderResults(result) {
+        const results = document.getElementById('results');
+        results.style.display = 'block';
+        document.getElementById('resultTitle').textContent = result.title;
+        document.getElementById('resultSubtitle').textContent = result.subtitle;
+
+        const scoreEl = document.getElementById('overallScore');
+        scoreEl.textContent = `${result.score}/100`;
+        scoreEl.className = `score ${scoreBand(result.score)}`;
+
+        document.getElementById('kpis').innerHTML = result.kpis.map(k => `<div class="kpi"><span class="small">${k.label}</span><b>${k.value}</b></div>`).join('');
+
+        document.getElementById('categoryBars').innerHTML = Object.entries(result.categories).map(([key,val]) => `
+            <div class="bar-row">
+                <div class="bar-label"><span>${friendly(key)}</span><span>${Math.round(val)}/100</span></div>
+                <div class="bar"><span style="width:${Math.round(val)}%"></span></div>
+            </div>
+        `).join('');
+
+        document.getElementById('strengths').innerHTML = result.strengths.map(i => `<div class="list-item">${i}</div>`).join('');
+        document.getElementById('risks').innerHTML = result.risks.map(i => `<div class="list-item">${i}</div>`).join('');
+
+        document.getElementById('actionPlan').innerHTML = result.actionPlan.map(block => `
+            <div class="panel" style="margin-top:0;">
+                <div class="headline">${block.title}</div>
+                <div class="list">${block.items.map(i => `<div class="list-item">${i}</div>`).join('')}</div>
+            </div>
+        `).join('');
+    }
+
+    function friendly(v) { return v.replace(/_/g, ' '); }
+    function clamp(v) { return Math.max(0, Math.min(100, Math.round(v))); }
+</script>
 </body>
 </html>
