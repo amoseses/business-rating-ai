@@ -206,6 +206,16 @@
         <button class="action" id="runBtn">Run Analysis</button>
         <button class="action secondary" id="demoBtn">Load Demo Pitch</button>
       </div>
+      <div class="row" style="margin-top:.7rem;">
+        <div>
+          <label for="backendUrl">Backend URL</label>
+          <input id="backendUrl" placeholder="http://127.0.0.1:8080" />
+        </div>
+        <div>
+          <label for="backendHint">Connection hint</label>
+          <input id="backendHint" value="Run: python3 backend.py, then open http://127.0.0.1:8080" disabled />
+        </div>
+      </div>
       <p class="muted" id="status" style="margin-top:.6rem;">Ready.</p>
     </section>
 
@@ -255,6 +265,26 @@ const state = {
 };
 
 const $ = (id) => document.getElementById(id);
+
+initBackendUrl();
+$('backendUrl').addEventListener('blur', saveBackendUrl);
+
+function initBackendUrl() {
+  const saved = localStorage.getItem('astrapitch-backend-url');
+  const defaultUrl = (location.protocol.startsWith('http') && location.port === '8080')
+    ? location.origin
+    : 'http://127.0.0.1:8080';
+  $('backendUrl').value = saved || defaultUrl;
+}
+
+function saveBackendUrl() {
+  localStorage.setItem('astrapitch-backend-url', $('backendUrl').value.trim());
+}
+
+function apiUrl(path) {
+  const base = ($('backendUrl').value || '').trim().replace(/\/$/, '');
+  return `${base}${path}`;
+}
 
 $('planChips').addEventListener('click', (e) => {
   if (!e.target.dataset.plan) return;
@@ -340,13 +370,22 @@ async function runAnalysis() {
   }
 
   try {
-    const res = await fetch(endpoint, {
+    saveBackendUrl();
+    const res = await fetch(apiUrl(endpoint), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Analysis failed');
+    const raw = await res.text();
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (parseErr) {
+      const preview = raw.slice(0, 120).replace(/\s+/g, ' ');
+      throw new Error(`Backend did not return JSON. Got: "${preview}". Make sure backend is running and Backend URL is correct.`);
+    }
+
+    if (!res.ok) throw new Error(data.error || data.fix || 'Analysis failed');
     render(data);
     $('status').textContent = 'Analysis complete.';
   } catch (err) {
