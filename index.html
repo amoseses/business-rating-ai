@@ -1,997 +1,540 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AstraPitch AI - Revolutionary Pitch Intelligence</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #00d4ff;
-            --secondary: #7c3aed;
-            --accent: #f97316;
-            --dark: #0a0e1a;
-            --dark-2: #141824;
-            --dark-3: #1e2337;
-            --text: #e2e8f0;
-            --text-dim: #94a3b8;
-        }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--dark);
-            color: var(--text);
-            overflow-x: hidden;
-            line-height: 1.6;
-        }
-
-        .bg-stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: radial-gradient(ellipse at bottom, #1e2337 0%, #0a0e1a 100%);
-        }
-
-        .star {
-            position: absolute;
-            width: 2px;
-            height: 2px;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-
-        .glow-orb {
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.2;
-            pointer-events: none;
-        }
-
-        .orb-1 {
-            background: var(--primary);
-            top: -200px;
-            right: -100px;
-            animation: float 15s infinite ease-in-out;
-        }
-
-        .orb-2 {
-            background: var(--secondary);
-            bottom: -200px;
-            left: -100px;
-            animation: float 20s infinite ease-in-out reverse;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(50px, 50px) scale(1.1); }
-        }
-
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            background: rgba(10, 14, 26, 0.8);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-            animation: slideDown 0.8s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 2px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2.5rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--primary);
-            transition: width 0.3s;
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 6rem 2rem 2rem;
-            position: relative;
-        }
-
-        .hero-content {
-            max-width: 900px;
-            animation: fadeInUp 1s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 4.5rem;
-            font-weight: 900;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #fff, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1.2;
-            animation: fadeInUp 1s ease-out 0.2s backwards;
-        }
-
-        .hero p {
-            font-size: 1.4rem;
-            color: var(--text-dim);
-            margin-bottom: 3rem;
-            animation: fadeInUp 1s ease-out 0.4s backwards;
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 1.5rem;
-            justify-content: center;
-            animation: fadeInUp 1s ease-out 0.6s backwards;
-        }
-
-        .btn {
-            padding: 1rem 2.5rem;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.5);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--primary);
-            color: var(--dark);
-            transform: translateY(-3px);
-        }
-
-        /* Features Section */
-        .features {
-            padding: 8rem 2rem;
-            position: relative;
-        }
-
-        .section-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
-            text-align: center;
-            margin-bottom: 4rem;
-            background: linear-gradient(135deg, var(--primary), white);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .features-grid {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: linear-gradient(135deg, rgba(30, 35, 55, 0.6), rgba(20, 24, 36, 0.6));
-            padding: 2.5rem;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.1);
-            backdrop-filter: blur(10px);
-            transition: all 0.4s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), transparent);
-            opacity: 0;
-            transition: opacity 0.4s;
-        }
-
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--primary);
-            box-shadow: 0 20px 50px rgba(0, 212, 255, 0.2);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-card h3 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        .feature-card p {
-            color: var(--text-dim);
-            line-height: 1.8;
-        }
-
-        /* Analyzer Section */
-        .analyzer {
-            padding: 8rem 2rem;
-            background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.03));
-        }
-
-        .analyzer-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .upload-area {
-            background: linear-gradient(135deg, rgba(30, 35, 55, 0.8), rgba(20, 24, 36, 0.8));
-            border: 2px dashed var(--primary);
-            border-radius: 20px;
-            padding: 4rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .upload-area::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent));
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: -1;
-            border-radius: 20px;
-        }
-
-        .upload-area:hover::before {
-            opacity: 0.2;
-        }
-
-        .upload-area:hover {
-            border-color: var(--secondary);
-            transform: scale(1.02);
-        }
-
-        .upload-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 200px;
-            background: rgba(30, 35, 55, 0.8);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 12px;
-            padding: 1.5rem;
-            color: var(--text);
-            font-family: 'Outfit', sans-serif;
-            font-size: 1rem;
-            resize: vertical;
-            margin-top: 2rem;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-        }
-
-        .plan-selector {
-            margin: 2rem 0;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .plan-option {
-            padding: 1rem 2rem;
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 12px;
-            background: rgba(30, 35, 55, 0.6);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .plan-option.active {
-            border-color: var(--primary);
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.2));
-        }
-
-        .analysis-result {
-            margin-top: 3rem;
-            background: linear-gradient(135deg, rgba(30, 35, 55, 0.8), rgba(20, 24, 36, 0.8));
-            border-radius: 20px;
-            border: 1px solid var(--primary);
-            padding: 2rem;
-            display: none;
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .analysis-result.show {
-            display: block;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(0, 212, 255, 0.2);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Pricing Section */
-        .pricing {
-            padding: 8rem 2rem;
-        }
-
-        .pricing-grid {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-        }
-
-        .pricing-card {
-            background: linear-gradient(135deg, rgba(30, 35, 55, 0.8), rgba(20, 24, 36, 0.8));
-            border-radius: 24px;
-            padding: 3rem 2.5rem;
-            border: 2px solid rgba(0, 212, 255, 0.1);
-            transition: all 0.4s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .pricing-card.featured {
-            border-color: var(--primary);
-            transform: scale(1.05);
-        }
-
-        .pricing-card.featured::before {
-            content: 'POPULAR';
-            position: absolute;
-            top: 20px;
-            right: -35px;
-            background: linear-gradient(135deg, var(--accent), var(--secondary));
-            color: white;
-            padding: 0.5rem 3rem;
-            transform: rotate(45deg);
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .pricing-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            border-color: var(--primary);
-            box-shadow: 0 30px 60px rgba(0, 212, 255, 0.3);
-        }
-
-        .plan-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .plan-price {
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin: 1.5rem 0;
-            font-family: 'Orbitron', sans-serif;
-        }
-
-        .plan-price span {
-            font-size: 1.2rem;
-            color: var(--text-dim);
-        }
-
-        .plan-features {
-            list-style: none;
-            margin: 2rem 0;
-        }
-
-        .plan-features li {
-            padding: 1rem 0;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .plan-features li::before {
-            content: '✓';
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-
-        .plan-features li.con {
-            opacity: 0.5;
-        }
-
-        .plan-features li.con::before {
-            content: '✗';
-            color: var(--accent);
-        }
-
-        /* Footer */
-        footer {
-            background: rgba(10, 14, 26, 0.9);
-            padding: 3rem 2rem;
-            text-align: center;
-            border-top: 1px solid rgba(0, 212, 255, 0.1);
-        }
-
-        footer p {
-            color: var(--text-dim);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .hero p {
-                font-size: 1.1rem;
-            }
-
-            .cta-buttons {
-                flex-direction: column;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .features-grid,
-            .pricing-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .pricing-card.featured {
-                transform: scale(1);
-            }
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            margin-top: 1rem;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .file-label {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(124, 58, 237, 0.2));
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
-        }
-
-        .file-label:hover {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            transform: translateY(-2px);
-        }
-
-        .file-name {
-            margin-top: 1rem;
-            color: var(--primary);
-            font-size: 0.9rem;
-        }
-
-        .score-badge {
-            display: inline-block;
-            padding: 0.5rem 1.5rem;
-            border-radius: 25px;
-            font-weight: 700;
-            font-size: 1.2rem;
-            margin: 1rem 0;
-        }
-
-        .score-excellent {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-
-        .score-good {
-            background: linear-gradient(135deg, var(--primary), #0ea5e9);
-        }
-
-        .score-fair {
-            background: linear-gradient(135deg, #f59e0b, var(--accent));
-        }
-
-        .score-poor {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
-
-        .recommendation-section {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(0, 212, 255, 0.2);
-        }
-
-        .recommendation-section h3 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-
-        .recommendation-item {
-            background: rgba(0, 212, 255, 0.05);
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 0.5rem 0;
-            border-left: 3px solid var(--primary);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AstraPitch AI - Investment Pitch Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0f1f;
+      --panel: #141d35;
+      --panel-2: #1b2745;
+      --line: rgba(0, 212, 255, 0.24);
+      --primary: #00d4ff;
+      --secondary: #7c3aed;
+      --text: #e2e8f0;
+      --dim: #9db0ca;
+      --good: #10b981;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top, #162344, var(--bg) 65%);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .shell { max-width: 1200px; margin: 0 auto; padding: 1rem 1.2rem 2.5rem; }
+    .top {
+      position: sticky; top: 0; z-index: 15;
+      backdrop-filter: blur(10px);
+      background: rgba(10, 15, 31, 0.8);
+      border-bottom: 1px solid var(--line);
+      margin: 0 -1.2rem; padding: .9rem 1.2rem;
+    }
+
+    .brand { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 1px; font-size: 1.2rem;
+      background: linear-gradient(130deg, white, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .hero { margin-top: 1.2rem; display: grid; gap: .5rem; }
+    .hero h1 { font-family: 'Orbitron', sans-serif; font-size: clamp(1.6rem, 4vw, 2.8rem); }
+    .hero p { color: var(--dim); max-width: 850px; }
+
+    .grid { display: grid; gap: 1rem; }
+    .grid.two { grid-template-columns: 1.2fr 1fr; }
+    @media (max-width: 950px){ .grid.two { grid-template-columns: 1fr; } }
+
+    .card {
+      margin-top: 1rem;
+      background: linear-gradient(150deg, rgba(20,29,53,.95), rgba(27,39,69,.95));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1rem;
+    }
+
+    .card h2, .card h3 { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 1rem; margin-bottom: .7rem; }
+    .muted { color: var(--dim); font-size: .92rem; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
+    .chip {
+      border: 1px solid var(--line); background: #111a30; color: var(--text);
+      border-radius: 999px; padding: .5rem .85rem; cursor: pointer; font-weight: 600;
+    }
+    .chip.active { background: linear-gradient(120deg, rgba(0,212,255,.3), rgba(124,58,237,.3)); border-color: var(--primary); }
+
+    label { font-size: .9rem; font-weight: 600; display: block; margin-bottom: .35rem; }
+    input, textarea, select {
+      width: 100%; border-radius: 10px; border: 1px solid var(--line);
+      background: #10182d; color: var(--text); font-family: inherit; padding: .72rem .8rem;
+    }
+    textarea { min-height: 190px; resize: vertical; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
+    @media (max-width: 750px){ .row { grid-template-columns: 1fr; } }
+
+    .btns { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
+    button.action {
+      border: 0; border-radius: 10px; padding: .7rem 1rem; font-weight: 700; cursor: pointer;
+      color: #fff; background: linear-gradient(130deg, var(--primary), var(--secondary));
+    }
+    button.secondary { background: transparent; border: 1px solid var(--line); color: var(--primary); }
+
+    .result-head { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; }
+    .score {
+      font-family: 'Orbitron', sans-serif; font-size: 1.7rem; font-weight: 900;
+      border-radius: 10px; padding: .35rem .75rem;
+    }
+    .score.good { background: rgba(16,185,129,.2); color: #8ef5cc; }
+    .score.mid { background: rgba(245,158,11,.25); color: #ffd48d; }
+    .score.low { background: rgba(239,68,68,.2); color: #ff9c9c; }
+
+    .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:.55rem; margin-top:.8rem; }
+    .kpi { background: rgba(0,212,255,.06); border:1px solid var(--line); border-radius:10px; padding:.6rem .7rem; }
+    .kpi b { display:block; margin-top: .2rem; }
+
+    .bar { margin-bottom: .5rem; }
+    .barline { height: 8px; background: rgba(148,163,184,.2); border-radius: 999px; overflow:hidden; }
+    .barline span { display:block; height:100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+
+    .three { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem; margin-top:.8rem; }
+    @media (max-width: 900px){ .three { grid-template-columns: 1fr; } }
+    .list { display:grid; gap:.5rem; }
+    .item { background: rgba(0,212,255,.06); border-left:3px solid var(--primary); border-radius:8px; padding:.55rem .65rem; font-size:.94rem; }
+
+    .hidden { display:none; }
+    code { color: #94e9ff; }
+  </style>
 </head>
 <body>
-    <div class="bg-stars" id="stars"></div>
-    <div class="glow-orb orb-1"></div>
-    <div class="glow-orb orb-2"></div>
+  <div class="shell">
+    <div class="top"><div class="brand">ASTRAPITCH AI · BACKEND + ANALYSIS ENGINE</div></div>
 
-    <!-- Navigation -->
-    <nav>
-        <div class="nav-container">
-            <div class="logo">ASTRAPITCH AI</div>
-            <ul class="nav-links">
-                <li><a href="#home">Home</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#analyzer">Analyzer</a></li>
-                <li><a href="#pricing">Pricing</a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="hero-content">
-            <h1>Revolutionary Pitch Intelligence</h1>
-            <p>Harness the power of advanced AI to analyze, optimize, and perfect your investment and business pitches with unparalleled precision.</p>
-            <div class="cta-buttons">
-                <a href="#analyzer" class="btn btn-primary">Analyze Your Pitch</a>
-                <a href="#pricing" class="btn btn-secondary">View Pricing</a>
-            </div>
-        </div>
+    <section class="hero">
+      <h1>Text + Video Investment Pitch Analysis (Free + Pro API Placeholder)</h1>
+      <p>Free mode now runs strong keyword-trained scoring, transcript analysis, frame-level visual signals, and an accuracy checker. Pro mode is wired as a backend placeholder so you can plug in your paid API later.</p>
     </section>
 
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <h2 class="section-title">Why AstraPitch AI?</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🎯</div>
-                <h3>Precision Analysis</h3>
-                <p>Our AI evaluates every aspect of your pitch—from market potential to financial projections—with institutional-grade accuracy.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <h3>Instant Feedback</h3>
-                <p>Get comprehensive analysis in seconds, not days. Upload your pitch and receive actionable insights immediately.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h3>Context-Aware Insights</h3>
-                <p>Pro plan analyzes your pitch against specific companies and stocks, providing tailored recommendations based on real market data.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔒</div>
-                <h3>Secure & Confidential</h3>
-                <p>Your pitches are encrypted and never shared. We maintain the highest standards of data security and privacy.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📄</div>
-                <h3>Multi-Format Support</h3>
-                <p>Upload text or PDF documents. Our AI seamlessly processes both formats with equal precision.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🚀</div>
-                <h3>Continuous Learning</h3>
-                <p>Our AI is trained on thousands of successful pitches and continuously improves to stay ahead of market trends.</p>
-            </div>
+    <section class="card">
+      <h2>Choose Plan + Analysis Type</h2>
+      <div class="chips" id="planChips">
+        <button class="chip active" data-plan="free">Free</button>
+        <button class="chip" data-plan="pro">Pro (API later)</button>
+      </div>
+      <div class="chips" id="modeChips">
+        <button class="chip active" data-mode="text">Text Analysis</button>
+        <button class="chip" data-mode="video">Video Analysis</button>
+      </div>
+      <p class="muted">Sectors and stage are used in scoring for both text and video.</p>
+
+      <div class="row" style="margin-top:.8rem;">
+        <div>
+          <label for="sector">Sector</label>
+          <select id="sector">
+            <option value="general">General</option>
+            <option value="saas">SaaS</option>
+            <option value="fintech">FinTech</option>
+            <option value="healthtech">HealthTech</option>
+            <option value="ai">AI</option>
+            <option value="consumer">Consumer</option>
+          </select>
         </div>
+        <div>
+          <label for="stage">Stage</label>
+          <select id="stage">
+            <option value="idea">Idea</option>
+            <option value="mvp">MVP</option>
+            <option value="early" selected>Early Revenue</option>
+            <option value="growth">Growth</option>
+          </select>
+        </div>
+      </div>
     </section>
 
-    <!-- Analyzer Section -->
-    <section class="analyzer" id="analyzer">
-        <div class="analyzer-container">
-            <h2 class="section-title">Analyze Your Pitch</h2>
-            
-            <div class="plan-selector">
-                <div class="plan-option active" data-plan="basic">
-                    <h4>Basic (Free)</h4>
-                    <p>General Recommendations</p>
-                </div>
-                <div class="plan-option" data-plan="pro">
-                    <h4>Pro</h4>
-                    <p>AI-Powered + Context Analysis</p>
-                </div>
-            </div>
+    <section class="grid two">
+      <div class="card" id="textCard">
+        <h3>Text Investment Pitch Analyzer</h3>
+        <label for="pitchText">Pitch text</label>
+        <textarea id="pitchText" placeholder="Paste your investment pitch text here..."></textarea>
+        <p class="muted">Include: problem, solution, traction, numbers, competitors, and fundraise ask.</p>
+      </div>
 
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📤</div>
-                <h3>Upload Your Pitch or Paste Text</h3>
-                <p style="color: var(--text-dim); margin-top: 1rem;">Supports PDF and text formats</p>
-                <div class="file-input-wrapper">
-                    <input type="file" id="fileInput" accept=".pdf,.txt">
-                    <label for="fileInput" class="file-label">Choose PDF File</label>
-                    <div class="file-name" id="fileName"></div>
-                </div>
-            </div>
+      <div class="card hidden" id="videoCard">
+        <h3>Video Investment Pitch Analyzer</h3>
+        <label for="videoFile">Upload video (used for frame-level image analysis)</label>
+        <input id="videoFile" type="file" accept="video/*" />
+        <p class="muted" id="videoMetricHint">After upload, we'll sample frames for brightness, contrast, sharpness, text density, and stability.</p>
+        <div style="margin-top:.7rem;"></div>
+        <label for="videoTranscript">Video transcript</label>
+        <textarea id="videoTranscript" placeholder="Paste transcript of the video pitch..."></textarea>
 
-            <textarea id="pitchText" placeholder="Or paste your pitch text here..."></textarea>
-
-            <div id="companyInput" style="display: none; margin-top: 2rem;">
-                <input type="text" id="companyName" placeholder="Enter company/stock symbol (e.g., AAPL, Tesla)" 
-                    style="width: 100%; padding: 1rem; background: rgba(30, 35, 55, 0.8); border: 1px solid rgba(0, 212, 255, 0.2); border-radius: 12px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 1rem;">
-            </div>
-
-            <button class="btn btn-primary" style="width: 100%; margin-top: 2rem;" onclick="analyzePitch()">
-                Analyze Pitch
-            </button>
-
-            <div class="analysis-result" id="analysisResult">
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Analyzing your pitch with advanced AI...</p>
-                </div>
-                <div id="resultContent" style="display: none;"></div>
-            </div>
+        <div class="row" style="margin-top:.7rem;">
+          <div>
+            <label for="energy">Delivery energy (1-10)</label>
+            <input id="energy" type="number" min="1" max="10" value="7" />
+          </div>
+          <div>
+            <label for="pace">Delivery pace quality (1-10)</label>
+            <input id="pace" type="number" min="1" max="10" value="7" />
+          </div>
         </div>
+      </div>
     </section>
 
-    <!-- Pricing Section -->
-    <section class="pricing" id="pricing">
-        <h2 class="section-title">Choose Your Plan</h2>
-        <div class="pricing-grid">
-            <div class="pricing-card">
-                <h3 class="plan-name">Basic</h3>
-                <div class="plan-price">FREE</div>
-                <ul class="plan-features">
-                    <li>Text & PDF upload support</li>
-                    <li>Core pitch analysis</li>
-                    <li>General recommendations</li>
-                    <li>Structure & clarity feedback</li>
-                    <li>Basic scoring system</li>
-                    <li class="con">No AI-powered insights</li>
-                    <li class="con">No company-specific analysis</li>
-                    <li class="con">No market context</li>
-                </ul>
-                <button class="btn btn-secondary" style="width: 100%;">Get Started Free</button>
-            </div>
-
-            <div class="pricing-card featured">
-                <h3 class="plan-name">Pro</h3>
-                <div class="plan-price">COMING SOON</div>
-                <ul class="plan-features">
-                    <li>Everything in Basic</li>
-                    <li>Advanced AI-powered analysis</li>
-                    <li>Company-specific insights</li>
-                    <li>Stock market context</li>
-                    <li>Competitive comparison</li>
-                    <li>Industry benchmarking</li>
-                    <li>Real-time market data integration</li>
-                    <li>Detailed improvement roadmap</li>
-                    <li>Priority support</li>
-                </ul>
-                <button class="btn btn-primary" style="width: 100%; opacity: 0.7; cursor: not-allowed;">Coming Soon</button>
-            </div>
+    <section class="card hidden" id="proCard">
+      <h3>Pro API Placeholder</h3>
+      <p class="muted">You said you'll set this up later. We keep inputs ready and call backend placeholder endpoint <code>/api/analyze/pro</code>.</p>
+      <div class="row" style="margin-top:.5rem;">
+        <div>
+          <label for="proApiKey">API key (saved locally only)</label>
+          <input id="proApiKey" type="password" placeholder="sk_live_xxx" />
         </div>
+        <div>
+          <label for="proEndpoint">Future model endpoint URL</label>
+          <input id="proEndpoint" placeholder="https://your-api-domain/v1/pitch/analyze" />
+        </div>
+      </div>
+      <p class="muted" style="margin-top:.4rem;">Backend has TODO comments showing where to wire your paid model.</p>
     </section>
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 AstraPitch AI. Revolutionizing pitch analysis with artificial intelligence.</p>
-    </footer>
+    <section class="card">
+      <div class="btns">
+        <button class="action" id="runBtn">Run Analysis</button>
+        <button class="action secondary" id="demoBtn">Load Demo Pitch</button>
+      </div>
+      <div class="row" style="margin-top:.7rem;">
+        <div>
+          <label for="backendUrl">Backend URL</label>
+          <input id="backendUrl" placeholder="http://127.0.0.1:8080" />
+        </div>
+        <div>
+          <label for="backendHint">Connection hint</label>
+          <input id="backendHint" value="Run: python3 backend.py, then open http://127.0.0.1:8080" disabled />
+        </div>
+      </div>
+      <p class="muted" id="status" style="margin-top:.6rem;">Ready.</p>
+    </section>
 
-    <script>
-        // Generate stars
-        const starsContainer = document.getElementById('stars');
-        for (let i = 0; i < 100; i++) {
-            const star = document.createElement('div');
-            star.className = 'star';
-            star.style.left = Math.random() * 100 + '%';
-            star.style.top = Math.random() * 100 + '%';
-            star.style.animationDelay = Math.random() * 3 + 's';
-            starsContainer.appendChild(star);
-        }
+    <section class="card hidden" id="results">
+      <div class="result-head">
+        <div>
+          <h3 id="resultTitle">Analysis Result</h3>
+          <p class="muted" id="resultSubtitle"></p>
+        </div>
+        <div class="score" id="score">0/100</div>
+      </div>
 
-        // Plan selector
-        document.querySelectorAll('.plan-option').forEach(option => {
-            option.addEventListener('click', function() {
-                document.querySelectorAll('.plan-option').forEach(o => o.classList.remove('active'));
-                this.classList.add('active');
-                const plan = this.dataset.plan;
-                const companyInput = document.getElementById('companyInput');
-                if (plan === 'pro') {
-                    companyInput.style.display = 'block';
-                } else {
-                    companyInput.style.display = 'none';
-                }
-            });
-        });
+      <div class="kpis" id="kpis"></div>
 
-        // File input
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const fileName = document.getElementById('fileName');
-            if (e.target.files.length > 0) {
-                fileName.textContent = '📄 ' + e.target.files[0].name;
-            } else {
-                fileName.textContent = '';
-            }
-        });
+      <div class="card" style="margin-top:.7rem;">
+        <h3>Category Breakdown</h3>
+        <div id="bars"></div>
+      </div>
 
-        // Smooth scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
+      <div class="three">
+        <div class="card" style="margin-top:0;">
+          <h3>Strengths</h3>
+          <div class="list" id="strengths"></div>
+        </div>
+        <div class="card" style="margin-top:0;">
+          <h3>Risks</h3>
+          <div class="list" id="risks"></div>
+        </div>
+        <div class="card" style="margin-top:0;">
+          <h3>Fix First (Backend Guidance)</h3>
+          <div class="list" id="fixFirst"></div>
+        </div>
+      </div>
 
-        // Analysis function (Basic plan - rule-based)
-        function analyzeBasicPitch(text) {
-            const words = text.trim().split(/\s+/).length;
-            const hasProblem = text.toLowerCase().includes('problem') || text.toLowerCase().includes('issue');
-            const hasSolution = text.toLowerCase().includes('solution') || text.toLowerCase().includes('solve');
-            const hasMarket = text.toLowerCase().includes('market') || text.toLowerCase().includes('customer');
-            const hasFinancials = text.toLowerCase().includes('revenue') || text.toLowerCase().includes('profit') || text.toLowerCase().includes('$');
-            
-            let score = 0;
-            let recommendations = [];
-            
-            // Scoring
-            if (words >= 100) score += 20;
-            else recommendations.push('Expand your pitch to at least 100 words for better coverage');
-            
-            if (hasProblem) score += 20;
-            else recommendations.push('Clearly define the problem you\'re solving');
-            
-            if (hasSolution) score += 20;
-            else recommendations.push('Articulate your solution more explicitly');
-            
-            if (hasMarket) score += 20;
-            else recommendations.push('Include market size and target customer information');
-            
-            if (hasFinancials) score += 20;
-            else recommendations.push('Add financial projections or revenue model');
-            
-            // Additional checks
-            if (words < 50) recommendations.push('Pitch is too brief - add more detail about your business');
-            if (text.split('.').length < 5) recommendations.push('Use more complete sentences to improve clarity');
-            if (!text.includes('unique') && !text.includes('different')) recommendations.push('Highlight what makes you unique or different from competitors');
-            
-            let scoreClass = 'score-poor';
-            let scoreLabel = 'Needs Improvement';
-            if (score >= 80) { scoreClass = 'score-excellent'; scoreLabel = 'Excellent'; }
-            else if (score >= 60) { scoreClass = 'score-good'; scoreLabel = 'Good'; }
-            else if (score >= 40) { scoreClass = 'score-fair'; scoreLabel = 'Fair'; }
-            
-            return { score, scoreClass, scoreLabel, recommendations };
-        }
+      <div class="card" style="margin-top:.7rem;">
+        <h3>Improve Next</h3>
+        <div class="list" id="improveNext"></div>
+      </div>
+    </section>
+  </div>
 
-        // Main analyze function
-        async function analyzePitch() {
-            const pitchText = document.getElementById('pitchText').value.trim();
-            const fileInput = document.getElementById('fileInput');
-            const selectedPlan = document.querySelector('.plan-option.active').dataset.plan;
-            const companyName = document.getElementById('companyName').value.trim();
-            
-            if (!pitchText && fileInput.files.length === 0) {
-                alert('Please enter pitch text or upload a file');
-                return;
-            }
+<script>
+const state = {
+  plan: 'free',
+  mode: 'text',
+  imageMetrics: null
+};
 
-            // Show results section
-            const analysisResult = document.getElementById('analysisResult');
-            const loading = document.getElementById('loading');
-            const resultContent = document.getElementById('resultContent');
-            
-            analysisResult.classList.add('show');
-            loading.style.display = 'block';
-            resultContent.style.display = 'none';
+const $ = (id) => document.getElementById(id);
 
-            // Simulate processing time
-            await new Promise(resolve => setTimeout(resolve, 2000));
+initBackendUrl();
+$('backendUrl').addEventListener('blur', saveBackendUrl);
 
-            let result;
-            
-            if (selectedPlan === 'basic') {
-                // Basic plan - rule-based analysis
-                let textToAnalyze = pitchText;
-                if (fileInput.files.length > 0) {
-                    // In a real implementation, you'd extract text from PDF here
-                    textToAnalyze = pitchText || 'PDF content would be extracted here...';
-                }
-                
-                result = analyzeBasicPitch(textToAnalyze);
-                
-                resultContent.innerHTML = `
-                    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary); margin-bottom: 1rem;">Analysis Complete</h3>
-                    <div class="score-badge ${result.scoreClass}">Score: ${result.score}/100 - ${result.scoreLabel}</div>
-                    
-                    <div class="recommendation-section">
-                        <h3>Recommendations</h3>
-                        ${result.recommendations.map(rec => `<div class="recommendation-item">${rec}</div>`).join('')}
-                    </div>
-                    
-                    <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(124, 58, 237, 0.1); border-radius: 12px; border-left: 3px solid var(--secondary);">
-                        <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">💎 Upgrade to Pro</h4>
-                        <p style="color: var(--text-dim);">Get AI-powered insights, company-specific analysis, and market context to take your pitch to the next level.</p>
-                    </div>
-                `;
-            } else {
-                // Pro plan - would use API here
-                if (!companyName) {
-                    alert('Please enter a company or stock symbol for Pro analysis');
-                    loading.style.display = 'none';
-                    return;
-                }
-                
-                resultContent.innerHTML = `
-                    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary); margin-bottom: 1rem;">Pro Analysis Complete</h3>
-                    <div class="score-badge score-excellent">Score: 87/100 - Excellent</div>
-                    
-                    <div class="recommendation-section">
-                        <h3>AI-Powered Insights for ${companyName}</h3>
-                        <div class="recommendation-item">
-                            <strong>Market Context:</strong> Your pitch aligns well with current ${companyName} market trends. The sector is experiencing 23% YoY growth.
-                        </div>
-                        <div class="recommendation-item">
-                            <strong>Competitive Position:</strong> Similar to ${companyName}'s early positioning, but consider emphasizing differentiation more clearly.
-                        </div>
-                        <div class="recommendation-item">
-                            <strong>Financial Projections:</strong> Your revenue model is realistic compared to ${companyName}'s trajectory. Consider adding unit economics.
-                        </div>
-                        <div class="recommendation-item">
-                            <strong>Risk Assessment:</strong> Market risks are well-addressed. Add more detail on operational scaling challenges.
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(0, 212, 255, 0.1); border-radius: 12px;">
-                        <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Next Steps</h4>
-                        <p style="color: var(--text-dim);">Based on ${companyName}'s investor preferences, focus on: scalability metrics, customer acquisition costs, and long-term competitive moats.</p>
-                    </div>
-                `;
-            }
+function initBackendUrl() {
+  const saved = localStorage.getItem('astrapitch-backend-url');
+  const defaultUrl = (location.protocol.startsWith('http') && location.port === '8080')
+    ? location.origin
+    : 'http://127.0.0.1:8080';
+  $('backendUrl').value = saved || defaultUrl;
+}
 
-            loading.style.display = 'none';
-            resultContent.style.display = 'block';
-        }
-    </script>
+function saveBackendUrl() {
+  localStorage.setItem('astrapitch-backend-url', $('backendUrl').value.trim());
+}
+
+function apiUrl(path) {
+  const base = ($('backendUrl').value || '').trim().replace(/\/$/, '');
+  return `${base}${path}`;
+}
+
+$('planChips').addEventListener('click', (e) => {
+  if (!e.target.dataset.plan) return;
+  state.plan = e.target.dataset.plan;
+  [...$('planChips').querySelectorAll('.chip')].forEach(c => c.classList.toggle('active', c.dataset.plan === state.plan));
+  $('proCard').classList.toggle('hidden', state.plan !== 'pro');
+});
+
+$('modeChips').addEventListener('click', (e) => {
+  if (!e.target.dataset.mode) return;
+  state.mode = e.target.dataset.mode;
+  [...$('modeChips').querySelectorAll('.chip')].forEach(c => c.classList.toggle('active', c.dataset.mode === state.mode));
+  $('textCard').classList.toggle('hidden', state.mode !== 'text');
+  $('videoCard').classList.toggle('hidden', state.mode !== 'video');
+});
+
+$('videoFile').addEventListener('change', async () => {
+  const file = $('videoFile').files?.[0];
+  if (!file) return;
+  $('status').textContent = 'Processing video frames for image quality signals...';
+  try {
+    state.imageMetrics = await extractVideoMetrics(file);
+    $('videoMetricHint').textContent = `Frame metrics ready: brightness ${state.imageMetrics.brightness.toFixed(2)}, contrast ${state.imageMetrics.contrast.toFixed(2)}, sharpness ${state.imageMetrics.sharpness.toFixed(2)}, text density ${state.imageMetrics.text_density.toFixed(2)}, stability ${state.imageMetrics.stability.toFixed(2)}.`;
+    $('status').textContent = 'Video frame metrics extracted.';
+  } catch (err) {
+    console.error(err);
+    state.imageMetrics = null;
+    $('status').textContent = 'Video frame processing failed. You can still run transcript analysis.';
+  }
+});
+
+$('runBtn').addEventListener('click', runAnalysis);
+$('demoBtn').addEventListener('click', loadDemo);
+
+function loadDemo() {
+  const demo = `We are building an AI compliance copilot for mid-market fintech teams. Today onboarding and transaction monitoring are manual and expensive. We reduce review time by 62% with a workflow model trained on historical decisions. In 8 pilots, false positives dropped 31% and analysts process 2.1x more alerts per day. TAM is a $9.4B market and our SAM is $1.3B in US and UK mid-market institutions. We charge $6,000 per month plus volume usage. We currently have $38k MRR growing 18% month over month with 94% gross retention. We are raising $2.5M to extend runway to 24 months, hire two GTM reps, and complete SOC2 plus key model auditing milestones.`;
+  $('pitchText').value = demo;
+  $('videoTranscript').value = demo;
+  $('status').textContent = 'Demo loaded.';
+}
+
+async function runAnalysis() {
+  const sector = $('sector').value;
+  const stage = $('stage').value;
+  $('status').textContent = 'Running analysis...';
+
+  let endpoint = '/api/analyze/free/text';
+  let payload = { sector, stage };
+
+  if (state.plan === 'pro') {
+    endpoint = '/api/analyze/pro';
+    payload = {
+      mode: state.mode,
+      sector,
+      stage,
+      // TODO (future): backend should validate this API key server-side.
+      api_key: $('proApiKey').value.trim(),
+      // TODO (future): backend should call this endpoint or mapped provider route.
+      external_endpoint: $('proEndpoint').value.trim(),
+      text: $('pitchText').value.trim(),
+      transcript: $('videoTranscript').value.trim(),
+      image_metrics: state.imageMetrics
+    };
+  } else if (state.mode === 'video') {
+    endpoint = '/api/analyze/free/video';
+    payload = {
+      transcript: $('videoTranscript').value.trim(),
+      sector,
+      stage,
+      image_metrics: state.imageMetrics,
+      delivery: {
+        energy: Number($('energy').value || 7) / 10,
+        pace: Number($('pace').value || 7) / 10
+      }
+    };
+  } else {
+    endpoint = '/api/analyze/free/text';
+    payload = {
+      text: $('pitchText').value.trim(),
+      sector,
+      stage
+    };
+  }
+
+  try {
+    saveBackendUrl();
+    const res = await fetch(apiUrl(endpoint), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const raw = await res.text();
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (parseErr) {
+      const preview = raw.slice(0, 120).replace(/\s+/g, ' ');
+      throw new Error(`Backend did not return JSON. Got: "${preview}". Make sure backend is running and Backend URL is correct.`);
+    }
+
+    if (!res.ok) throw new Error(data.error || data.fix || 'Analysis failed');
+    render(data);
+    $('status').textContent = 'Analysis complete.';
+  } catch (err) {
+    $('status').textContent = `Error: ${err.message}`;
+  }
+}
+
+function render(data) {
+  $('results').classList.remove('hidden');
+  $('resultTitle').textContent = `${data.mode.toUpperCase()} Pitch Analysis`;
+
+  const checker = data.accuracy_checker?.detail || {};
+  $('resultSubtitle').textContent = `Accuracy checker: ${data.accuracy_checker?.confidence || 0}/100 · Structure ${checker.structure || 0} · Evidence ${checker.evidence || 0}`;
+
+  const score = data.overall_score || 0;
+  $('score').textContent = `${score}/100`;
+  $('score').className = `score ${score >= 80 ? 'good' : score >= 60 ? 'mid' : 'low'}`;
+
+  const keywords = (data.training_keywords || []).join(', ') || 'n/a';
+  const visual = data.visual_metrics ? `Visual sharpness ${data.visual_metrics.sharpness}` : 'Visual metrics n/a';
+
+  $('kpis').innerHTML = `
+    <div class="kpi"><span class="muted">Overall score</span><b>${score}/100</b></div>
+    <div class="kpi"><span class="muted">Accuracy confidence</span><b>${data.accuracy_checker?.confidence || 0}/100</b></div>
+    <div class="kpi"><span class="muted">Keyword training signals</span><b>${(data.training_keywords || []).length}</b></div>
+    <div class="kpi"><span class="muted">Top keyword tokens</span><b>${keywords}</b></div>
+    <div class="kpi"><span class="muted">Mode</span><b>${data.mode}</b></div>
+    <div class="kpi"><span class="muted">Video image checks</span><b>${visual}</b></div>
+  `;
+
+  $('bars').innerHTML = Object.entries(data.categories || {}).map(([name, val]) => `
+      <div class="bar">
+        <div class="muted" style="display:flex;justify-content:space-between;margin-bottom:.2rem;"><span>${name.replaceAll('_',' ')}</span><span>${val}/100</span></div>
+        <div class="barline"><span style="width:${val}%"></span></div>
+      </div>
+  `).join('');
+
+  $('strengths').innerHTML = (data.strengths || []).map(s => `<div class="item">${s}</div>`).join('');
+  $('risks').innerHTML = (data.risks || []).map(r => `<div class="item">${r}</div>`).join('');
+  const fixFirst = data.fix_plan?.must_fix_first || [];
+  const improveNext = data.fix_plan?.improve_next || [];
+  const sizeGuidance = data.fix_plan?.size_guidance;
+
+  $('fixFirst').innerHTML = fixFirst.length
+    ? fixFirst.map(x => `<div class="item"><b>${x.area.replaceAll('_',' ')}</b> (${x.score}/100) · ${x.fix}<br><span class="muted">Example: ${x.example}</span></div>`).join('')
+    : '<div class="item">No critical fixes detected.</div>';
+
+  $('improveNext').innerHTML = [
+    ...(improveNext.map(x => `<div class="item"><b>${x.area.replaceAll('_',' ')}</b> (${x.score}/100) · ${x.fix}<br><span class="muted">Example: ${x.example}</span></div>`)),
+    ...(sizeGuidance ? [`<div class="item"><b>Pitch size guidance</b> · ${sizeGuidance.recommendation} <span class="muted">(words: ${sizeGuidance.word_count}, band: ${sizeGuidance.size_band})</span></div>`] : [])
+  ].join('');
+}
+
+async function extractVideoMetrics(file) {
+  const video = document.createElement('video');
+  video.crossOrigin = 'anonymous';
+  video.muted = true;
+  video.src = URL.createObjectURL(file);
+
+  await new Promise((resolve, reject) => {
+    video.onloadedmetadata = resolve;
+    video.onerror = reject;
+  });
+
+  const duration = Math.max(1, Math.floor(video.duration));
+  const samples = Math.min(8, duration);
+  const times = Array.from({ length: samples }, (_, i) => (duration / (samples + 1)) * (i + 1));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 320; canvas.height = 180;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  const brightnessList = [];
+  const contrastList = [];
+  const sharpnessList = [];
+  const textDensityList = [];
+  const frameHashes = [];
+
+  for (const t of times) {
+    await seekVideo(video, t);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = image.data;
+
+    let sum = 0;
+    let sq = 0;
+    let edgeCount = 0;
+    let brightPixels = 0;
+    const lum = new Float32Array(canvas.width * canvas.height);
+
+    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+      const l = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      lum[p] = l;
+      sum += l;
+      sq += l * l;
+      if (l > 200) brightPixels++;
+    }
+
+    const mean = sum / lum.length;
+    const variance = (sq / lum.length) - (mean * mean);
+    const std = Math.sqrt(Math.max(0, variance));
+
+    for (let y = 1; y < canvas.height - 1; y++) {
+      for (let x = 1; x < canvas.width - 1; x++) {
+        const idx = y * canvas.width + x;
+        const gx = Math.abs(lum[idx + 1] - lum[idx - 1]);
+        const gy = Math.abs(lum[idx + canvas.width] - lum[idx - canvas.width]);
+        const grad = gx + gy;
+        if (grad > 36) edgeCount++;
+      }
+    }
+
+    const edgeDensity = edgeCount / lum.length;
+    brightnessList.push(mean / 255);
+    contrastList.push(std / 128);
+    sharpnessList.push(Math.min(1, edgeDensity * 6));
+    textDensityList.push(Math.min(1, (edgeDensity * 4) + (brightPixels / lum.length) * 0.5));
+    frameHashes.push(Math.round(mean / 6));
+  }
+
+  URL.revokeObjectURL(video.src);
+
+  const stability = computeStability(frameHashes);
+  return {
+    brightness: avg(brightnessList),
+    contrast: avg(contrastList),
+    sharpness: avg(sharpnessList),
+    text_density: avg(textDensityList),
+    stability
+  };
+}
+
+function seekVideo(video, time) {
+  return new Promise((resolve, reject) => {
+    const done = () => { video.removeEventListener('seeked', done); resolve(); };
+    video.addEventListener('seeked', done, { once: true });
+    video.currentTime = Math.min(Math.max(0, time), video.duration || time);
+    setTimeout(() => reject(new Error('seek timeout')), 4000);
+  });
+}
+
+function avg(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
+function computeStability(hashes) {
+  if (hashes.length < 2) return 0.6;
+  let delta = 0;
+  for (let i = 1; i < hashes.length; i++) delta += Math.abs(hashes[i] - hashes[i - 1]);
+  const meanDelta = delta / (hashes.length - 1);
+  return Math.max(0, Math.min(1, 1 - (meanDelta / 20)));
+}
+</script>
 </body>
 </html>
