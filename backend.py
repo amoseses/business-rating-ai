@@ -1,14 +1,43 @@
 #!/usr/bin/env python3
 import json
 import math
+import os
 import re
 from collections import Counter
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
 INDEX_PATH = ROOT / "index.html"
+
+# ---------------------------------------------------------------------------
+# OPTIONAL PLUS / LLM BACKEND SECTION
+# Add your hosted model credentials here if you want the backend to enrich the
+# free rules-based analysis with an external LLM. This is intentionally kept in
+# backend code only so the frontend UX stays clean and does not expose API-key
+# fields to end users.
+#
+# Supported setup:
+#   export PITCH_LLM_ENDPOINT="https://your-api-domain/v1/pitch/analyze"
+#   export PITCH_LLM_API_KEY="sk_live_xxx"
+#
+# The endpoint should accept JSON with:
+#   {"mode": "text|video", "input": {...free analysis payload...}, "analysis": {...}}
+# and may return fields like:
+#   {
+#     "summary": "...",
+#     "investor_readout": ["..."],
+#     "rewrite": "...",
+#     "next_steps": ["..."],
+#     "score_delta": 3
+#   }
+# ---------------------------------------------------------------------------
+LLM_ENDPOINT = os.environ.get("PITCH_LLM_ENDPOINT", "").strip()
+LLM_API_KEY = os.environ.get("PITCH_LLM_API_KEY", "").strip()
+LLM_TIMEOUT_SECONDS = float(os.environ.get("PITCH_LLM_TIMEOUT", "8"))
 
 SECTOR_KEYWORDS = {
     "saas": ["arr", "mrr", "churn", "retention", "seat", "subscription", "pipeline", "expansion"],
@@ -367,6 +396,68 @@ def generate_rewrite(text, sector, weakest_areas):
     )
 
 
+def build_how_it_works(mode, sector, stage, words):
+    return [
+        f"1. Parsed the {mode} pitch into investor categories for the {sector} sector at the {stage} stage.",
+        f"2. Compared wording against {DATASET_PROFILE['stats']['rows']} embedded training examples and weighted high-signal terms.",
+        f"3. Checked proof density, structure quality, and pitch length across {words} words.",
+        "4. Ranked the weakest sections, generated a fix plan, and produced a suggested rewrite.",
+    ]
+
+
+def build_execution_summary(categories, missing_stage_terms, checker):
+    weakest = sorted(categories.items(), key=lambda item: item[1])[:3]
+    strongest = sorted(categories.items(), key=lambda item: item[1], reverse=True)[:3]
+    return {
+        "strongest_areas": [name for name, _ in strongest],
+        "weakest_areas": [name for name, _ in weakest],
+        "biggest_gap": weakest[0][0] if weakest else None,
+        "missing_stage_signals": missing_stage_terms,
+        "confidence": checker["confidence"],
+    }
+
+
+def maybe_call_llm(mode, payload, analysis):
+    if not LLM_ENDPOINT or not LLM_API_KEY:
+        return {"enabled": False, "status": "not_configured"}
+
+    body = json.dumps({"mode": mode, "input": payload, "analysis": analysis}).encode("utf-8")
+    req = Request(
+        LLM_ENDPOINT,
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {LLM_API_KEY}",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(req, timeout=LLM_TIMEOUT_SECONDS) as response:
+            raw = response.read().decode("utf-8")
+            data = json.loads(raw) if raw else {}
+            return {"enabled": True, "status": "ok", "output": data}
+    except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+        return {"enabled": True, "status": "error", "error": str(exc)}
+
+
+def apply_llm_enrichment(result, llm_result):
+    enriched = dict(result)
+    enriched["llm"] = {"enabled": llm_result.get("enabled", False), "status": llm_result.get("status", "not_configured")}
+    output = llm_result.get("output") or {}
+    if llm_result.get("status") == "ok":
+        score_delta = int(output.get("score_delta", 0)) if str(output.get("score_delta", "")).lstrip("-").isdigit() else 0
+        enriched["overall_score"] = clamp(enriched["overall_score"] + max(-5, min(5, score_delta)))
+        enriched["llm"]["summary"] = output.get("summary", "")
+        enriched["llm"]["investor_readout"] = output.get("investor_readout") or []
+        enriched["llm"]["next_steps"] = output.get("next_steps") or []
+        rewrite = (output.get("rewrite") or "").strip()
+        if rewrite:
+            enriched["rewrite_suggestion"] = rewrite
+    elif llm_result.get("status") == "error":
+        enriched["llm"]["error"] = llm_result.get("error", "Unknown LLM error")
+    return enriched
+
+
 def analyze_text(payload):
     text = (payload.get("text") or "").strip()
     sector = (payload.get("sector") or "general").lower()
@@ -399,7 +490,7 @@ def analyze_text(payload):
         risks.insert(1, f"Stage mismatch for {stage}: missing {', '.join(missing_stage_terms[:3])} signals.")
 
     weakest = sorted(categories.items(), key=lambda kv: kv[1])[:3]
-    return {
+    result = {
         "mode": "text",
         "overall_score": overall,
         "accuracy_checker": checker,
@@ -418,7 +509,10 @@ def analyze_text(payload):
             "available_sectors": DATASET_PROFILE["stats"]["sectors"],
             "available_stages": DATASET_PROFILE["stats"]["stages"],
         },
+        "how_it_works": build_how_it_works("text", sector, stage, words),
+        "execution_summary": build_execution_summary(categories, missing_stage_terms, checker),
     }
+    return apply_llm_enrichment(result, maybe_call_llm("text", payload, result))
 
 
 def analyze_video(payload):
@@ -448,14 +542,18 @@ def analyze_video(payload):
     base["categories"] = merged
     visual_avg = sum(visual_categories.values()) / len(visual_categories)
     base["overall_score"] = clamp(base["overall_score"] * 0.72 + visual_avg * 0.28)
-    base["visual_metrics"] = {"brightness": round(brightness, 3), "contrast": round(contrast, 3), "sharpness": round(sharpness, 3), "text_density": round(text_density, 3), "stability": round(stability, 3)}
+    base["visual_metrics"] = {"brightness": round(brightness, 3), "contrast": round(contrast, 3), "sharpness": round(sharpness, 3), "text_density": round(text_density, 3), "stability": round(stability, 3), "energy": round(energy, 3), "pace": round(pace, 3)}
     base["accuracy_checker"]["detail"]["visual_readiness"] = clamp(visual_avg)
     base["accuracy_checker"]["confidence"] = clamp(base["accuracy_checker"]["confidence"] * 0.78 + visual_avg * 0.22)
     base["fix_plan"]["improve_next"] = base["fix_plan"].get("improve_next", []) + [
         {"area": "slide_readability", "score": visual_categories["slide_readability"], "priority": "medium", "fix": "Increase slide font size and contrast so the sampled frame text stays readable.", "example": "Use 6 lines or fewer per slide with strong foreground/background contrast."},
         {"area": "camera_stability", "score": visual_categories["camera_stability"], "priority": "medium", "fix": "Keep the framing stable during key points.", "example": "Use a tripod or fixed laptop framing during the pitch."},
     ]
-    return base
+    base["how_it_works"] = build_how_it_works("video", payload.get("sector", "general"), payload.get("stage", "early"), sentence_stats(transcript)[0]) + [
+        "5. Added transcript delivery and visual heuristics to estimate on-camera clarity.",
+    ]
+    base["execution_summary"] = build_execution_summary(base["categories"], base["missing_stage_signals"], base["accuracy_checker"])
+    return apply_llm_enrichment(base, maybe_call_llm("video", payload, base))
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -493,7 +591,11 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(html)
             return
         if parsed.path == "/api/health":
-            return self._json_response({"status": "ok", "dataset_rows": DATASET_PROFILE["stats"]["rows"]})
+            return self._json_response({
+                "status": "ok",
+                "dataset_rows": DATASET_PROFILE["stats"]["rows"],
+                "llm_configured": bool(LLM_ENDPOINT and LLM_API_KEY),
+            })
         if parsed.path == "/api/training/dataset":
             preview = [{**{key: example[key] for key in ["id", "sector", "stage", "rating", "quality"]}, "pitch_preview": example["pitch"][:220]} for example in TRAINING_DATASET]
             return self._json_response({"stats": DATASET_PROFILE["stats"], "examples": preview})
@@ -506,33 +608,26 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             return self._json_response({"error": "Invalid JSON"}, 400)
 
-        if parsed.path == "/api/analyze/free/text":
+        if parsed.path in ("/api/analyze/free/text", "/api/analyze/text"):
             text = (payload.get("text") or "").strip()
             if len(text) < 12:
                 return self._json_response({"error": "Pitch is too short to analyze.", "fix": "Provide at least 12 characters and ideally 180+ words."}, 400)
             return self._json_response(analyze_text(payload))
 
-        if parsed.path == "/api/analyze/free/video":
+        if parsed.path in ("/api/analyze/free/video", "/api/analyze/video"):
             transcript = (payload.get("transcript") or "").strip()
             if len(transcript) < 12:
                 return self._json_response({"error": "Transcript is too short to analyze.", "fix": "Provide at least 12 characters and ideally 180+ words."}, 400)
             return self._json_response(analyze_video(payload))
 
-        if parsed.path == "/api/analyze/pro":
-            return self._json_response({
-                "error": "Pro mode is coming soon.",
-                "todo": "Wire a hosted model into this endpoint and keep the same response schema.",
-                "fix": "Use the integrated local text/video analysis modes for now."
-            }, 501)
-
         self._json_response({"error": "Not found"}, 404)
 
 
-def main():
-    server = HTTPServer(("0.0.0.0", 8080), Handler)
-    print("AstraPitch backend running on http://0.0.0.0:8080")
+def run(host="127.0.0.1", port=8080):
+    server = HTTPServer((host, port), Handler)
+    print(f"AstraPitch backend running on http://{host}:{port}")
     server.serve_forever()
 
 
 if __name__ == "__main__":
-    main()
+    run()

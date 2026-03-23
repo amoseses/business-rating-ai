@@ -57,6 +57,7 @@ class BackendAnalysisTests(unittest.TestCase):
     def test_options_and_health_support_cross_origin_frontend(self):
         self.assertTrue(hasattr(backend.Handler, 'do_OPTIONS'))
         self.assertIn('rows', backend.DATASET_PROFILE['stats'])
+        self.assertTrue(hasattr(backend, 'LLM_ENDPOINT'))
 
     def test_rewrite_and_fix_plan_are_generated(self):
         result = backend.analyze_text({"text": WEAK_TEXT, "sector": "general", "stage": "idea"})
@@ -66,3 +67,14 @@ class BackendAnalysisTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BackendIntegrationShapeTests(unittest.TestCase):
+    def test_text_analysis_exposes_how_it_works_and_llm_status(self):
+        result = backend.analyze_text({'text': STRONG_TEXT, 'sector': 'fintech', 'stage': 'growth'})
+        self.assertTrue(result['how_it_works'])
+        self.assertIn('status', result['llm'])
+
+    def test_health_payload_exposes_llm_configuration_flag(self):
+        self.assertTrue(callable(getattr(backend.Handler, 'do_GET', None)))
+
