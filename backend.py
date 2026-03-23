@@ -94,51 +94,15 @@ TRAINING_DATASET = [
 ]
 
 FIX_LIBRARY = {
-    "problem_definition": {
-        "priority": "high",
-        "fix": "State one clear customer pain and quantify it with time or money lost.",
-        "example": "Finance teams lose 11 hours per week reconciling payouts manually."
-    },
-    "solution_quality": {
-        "priority": "high",
-        "fix": "Describe the product workflow in one sentence, not just the vision.",
-        "example": "Our engine auto-matches payouts to ledger entries with 96% precision."
-    },
-    "market_strength": {
-        "priority": "high",
-        "fix": "Add TAM, wedge market, and exact buyer.",
-        "example": "TAM is $9.4B, SAM is $1.3B, and we target 2,000 mid-market fintech firms."
-    },
-    "business_model": {
-        "priority": "medium",
-        "fix": "Explain pricing, gross margin assumptions, and sales motion.",
-        "example": "$6k per month plus usage, 78% gross margin, 45-day sales cycle."
-    },
-    "traction": {
-        "priority": "high",
-        "fix": "Show proof over time: revenue, growth, retention, conversion, or pilots.",
-        "example": "MRR grew from $18k to $38k in four months with 94% gross retention."
-    },
-    "competition_moat": {
-        "priority": "medium",
-        "fix": "Compare the status quo and say why your advantage compounds.",
-        "example": "Only platform with a real-time fraud graph plus bank-grade audit trail."
-    },
-    "fundraise_clarity": {
-        "priority": "high",
-        "fix": "Specify the amount raised, runway target, and milestones unlocked.",
-        "example": "Raising $2.5M for 24 months runway to reach $150k MRR and SOC 2."
-    },
-    "risk_awareness": {
-        "priority": "medium",
-        "fix": "Name the top execution risk and the mitigation plan.",
-        "example": "Regulatory risk is mitigated through quarterly external compliance audits."
-    },
-    "sector_alignment": {
-        "priority": "medium",
-        "fix": "Use the sector metrics investors expect to hear.",
-        "example": "For SaaS, include CAC, LTV, churn, and expansion revenue."
-    },
+    "problem_definition": {"priority": "high", "fix": "State one clear customer pain and quantify it with time or money lost.", "example": "Finance teams lose 11 hours per week reconciling payouts manually."},
+    "solution_quality": {"priority": "high", "fix": "Describe the product workflow in one sentence, not just the vision.", "example": "Our engine auto-matches payouts to ledger entries with 96% precision."},
+    "market_strength": {"priority": "high", "fix": "Add TAM, wedge market, and exact buyer.", "example": "TAM is $9.4B, SAM is $1.3B, and we target 2,000 mid-market fintech firms."},
+    "business_model": {"priority": "medium", "fix": "Explain pricing, gross margin assumptions, and sales motion.", "example": "$6k per month plus usage, 78% gross margin, 45-day sales cycle."},
+    "traction": {"priority": "high", "fix": "Show proof over time: revenue, growth, retention, conversion, or pilots.", "example": "MRR grew from $18k to $38k in four months with 94% gross retention."},
+    "competition_moat": {"priority": "medium", "fix": "Compare the status quo and say why your advantage compounds.", "example": "Only platform with a real-time fraud graph plus bank-grade audit trail."},
+    "fundraise_clarity": {"priority": "high", "fix": "Specify the amount raised, runway target, and milestones unlocked.", "example": "Raising $2.5M for 24 months runway to reach $150k MRR and SOC 2."},
+    "risk_awareness": {"priority": "medium", "fix": "Name the top execution risk and the mitigation plan.", "example": "Regulatory risk is mitigated through quarterly external compliance audits."},
+    "sector_alignment": {"priority": "medium", "fix": "Use the sector metrics investors expect to hear.", "example": "For SaaS, include CAC, LTV, churn, and expansion revenue."},
 }
 
 
@@ -200,13 +164,7 @@ def get_size_band(words):
 
 
 def size_adjustment(words):
-    return {
-        "very_short": -16,
-        "short": -6,
-        "standard": 6,
-        "long": 2,
-        "very_long": -8,
-    }[get_size_band(words)]
+    return {"very_short": -16, "short": -6, "standard": 6, "long": 2, "very_long": -8}[get_size_band(words)]
 
 
 def stage_alignment_score(text, stage):
@@ -247,10 +205,7 @@ def build_dataset_profile(dataset):
         pos = weighted_rating_sum[token]
         neg = weighted_inverse_sum[token]
         total = pos + neg
-        if total:
-            weights[token] = round(((pos - neg) / total) * 18, 4)
-        else:
-            weights[token] = 0.0
+        weights[token] = round(((pos - neg) / total) * 18, 4) if total else 0.0
 
     ratings = sorted(example["rating"] for example in dataset)
     return {
@@ -315,14 +270,11 @@ def dataset_training_signals(text, sector=None):
 
     examples = nearest_training_examples(text, sector=sector, limit=3)
     if examples:
-        avg_neighbor = sum(item["rating"] * max(item["similarity"], 0.05) for item in examples) / sum(max(item["similarity"], 0.05) for item in examples)
+        weighted = [max(item["similarity"], 0.05) for item in examples]
+        avg_neighbor = sum(item["rating"] * weight for item, weight in zip(examples, weighted)) / sum(weighted)
         score = (score * 0.55) + (avg_neighbor * 0.45)
     contributors.sort(key=lambda item: abs(item["impact"]), reverse=True)
-    return {
-        "score": clamp(score),
-        "contributors": contributors[:8],
-        "nearest_examples": examples,
-    }
+    return {"score": clamp(score), "contributors": contributors[:8], "nearest_examples": examples}
 
 
 def accuracy_checker(text, category_scores):
@@ -376,13 +328,7 @@ def build_fix_plan(categories, words):
         entry = FIX_LIBRARY.get(name)
         if not entry:
             continue
-        item = {
-            "area": name,
-            "score": score,
-            "priority": entry["priority"],
-            "fix": entry["fix"],
-            "example": entry["example"],
-        }
+        item = {"area": name, "score": score, "priority": entry["priority"], "fix": entry["fix"], "example": entry["example"]}
         if len(must_fix) < 3 and (score < 50 or entry["priority"] == "high"):
             must_fix.append(item)
         elif len(improve_next) < 3:
@@ -396,11 +342,7 @@ def build_fix_plan(categories, words):
         "size_guidance": {
             "size_band": get_size_band(words),
             "word_count": words,
-            "recommendation": (
-                "Expand to 180-450 words for stronger investor signal." if words < 180 else
-                "Good length for most investor intros." if words <= 650 else
-                "Consider a shorter investor version plus appendix."
-            ),
+            "recommendation": "Expand to 180-450 words for stronger investor signal." if words < 180 else "Good length for most investor intros." if words <= 650 else "Consider a shorter investor version plus appendix.",
         },
     }
 
@@ -506,35 +448,27 @@ def analyze_video(payload):
     base["categories"] = merged
     visual_avg = sum(visual_categories.values()) / len(visual_categories)
     base["overall_score"] = clamp(base["overall_score"] * 0.72 + visual_avg * 0.28)
-    base["visual_metrics"] = {
-        "brightness": round(brightness, 3),
-        "contrast": round(contrast, 3),
-        "sharpness": round(sharpness, 3),
-        "text_density": round(text_density, 3),
-        "stability": round(stability, 3),
-    }
+    base["visual_metrics"] = {"brightness": round(brightness, 3), "contrast": round(contrast, 3), "sharpness": round(sharpness, 3), "text_density": round(text_density, 3), "stability": round(stability, 3)}
     base["accuracy_checker"]["detail"]["visual_readiness"] = clamp(visual_avg)
     base["accuracy_checker"]["confidence"] = clamp(base["accuracy_checker"]["confidence"] * 0.78 + visual_avg * 0.22)
     base["fix_plan"]["improve_next"] = base["fix_plan"].get("improve_next", []) + [
-        {
-            "area": "slide_readability",
-            "score": visual_categories["slide_readability"],
-            "priority": "medium",
-            "fix": "Increase slide font size and contrast so the sampled frame text stays readable.",
-            "example": "Use 6 lines or fewer per slide with strong foreground/background contrast."
-        },
-        {
-            "area": "camera_stability",
-            "score": visual_categories["camera_stability"],
-            "priority": "medium",
-            "fix": "Keep the framing stable during key points.",
-            "example": "Use a tripod or fixed laptop framing during the pitch."
-        },
+        {"area": "slide_readability", "score": visual_categories["slide_readability"], "priority": "medium", "fix": "Increase slide font size and contrast so the sampled frame text stays readable.", "example": "Use 6 lines or fewer per slide with strong foreground/background contrast."},
+        {"area": "camera_stability", "score": visual_categories["camera_stability"], "priority": "medium", "fix": "Keep the framing stable during key points.", "example": "Use a tripod or fixed laptop framing during the pitch."},
     ]
     return base
 
 
 class Handler(BaseHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.end_headers()
+
     def _json_response(self, payload, status=200):
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
@@ -558,8 +492,10 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(html)
             return
+        if parsed.path == "/api/health":
+            return self._json_response({"status": "ok", "dataset_rows": DATASET_PROFILE["stats"]["rows"]})
         if parsed.path == "/api/training/dataset":
-            preview = [{key: example[key] for key in ["id", "sector", "stage", "rating", "quality"]} for example in TRAINING_DATASET]
+            preview = [{**{key: example[key] for key in ["id", "sector", "stage", "rating", "quality"]}, "pitch_preview": example["pitch"][:220]} for example in TRAINING_DATASET]
             return self._json_response({"stats": DATASET_PROFILE["stats"], "examples": preview})
         self._json_response({"error": "Not found"}, 404)
 
@@ -584,9 +520,9 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/api/analyze/pro":
             return self._json_response({
-                "error": "Pro API backend is not connected yet.",
-                "todo": "Plug your hosted model into this endpoint and return the same schema as the free endpoints.",
-                "fix": "Use the integrated local scoring and embedded dataset until the paid model is ready."
+                "error": "Pro mode is coming soon.",
+                "todo": "Wire a hosted model into this endpoint and keep the same response schema.",
+                "fix": "Use the integrated local text/video analysis modes for now."
             }, 501)
 
         self._json_response({"error": "Not found"}, 404)

@@ -46,6 +46,18 @@ class BackendAnalysisTests(unittest.TestCase):
         self.assertIn("visual_clarity", result["categories"])
         self.assertIn("visual_metrics", result)
 
+
+    def test_training_dataset_preview_contains_pitch_preview(self):
+        handler = backend.Handler
+        self.assertTrue(callable(getattr(handler, 'do_GET', None)))
+        preview = [{**{key: example[key] for key in ['id', 'sector', 'stage', 'rating', 'quality']}, 'pitch_preview': example['pitch'][:220]} for example in backend.TRAINING_DATASET]
+        self.assertIn('pitch_preview', preview[0])
+        self.assertGreater(len(preview[0]['pitch_preview']), 20)
+
+    def test_options_and_health_support_cross_origin_frontend(self):
+        self.assertTrue(hasattr(backend.Handler, 'do_OPTIONS'))
+        self.assertIn('rows', backend.DATASET_PROFILE['stats'])
+
     def test_rewrite_and_fix_plan_are_generated(self):
         result = backend.analyze_text({"text": WEAK_TEXT, "sector": "general", "stage": "idea"})
         self.assertTrue(result["rewrite_suggestion"])
