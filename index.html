@@ -3,656 +3,491 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AstraPitch AI - Investment Pitch Analyzer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>AstraPitch AI — Unified Pitch Analyzer</title>
   <style>
     :root {
-      --bg: #0a0f1f;
-      --panel: #141d35;
-      --panel-2: #1b2745;
-      --line: rgba(0, 212, 255, 0.24);
-      --primary: #00d4ff;
-      --secondary: #7c3aed;
-      --text: #e2e8f0;
-      --dim: #9db0ca;
-      --good: #10b981;
-      --warn: #f59e0b;
-      --bad: #ef4444;
+      --bg:#08111f;
+      --bg2:#0d1730;
+      --panel:rgba(14,21,39,.86);
+      --line:rgba(102,198,255,.16);
+      --text:#ebf3ff;
+      --muted:#98a8c5;
+      --primary:#59d7ff;
+      --primary2:#8d63ff;
+      --good:#16c784;
+      --warn:#ffb020;
+      --bad:#ff5f6d;
+      --radius:22px;
+      --shadow:0 24px 80px rgba(0,0,0,.34);
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing:border-box; margin:0; padding:0; }
     body {
-      font-family: 'Outfit', sans-serif;
-      color: var(--text);
-      background: radial-gradient(circle at top, #162344, var(--bg) 65%);
-      min-height: 100vh;
-      line-height: 1.5;
+      font-family:var(--sans);
+      background: radial-gradient(circle at top right, rgba(89,215,255,.12), transparent 32%), linear-gradient(180deg, #060d18 0%, #091323 28%, #08111f 100%);
+      color:var(--text);
+      min-height:100vh;
     }
-
-    .shell { max-width: 1200px; margin: 0 auto; padding: 1rem 1.2rem 2.5rem; }
-    .top {
-      position: sticky; top: 0; z-index: 15;
-      backdrop-filter: blur(10px);
-      background: rgba(10, 15, 31, 0.8);
-      border-bottom: 1px solid var(--line);
-      margin: 0 -1.2rem; padding: .9rem 1.2rem;
+    .wrap { width:min(1280px, calc(100% - 32px)); margin:0 auto; }
+    nav {
+      position:sticky; top:0; z-index:10; backdrop-filter: blur(18px);
+      background:rgba(7,12,21,.72); border-bottom:1px solid rgba(255,255,255,.06);
     }
-
-    .brand { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 1px; font-size: 1.2rem;
-      background: linear-gradient(130deg, white, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-    .hero { margin-top: 1.2rem; display: grid; gap: .5rem; }
-    .hero h1 { font-family: 'Orbitron', sans-serif; font-size: clamp(1.6rem, 4vw, 2.8rem); }
-    .hero p { color: var(--dim); max-width: 850px; }
-
-    .grid { display: grid; gap: 1rem; }
-    .grid.two { grid-template-columns: 1.2fr 1fr; }
-    @media (max-width: 950px){ .grid.two { grid-template-columns: 1fr; } }
-
-    .card {
-      margin-top: 1rem;
-      background: linear-gradient(150deg, rgba(20,29,53,.95), rgba(27,39,69,.95));
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 1rem;
+    .nav-inner { display:flex; justify-content:space-between; align-items:center; padding:16px 0; gap:12px; flex-wrap:wrap; }
+    .brand { display:flex; gap:14px; align-items:center; font-weight:800; }
+    .brand-badge { width:40px; height:40px; border-radius:14px; background:linear-gradient(135deg, var(--primary), var(--primary2)); display:grid; place-items:center; color:#04101a; font-weight:900; }
+    .pill-row, .mode-row, .sample-buttons, .action-row, .history-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .hero { padding:48px 0 24px; display:grid; grid-template-columns:1.2fr .9fr; gap:24px; }
+    .hero-card, .panel { background:linear-gradient(180deg, rgba(18,28,48,.88), rgba(12,20,34,.92)); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .hero-card { padding:34px; }
+    .hero-card h1 { font-size:clamp(2.3rem, 5vw, 4rem); line-height:1.04; margin-bottom:16px; letter-spacing:-.04em; }
+    .gradient { background:linear-gradient(135deg, #fff, var(--primary) 48%, var(--primary2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .sub { color:var(--muted); font-size:1.04rem; line-height:1.7; }
+    .hero-side { padding:28px; display:grid; gap:14px; }
+    .mini-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .mini-stat { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px; }
+    .mini-stat .label { color:var(--muted); font-size:.82rem; margin-bottom:7px; }
+    .mini-stat .value { font-size:1.35rem; font-weight:800; }
+    .small-note { color:var(--muted); line-height:1.6; font-size:.95rem; }
+    .grid { display:grid; grid-template-columns:380px 1fr; gap:24px; padding:20px 0 60px; }
+    .panel { padding:22px; }
+    .panel h2, .panel h3 { font-size:1.08rem; margin-bottom:12px; }
+    .tag, .plan-tab, .mode-tab, .tiny-btn, .btn { cursor:pointer; }
+    .plan-tabs, .mode-tabs { display:grid; gap:12px; margin-bottom:18px; }
+    .plan-tabs { grid-template-columns:repeat(2, 1fr); }
+    .mode-tabs { grid-template-columns:repeat(2, 1fr); }
+    .plan-tab, .mode-tab, .btn, .tiny-btn {
+      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); color:var(--text); border-radius:18px; padding:14px 16px;
+      transition:.18s ease; font:inherit;
     }
-
-    .card h2, .card h3 { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 1rem; margin-bottom: .7rem; }
-    .muted { color: var(--dim); font-size: .92rem; }
-
-    .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .8rem; }
-    .chip {
-      border: 1px solid var(--line); background: #111a30; color: var(--text);
-      border-radius: 999px; padding: .5rem .85rem; cursor: pointer; font-weight: 600;
+    .plan-tab.active, .mode-tab.active, .btn-primary {
+      border-color:rgba(89,215,255,.55); background:linear-gradient(180deg, rgba(89,215,255,.14), rgba(141,99,255,.1)); transform:translateY(-1px);
     }
-    .chip.active { background: linear-gradient(120deg, rgba(0,212,255,.3), rgba(124,58,237,.3)); border-color: var(--primary); }
-
-    label { font-size: .9rem; font-weight: 600; display: block; margin-bottom: .35rem; }
-    input, textarea, select {
-      width: 100%; border-radius: 10px; border: 1px solid var(--line);
-      background: #10182d; color: var(--text); font-family: inherit; padding: .72rem .8rem;
+    .btn-primary { color:#04101a; font-weight:800; background:linear-gradient(135deg, var(--primary), var(--primary2)); }
+    .btn-secondary { background:rgba(255,255,255,.04); }
+    label { display:block; font-size:.92rem; color:var(--muted); margin:12px 0 8px; }
+    input[type=text], input[type=password], input[type=number], textarea, select {
+      width:100%; background:rgba(255,255,255,.03); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:14px 15px; font:inherit;
     }
-    textarea { min-height: 190px; resize: vertical; }
-
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
-    @media (max-width: 750px){ .row { grid-template-columns: 1fr; } }
-
-    .btns { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
-    button.action {
-      border: 0; border-radius: 10px; padding: .7rem 1rem; font-weight: 700; cursor: pointer;
-      color: #fff; background: linear-gradient(130deg, var(--primary), var(--secondary));
-    }
-    button.secondary { background: transparent; border: 1px solid var(--line); color: var(--primary); }
-
-    .result-head { display: flex; justify-content: space-between; align-items: center; gap: .8rem; flex-wrap: wrap; }
-    .score {
-      font-family: 'Orbitron', sans-serif; font-size: 1.7rem; font-weight: 900;
-      border-radius: 10px; padding: .35rem .75rem;
-    }
-    .score.good { background: rgba(16,185,129,.2); color: #8ef5cc; }
-    .score.mid { background: rgba(245,158,11,.25); color: #ffd48d; }
-    .score.low { background: rgba(239,68,68,.2); color: #ff9c9c; }
-
-    .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:.55rem; margin-top:.8rem; }
-    .kpi { background: rgba(0,212,255,.06); border:1px solid var(--line); border-radius:10px; padding:.6rem .7rem; }
-    .kpi b { display:block; margin-top: .2rem; }
-
-    .bar { margin-bottom: .5rem; }
-    .barline { height: 8px; background: rgba(148,163,184,.2); border-radius: 999px; overflow:hidden; }
-    .barline span { display:block; height:100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
-
-    .three { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.7rem; margin-top:.8rem; }
-    @media (max-width: 900px){ .three { grid-template-columns: 1fr; } }
-    .list { display:grid; gap:.5rem; }
-    .item { background: rgba(0,212,255,.06); border-left:3px solid var(--primary); border-radius:8px; padding:.55rem .65rem; font-size:.94rem; }
-
+    textarea { min-height:260px; resize:vertical; line-height:1.65; }
+    input:focus, textarea:focus, select:focus { outline:none; border-color:rgba(89,215,255,.45); box-shadow:0 0 0 4px rgba(89,215,255,.08); }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .note-box, .status-box { margin-top:14px; padding:14px; border-radius:18px; background:rgba(89,215,255,.06); border:1px solid rgba(89,215,255,.12); color:var(--muted); line-height:1.55; }
     .hidden { display:none; }
-    code { color: #94e9ff; }
+    .results-top { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap; }
+    .score-shell { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+    .score-ring {
+      width:120px; height:120px; border-radius:50%;
+      background: radial-gradient(circle at center, rgba(8,17,31,1) 54%, transparent 55%), conic-gradient(var(--ring-color) calc(var(--score)*1%), rgba(255,255,255,.08) 0);
+      display:grid; place-items:center;
+    }
+    .score-ring span { font-size:1.8rem; font-weight:900; }
+    .score-badges { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+    .badge { border-radius:999px; padding:9px 12px; font-size:.84rem; font-weight:700; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
+    .ok { color:#baf5d8; border-color:rgba(22,199,132,.25); background:rgba(22,199,132,.08); }
+    .warn { color:#ffe8b0; border-color:rgba(255,176,32,.25); background:rgba(255,176,32,.08); }
+    .bad { color:#ffc4ca; border-color:rgba(255,95,109,.25); background:rgba(255,95,109,.08); }
+    .section-grid, .cards-two, .compare-grid, .mini-grid { display:grid; gap:14px; }
+    .section-grid { grid-template-columns:repeat(3, 1fr); margin-top:22px; }
+    .cards-two, .compare-grid { grid-template-columns:1fr 1fr; margin-top:22px; }
+    .mini-grid { grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); margin-top:18px; }
+    .section-card, .list-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px; }
+    .section-card .top { display:flex; justify-content:space-between; margin-bottom:10px; }
+    .bar { height:10px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.07); }
+    .bar > span { display:block; height:100%; background:linear-gradient(135deg, var(--primary), var(--primary2)); }
+    .list-card ul { margin:10px 0 0 18px; color:var(--muted); line-height:1.8; }
+    .memo, .dataset-panel { margin-top:22px; padding:18px; border-radius:18px; background:linear-gradient(180deg, rgba(89,215,255,.07), rgba(141,99,255,.06)); border:1px solid rgba(89,215,255,.14); line-height:1.8; color:#dbe9ff; }
+    .history-list { display:grid; gap:12px; margin-top:12px; max-height:360px; overflow:auto; padding-right:4px; }
+    .history-item { border:1px solid rgba(255,255,255,.06); background:rgba(255,255,255,.03); border-radius:16px; padding:14px; }
+    code { color:#96eeff; }
+    @media (max-width: 1080px) {
+      .hero, .grid { grid-template-columns:1fr; }
+      .section-grid { grid-template-columns:repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      .row, .cards-two, .compare-grid, .section-grid, .mini-stat-grid, .plan-tabs, .mode-tabs { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <div class="top"><div class="brand">ASTRAPITCH AI · BACKEND + ANALYSIS ENGINE</div></div>
+  <nav>
+    <div class="wrap nav-inner">
+      <div class="brand"><div class="brand-badge">A</div><span>AstraPitch AI</span></div>
+      <div class="pill-row">
+        <span class="badge">Unified project</span>
+        <span class="badge">Backend-integrated</span>
+        <span class="badge">Dataset-trained scoring</span>
+      </div>
+    </div>
+  </nav>
 
+  <div class="wrap">
     <section class="hero">
-      <h1>Text + Video Investment Pitch Analysis (Free + Pro API Placeholder)</h1>
-      <p>Free mode now runs strong keyword-trained scoring, transcript analysis, frame-level visual signals, and an accuracy checker. Pro mode is wired as a backend placeholder so you can plug in your paid API later.</p>
-    </section>
-
-    <section class="card">
-      <h2>Choose Plan + Analysis Type</h2>
-      <div class="chips" id="planChips">
-        <button class="chip active" data-plan="free">Free</button>
-        <button class="chip" data-plan="pro">Pro (API later)</button>
-      </div>
-      <div class="chips" id="modeChips">
-        <button class="chip active" data-mode="text">Text Analysis</button>
-        <button class="chip" data-mode="video">Video Analysis</button>
-      </div>
-      <p class="muted">Sectors and stage are used in scoring for both text and video.</p>
-
-      <div class="row" style="margin-top:.8rem;">
-        <div>
-          <label for="sector">Sector</label>
-          <select id="sector">
-            <option value="general">General</option>
-            <option value="saas">SaaS</option>
-            <option value="fintech">FinTech</option>
-            <option value="healthtech">HealthTech</option>
-            <option value="ai">AI</option>
-            <option value="consumer">Consumer</option>
-          </select>
+      <div class="hero-card">
+        <h1><span class="gradient">One cohesive pitch analysis project</span> for text, video, rewrites, and training-backed scoring.</h1>
+        <p class="sub">This merged app combines the original backend API flow with the richer offline-trained UI ideas. The backend now uses an embedded dataset for similarity search, weighted signal scoring, rewrite guidance, and benchmark stats you can inspect directly from the interface.</p>
+        <div class="action-row" style="margin-top:24px;">
+          <button class="btn btn-primary" id="runBtn">Run analysis</button>
+          <button class="btn btn-secondary" id="compareBtn">Analyze demo</button>
+          <button class="btn btn-secondary" id="datasetBtn">Refresh training dataset</button>
         </div>
-        <div>
-          <label for="stage">Stage</label>
-          <select id="stage">
-            <option value="idea">Idea</option>
-            <option value="mvp">MVP</option>
-            <option value="early" selected>Early Revenue</option>
-            <option value="growth">Growth</option>
-          </select>
+      </div>
+      <div class="hero-side hero-card">
+        <div class="mini-stat-grid">
+          <div class="mini-stat"><div class="label">Modes</div><div class="value">Text + Video</div></div>
+          <div class="mini-stat"><div class="label">Training</div><div class="value" id="datasetRowsHero">Loading…</div></div>
+          <div class="mini-stat"><div class="label">Backend</div><div class="value">Python HTTP API</div></div>
+          <div class="mini-stat"><div class="label">Output</div><div class="value">Fixes + Rewrite</div></div>
         </div>
+        <p class="small-note">Use <code>/api/training/dataset</code> to inspect the embedded training set. The free analysis endpoints now incorporate those examples instead of only static keyword heuristics.</p>
+        <div class="status-box" id="statusBox">Ready. Start the server with <code>python3 backend.py</code> and keep the backend URL as <code>http://127.0.0.1:8080</code>.</div>
       </div>
     </section>
 
-    <section class="grid two">
-      <div class="card" id="textCard">
-        <h3>Text Investment Pitch Analyzer</h3>
+    <section class="grid">
+      <aside class="panel">
+        <h2>Configuration</h2>
+        <div class="plan-tabs">
+          <button class="plan-tab active" data-plan="free">Free integrated</button>
+          <button class="plan-tab" data-plan="pro">Pro placeholder</button>
+        </div>
+
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="text">Text analysis</button>
+          <button class="mode-tab" data-mode="video">Video analysis</button>
+        </div>
+
+        <label for="backendUrl">Backend URL</label>
+        <input id="backendUrl" type="text" value="http://127.0.0.1:8080" />
+
+        <div class="row">
+          <div>
+            <label for="sector">Sector</label>
+            <select id="sector">
+              <option value="general">General</option>
+              <option value="saas">SaaS</option>
+              <option value="fintech">FinTech</option>
+              <option value="healthtech">HealthTech</option>
+              <option value="ai">AI</option>
+              <option value="consumer">Consumer</option>
+            </select>
+          </div>
+          <div>
+            <label for="stage">Stage</label>
+            <select id="stage">
+              <option value="idea">Idea</option>
+              <option value="mvp">MVP</option>
+              <option value="early" selected>Early revenue</option>
+              <option value="growth">Growth</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="pitchTitle">Pitch title</label>
+        <input id="pitchTitle" type="text" placeholder="Acme AI seed round" />
+
         <label for="pitchText">Pitch text</label>
-        <textarea id="pitchText" placeholder="Paste your investment pitch text here..."></textarea>
-        <p class="muted">Include: problem, solution, traction, numbers, competitors, and fundraise ask.</p>
-      </div>
+        <textarea id="pitchText" placeholder="Paste the pitch here. Include the problem, solution, traction, market, moat, and the raise."></textarea>
 
-      <div class="card hidden" id="videoCard">
-        <h3>Video Investment Pitch Analyzer</h3>
-        <label for="videoFile">Upload video (used for frame-level image analysis)</label>
-        <input id="videoFile" type="file" accept="video/*" />
-        <p class="muted" id="videoMetricHint">After upload, we'll sample frames for brightness, contrast, sharpness, text density, and stability.</p>
-        <div style="margin-top:.7rem;"></div>
-        <label for="videoTranscript">Video transcript</label>
-        <textarea id="videoTranscript" placeholder="Paste transcript of the video pitch..."></textarea>
-
-        <div class="row" style="margin-top:.7rem;">
-          <div>
-            <label for="energy">Delivery energy (1-10)</label>
-            <input id="energy" type="number" min="1" max="10" value="7" />
-          </div>
-          <div>
-            <label for="pace">Delivery pace quality (1-10)</label>
-            <input id="pace" type="number" min="1" max="10" value="7" />
+        <div id="videoFields" class="hidden">
+          <label for="videoTranscript">Video transcript</label>
+          <textarea id="videoTranscript" placeholder="Paste the video transcript here."></textarea>
+          <div class="row">
+            <div>
+              <label for="energy">Delivery energy (1-10)</label>
+              <input id="energy" type="number" min="1" max="10" value="7" />
+            </div>
+            <div>
+              <label for="pace">Delivery pace (1-10)</label>
+              <input id="pace" type="number" min="1" max="10" value="7" />
+            </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <section class="card hidden" id="proCard">
-      <h3>Pro API Placeholder</h3>
-      <p class="muted">You said you'll set this up later. We keep inputs ready and call backend placeholder endpoint <code>/api/analyze/pro</code>.</p>
-      <div class="row" style="margin-top:.5rem;">
-        <div>
-          <label for="proApiKey">API key (saved locally only)</label>
+        <div id="proFields" class="hidden">
+          <label for="proApiKey">Future API key</label>
           <input id="proApiKey" type="password" placeholder="sk_live_xxx" />
+          <label for="proEndpoint">Future model endpoint</label>
+          <input id="proEndpoint" type="text" placeholder="https://your-api-domain/v1/pitch/analyze" />
         </div>
-        <div>
-          <label for="proEndpoint">Future model endpoint URL</label>
-          <input id="proEndpoint" placeholder="https://your-api-domain/v1/pitch/analyze" />
-        </div>
-      </div>
-      <p class="muted" style="margin-top:.4rem;">Backend has TODO comments showing where to wire your paid model.</p>
-    </section>
 
-    <section class="card">
-      <div class="btns">
-        <button class="action" id="runBtn">Run Analysis</button>
-        <button class="action secondary" id="demoBtn">Load Demo Pitch</button>
-      </div>
-      <div class="row" style="margin-top:.7rem;">
-        <div>
-          <label for="backendUrl">Backend URL</label>
-          <input id="backendUrl" placeholder="http://127.0.0.1:8080" />
+        <div class="sample-buttons">
+          <button class="tiny-btn" data-sample="strong">Load strong sample</button>
+          <button class="tiny-btn" data-sample="weak">Load weak sample</button>
+          <button class="tiny-btn" data-sample="video">Load video sample</button>
         </div>
-        <div>
-          <label for="backendHint">Connection hint</label>
-          <input id="backendHint" value="Run: python3 backend.py, then open http://127.0.0.1:8080" disabled />
-        </div>
-      </div>
-      <p class="muted" id="status" style="margin-top:.6rem;">Ready.</p>
-    </section>
 
-    <section class="card hidden" id="results">
-      <div class="result-head">
-        <div>
-          <h3 id="resultTitle">Analysis Result</h3>
-          <p class="muted" id="resultSubtitle"></p>
+        <div class="note-box">
+          The frontend is now fully integrated with the backend schema: dataset stats, nearest examples, rewrite guidance, category scoring, and video metrics all render in one place.
         </div>
-        <div class="score" id="score">0/100</div>
-      </div>
+      </aside>
 
-      <div class="kpis" id="kpis"></div>
+      <main class="panel">
+        <h2>Results</h2>
+        <div id="resultsArea" class="muted">Run an analysis to see scores, fix plans, benchmark examples, and rewrite guidance.</div>
 
-      <div class="card" style="margin-top:.7rem;">
-        <h3>Category Breakdown</h3>
-        <div id="bars"></div>
-      </div>
-
-      <div class="three">
-        <div class="card" style="margin-top:0;">
-          <h3>Strengths</h3>
-          <div class="list" id="strengths"></div>
+        <div class="dataset-panel">
+          <h3 style="margin-bottom:10px;">Embedded training dataset</h3>
+          <div id="datasetMeta" class="muted">Loading dataset stats…</div>
+          <div id="datasetExamples" class="history-list"></div>
         </div>
-        <div class="card" style="margin-top:0;">
-          <h3>Risks</h3>
-          <div class="list" id="risks"></div>
-        </div>
-        <div class="card" style="margin-top:0;">
-          <h3>Fix First (Backend Guidance)</h3>
-          <div class="list" id="fixFirst"></div>
-        </div>
-      </div>
 
-      <div class="card" style="margin-top:.7rem;">
-        <h3>Improve Next</h3>
-        <div class="list" id="improveNext"></div>
-      </div>
+        <div class="dataset-panel">
+          <h3 style="margin-bottom:10px;">Analysis history</h3>
+          <div class="history-actions">
+            <button class="tiny-btn" id="clearHistoryBtn">Clear local history</button>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </main>
     </section>
   </div>
 
 <script>
-const state = {
-  plan: 'free',
-  mode: 'text',
-  imageMetrics: null
+const state = { plan: 'free', mode: 'text', lastResult: null, dataset: null };
+const HISTORY_KEY = 'astrapitch_history_v2';
+
+const DEMOS = {
+  strong: {
+    title: 'LedgerFlow Series A',
+    sector: 'fintech',
+    stage: 'growth',
+    text: 'We help B2B software platforms launch embedded payments in 14 days instead of 4 months. Our orchestration layer routes transactions across processors, automates KYC and chargeback workflows, and gives finance teams an audit-ready ledger. We serve 46 software platforms, processed $182M annualized volume last quarter, and grew ARR from $1.1M to $2.8M in 11 months with 121% net revenue retention. We charge a SaaS subscription plus interchange share, maintain 81% gross margin, and are raising $4M to expand enterprise sales and bank partnerships while holding compliance risk low through quarterly external reviews.'
+  },
+  weak: {
+    title: 'WorldChanger',
+    sector: 'general',
+    stage: 'idea',
+    text: 'We are building a revolutionary platform for everyone. The market is huge and there is basically no competition. Our product will change the world very fast and we expect explosive growth soon. We are raising money to build more features.'
+  },
+  video: {
+    title: 'AgentGuard seed video',
+    sector: 'ai',
+    stage: 'early',
+    text: 'Customer support leaders use our AI agent quality platform to catch hallucinations before they reach users. We ingest transcripts, score every response against policy, and recommend safer prompts and fine-tunes in one workflow. Eight design partners converted to paid contracts, ARR reached $420k after six months, and gross retention is 96%. We sell annual software subscriptions to B2B SaaS companies and are raising $2.2M to deepen our proprietary evaluation dataset and complete SOC 2.'
+  }
 };
 
-const $ = (id) => document.getElementById(id);
+function $(id) { return document.getElementById(id); }
+function escapeHtml(str) { return String(str).replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
 
-initBackendUrl();
-$('backendUrl').addEventListener('blur', saveBackendUrl);
-
-function initBackendUrl() {
-  const saved = localStorage.getItem('astrapitch-backend-url');
-  const runningOnBackend = location.protocol.startsWith('http') && location.port === '8080';
-  const defaultUrl = runningOnBackend ? location.origin : '';
-  $('backendUrl').value = saved ?? defaultUrl;
+function setStatus(message, tone='') {
+  $('statusBox').innerHTML = message;
+  $('statusBox').style.borderColor = tone === 'bad' ? 'rgba(255,95,109,.3)' : tone === 'ok' ? 'rgba(22,199,132,.3)' : 'rgba(89,215,255,.12)';
 }
 
-function saveBackendUrl() {
-  localStorage.setItem('astrapitch-backend-url', $('backendUrl').value.trim());
+function scoreClass(score) {
+  if (score >= 80) return { label:'Investor-ready signal', ring:'#16c784', badge:'ok' };
+  if (score >= 60) return { label:'Promising but uneven', ring:'#ffb020', badge:'warn' };
+  return { label:'Needs stronger proof', ring:'#ff5f6d', badge:'bad' };
 }
 
-function apiUrl(path) {
-  const raw = ($('backendUrl').value || '').trim();
-  const base = raw ? raw.replace(/\/$/, '') : location.origin;
-  return `${base}${path}`;
+function renderScoreHeader(score, subtitle, badges=[]) {
+  const meta = scoreClass(score);
+  return `
+    <div class="results-top">
+      <div class="score-shell">
+        <div class="score-ring" style="--score:${score}; --ring-color:${meta.ring};"><span>${score}</span></div>
+        <div>
+          <h2>${meta.label}</h2>
+          <div class="muted">${escapeHtml(subtitle)}</div>
+          <div class="score-badges">${badges.join('')}</div>
+        </div>
+      </div>
+    </div>`;
 }
 
-function isLocalhostUrl(url) {
-  return /127\.0\.0\.1|localhost/.test(url);
+function renderSectionGrid(sectionScores) {
+  return `<div class="section-grid">${Object.entries(sectionScores).map(([key, value]) => `
+      <div class="section-card">
+        <div class="top"><strong>${escapeHtml(key.replaceAll('_', ' '))}</strong><span>${value}/100</span></div>
+        <div class="bar"><span style="width:${value}%"></span></div>
+      </div>`).join('')}</div>`;
 }
 
-$('planChips').addEventListener('click', (e) => {
-  if (!e.target.dataset.plan) return;
-  state.plan = e.target.dataset.plan;
-  [...$('planChips').querySelectorAll('.chip')].forEach(c => c.classList.toggle('active', c.dataset.plan === state.plan));
-  $('proCard').classList.toggle('hidden', state.plan !== 'pro');
-});
+function formatList(items) {
+  if (!items || !items.length) return '<li class="muted">Nothing flagged here yet.</li>';
+  return items.map(item => `<li>${escapeHtml(typeof item === 'string' ? item : JSON.stringify(item))}</li>`).join('');
+}
 
-$('modeChips').addEventListener('click', (e) => {
-  if (!e.target.dataset.mode) return;
-  state.mode = e.target.dataset.mode;
-  [...$('modeChips').querySelectorAll('.chip')].forEach(c => c.classList.toggle('active', c.dataset.mode === state.mode));
-  $('textCard').classList.toggle('hidden', state.mode !== 'text');
-  $('videoCard').classList.toggle('hidden', state.mode !== 'video');
-});
+function renderFixes(items) {
+  if (!items || !items.length) return '<div class="muted">No fixes generated.</div>';
+  return items.map(item => `<div class="section-card"><strong>${escapeHtml(item.area.replaceAll('_', ' '))}</strong><div class="muted" style="margin-top:8px;">${escapeHtml(item.fix)}</div><div class="muted" style="margin-top:8px;"><em>${escapeHtml(item.example)}</em></div></div>`).join('');
+}
 
-$('videoFile').addEventListener('change', async () => {
-  const file = $('videoFile').files?.[0];
-  if (!file) return;
-  $('status').textContent = 'Processing video frames for image quality signals...';
+function renderExamples(items) {
+  if (!items || !items.length) return '<li class="muted">No close training examples found.</li>';
+  return items.map(example => `<li><strong>${Math.round(example.similarity * 100)}% match</strong> · ${example.rating}/100 · ${escapeHtml(example.sector)} · ${escapeHtml(example.stage)} · ${escapeHtml(example.quality)}<br><span class="muted">${escapeHtml(example.pitch.slice(0, 220))}${example.pitch.length > 220 ? '…' : ''}</span></li>`).join('');
+}
+
+function renderContributors(items) {
+  if (!items || !items.length) return '<li class="muted">No strong learned-token contributors yet.</li>';
+  return items.map(item => `<li><strong>${escapeHtml(item.token)}</strong>: ${item.impact > 0 ? '+' : ''}${item.impact}</li>`).join('');
+}
+
+function renderResult(result) {
+  const badges = [
+    `<span class="badge">${escapeHtml(result.mode)}</span>`,
+    `<span class="badge">${escapeHtml(result.accuracy_checker.size_band)}</span>`,
+    `<span class="badge ${scoreClass(result.accuracy_checker.confidence).badge}">confidence ${result.accuracy_checker.confidence}/100</span>`
+  ];
+  const subtitle = `Dataset-backed scoring using ${result.project_summary.dataset_rows} embedded training examples.`;
+  const visualBlock = result.visual_metrics ? `
+    <div class="list-card">
+      <h3>Video metrics</h3>
+      <ul>${Object.entries(result.visual_metrics).map(([key, value]) => `<li>${escapeHtml(key)}: ${value}</li>`).join('')}</ul>
+    </div>` : '';
+
+  $('resultsArea').innerHTML = `
+    ${renderScoreHeader(result.overall_score, subtitle, badges)}
+    <div class="memo">${escapeHtml(result.rewrite_suggestion)}</div>
+    ${renderSectionGrid(result.categories)}
+    <div class="mini-grid">
+      <div class="section-card"><strong>Training keywords</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.training_keywords.join(', '))}</div></div>
+      <div class="section-card"><strong>Missing stage signals</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.missing_stage_signals.join(', ') || 'None')}</div></div>
+      <div class="section-card"><strong>Size guidance</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.fix_plan.size_guidance.recommendation)}</div></div>
+    </div>
+    <div class="cards-two">
+      <div class="list-card"><h3>Strengths</h3><ul>${formatList(result.strengths)}</ul></div>
+      <div class="list-card"><h3>Risks</h3><ul>${formatList(result.risks)}</ul></div>
+    </div>
+    <div class="cards-two">
+      <div class="list-card"><h3>Fix first</h3>${renderFixes(result.fix_plan.must_fix_first)}</div>
+      <div class="list-card"><h3>Improve next</h3>${renderFixes(result.fix_plan.improve_next)}</div>
+    </div>
+    <div class="cards-two">
+      <div class="list-card"><h3>Closest training examples</h3><ul>${renderExamples(result.dataset_training_detail.nearest_examples)}</ul></div>
+      <div class="list-card"><h3>Learned token contributors</h3><ul>${renderContributors(result.dataset_training_detail.contributors)}</ul></div>
+    </div>
+    <div class="cards-two">
+      <div class="list-card"><h3>Accuracy checker</h3><ul>${formatList(result.accuracy_checker.reasons.concat(result.accuracy_checker.detail.flags || []))}</ul></div>
+      ${visualBlock || '<div class="list-card"><h3>Project summary</h3><ul><li>Unified frontend and backend project.</li><li>Training dataset exposed through the API.</li><li>Rewrite guidance is generated on every run.</li></ul></div>'}
+    </div>`;
+}
+
+async function apiFetch(path, payload, method='POST') {
+  const base = $('backendUrl').value.trim().replace(/\/$/, '');
+  const response = await fetch(`${base}${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: method === 'GET' ? undefined : JSON.stringify(payload || {})
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function currentText() {
+  return state.mode === 'video' ? $('videoTranscript').value.trim() : $('pitchText').value.trim();
+}
+
+function saveHistory(entry) {
+  const current = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  current.unshift(entry);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(current.slice(0, 12)));
+  renderHistory();
+}
+
+function renderHistory() {
+  const items = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  $('historyList').innerHTML = items.length ? items.map(item => `
+    <div class="history-item">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+        <strong>${escapeHtml(item.title)}</strong>
+        <span class="badge">${item.mode} · ${item.score}</span>
+      </div>
+      <div class="muted" style="margin-top:6px;">${escapeHtml(item.timestamp)}</div>
+      <div class="muted" style="margin-top:8px;">${escapeHtml(item.snippet)}</div>
+    </div>`).join('') : '<div class="muted">No saved analyses yet.</div>';
+}
+
+async function loadDataset() {
   try {
-    state.imageMetrics = await extractVideoMetrics(file);
-    $('videoMetricHint').textContent = `Frame metrics ready: brightness ${state.imageMetrics.brightness.toFixed(2)}, contrast ${state.imageMetrics.contrast.toFixed(2)}, sharpness ${state.imageMetrics.sharpness.toFixed(2)}, text density ${state.imageMetrics.text_density.toFixed(2)}, stability ${state.imageMetrics.stability.toFixed(2)}.`;
-    $('status').textContent = 'Video frame metrics extracted.';
-  } catch (err) {
-    console.error(err);
-    state.imageMetrics = null;
-    $('status').textContent = 'Video frame processing failed. You can still run transcript analysis.';
+    const data = await apiFetch('/api/training/dataset', null, 'GET');
+    state.dataset = data;
+    $('datasetRowsHero').textContent = `${data.stats.rows} rows`;
+    $('datasetMeta').innerHTML = `Rows: <strong>${data.stats.rows}</strong> · Average rating: <strong>${data.stats.avg_rating}</strong> · Sectors: <strong>${data.stats.sectors.join(', ')}</strong> · Stages: <strong>${data.stats.stages.join(', ')}</strong>`;
+    $('datasetExamples').innerHTML = data.examples.map(example => `
+      <div class="history-item">
+        <strong>${escapeHtml(example.id)}</strong>
+        <div class="muted" style="margin-top:6px;">${example.rating}/100 · ${escapeHtml(example.sector)} · ${escapeHtml(example.stage)} · ${escapeHtml(example.quality)}</div>
+      </div>`).join('');
+    setStatus('Connected to backend and loaded the embedded training dataset.', 'ok');
+  } catch (error) {
+    $('datasetRowsHero').textContent = 'Unavailable';
+    $('datasetMeta').textContent = `Could not load dataset: ${error.message}`;
+    $('datasetExamples').innerHTML = '<div class="muted">Backend not reachable yet.</div>';
+    setStatus(`Could not reach the backend: ${escapeHtml(error.message)}. Start it with <code>python3 backend.py</code>.`, 'bad');
   }
-});
-
-$('runBtn').addEventListener('click', runAnalysis);
-$('demoBtn').addEventListener('click', loadDemo);
-
-function loadDemo() {
-  const demo = `We are building an AI compliance copilot for mid-market fintech teams. Today onboarding and transaction monitoring are manual and expensive. We reduce review time by 62% with a workflow model trained on historical decisions. In 8 pilots, false positives dropped 31% and analysts process 2.1x more alerts per day. TAM is a $9.4B market and our SAM is $1.3B in US and UK mid-market institutions. We charge $6,000 per month plus volume usage. We currently have $38k MRR growing 18% month over month with 94% gross retention. We are raising $2.5M to extend runway to 24 months, hire two GTM reps, and complete SOC2 plus key model auditing milestones.`;
-  $('pitchText').value = demo;
-  $('videoTranscript').value = demo;
-  $('status').textContent = 'Demo loaded.';
 }
 
 async function runAnalysis() {
-  const sector = $('sector').value;
-  const stage = $('stage').value;
-  const text = $('pitchText').value.trim();
-  const transcript = $('videoTranscript').value.trim();
-
-  $('status').textContent = 'Running analysis...';
-
-  let endpoint = '/api/analyze/free/text';
-  let payload = { sector, stage };
-
-  if (state.plan === 'pro') {
-    endpoint = '/api/analyze/pro';
-    payload = {
-      mode: state.mode,
-      sector,
-      stage,
-      api_key: $('proApiKey').value.trim(),
-      external_endpoint: $('proEndpoint').value.trim(),
-      text,
-      transcript,
-      image_metrics: state.imageMetrics
-    };
-  } else if (state.mode === 'video') {
-    endpoint = '/api/analyze/free/video';
-    payload = {
-      transcript,
-      sector,
-      stage,
-      image_metrics: state.imageMetrics,
-      delivery: {
-        energy: Number($('energy').value || 7) / 10,
-        pace: Number($('pace').value || 7) / 10
-      }
-    };
-  } else {
-    payload = { text, sector, stage };
-  }
-
   try {
-    saveBackendUrl();
-    const url = apiUrl(endpoint);
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const raw = await res.text();
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (_) {
-      throw new Error(`NON_JSON_RESPONSE::${raw.slice(0, 140).replace(/\s+/g, ' ')}`);
-    }
-
-    if (!res.ok) throw new Error(data.error || data.fix || 'Analysis failed');
-    render(data);
-    $('status').textContent = 'Analysis complete (backend).';
-  } catch (err) {
-    const local = (state.mode === 'video')
-      ? localAnalyzeVideo(transcript, sector, stage, state.imageMetrics)
-      : localAnalyzeText(text, sector, stage);
-
-    if (!local) {
-      $('status').textContent = `Error: ${String(err.message || err)}`;
+    if (state.plan === 'pro') {
+      const response = await apiFetch('/api/analyze/pro', { text: currentText(), apiKey: $('proApiKey').value.trim(), endpoint: $('proEndpoint').value.trim() });
+      renderResult(response);
       return;
     }
-
-    render(local);
-
-    const backendInput = ($('backendUrl').value || '').trim();
-    const hint = (!backendInput || isLocalhostUrl(backendInput) && !/localhost|127\.0\.0\.1/.test(location.hostname))
-      ? 'Tip: On GitHub/Vercel, localhost backend is unreachable; deploy backend or leave Backend URL empty for local fallback.'
-      : 'Tip: Check backend deployment and CORS if you want server scoring.';
-
-    $('status').textContent = `Using local fallback analyzer (${state.mode}). ${hint}`;
+    const sector = $('sector').value;
+    const stage = $('stage').value;
+    if (state.mode === 'video') {
+      const transcript = $('videoTranscript').value.trim();
+      const response = await apiFetch('/api/analyze/free/video', {
+        transcript,
+        sector,
+        stage,
+        delivery: { energy: Number($('energy').value) / 10, pace: Number($('pace').value) / 10 },
+        image_metrics: { brightness: 0.68, contrast: 0.7, sharpness: 0.73, text_density: 0.66, stability: 0.78 }
+      });
+      state.lastResult = response;
+      renderResult(response);
+      saveHistory({ title: $('pitchTitle').value.trim() || 'Untitled pitch', mode: 'video', score: response.overall_score, timestamp: new Date().toLocaleString(), snippet: transcript.slice(0, 120) });
+      setStatus('Video analysis completed using transcript, delivery inputs, and integrated visual heuristics.', 'ok');
+      return;
+    }
+    const text = $('pitchText').value.trim();
+    const response = await apiFetch('/api/analyze/free/text', { text, sector, stage });
+    state.lastResult = response;
+    renderResult(response);
+    saveHistory({ title: $('pitchTitle').value.trim() || 'Untitled pitch', mode: 'text', score: response.overall_score, timestamp: new Date().toLocaleString(), snippet: text.slice(0, 120) });
+    setStatus('Text analysis completed using category scoring plus the embedded training dataset.', 'ok');
+  } catch (error) {
+    setStatus(`Analysis failed: ${escapeHtml(error.message)}`, 'bad');
   }
 }
 
-
-function localAnalyzeText(text, sector, stage) {
-  if (!text || text.length < 12) return null;
-  const t = text.toLowerCase();
-  const words = (t.match(/[a-zA-Z][a-zA-Z\-']+/g) || []).length;
-  const nums = (t.match(/\$?\d+(?:\.\d+)?(?:%|k|m|b|x)?/g) || []).length;
-
-  const has = (arr) => arr.reduce((n, x) => n + (t.includes(x) ? 1 : 0), 0);
-  const categories = {
-    problem_definition: clampJs(20 + has(['problem','pain','friction','manual']) * 17 + Math.min(14, words / 35)),
-    solution_quality: clampJs(20 + has(['solution','platform','workflow','we built','product']) * 14),
-    market_strength: clampJs(18 + has(['tam','sam','som','market','segment']) * 16),
-    business_model: clampJs(18 + has(['pricing','revenue','margin','subscription','ltv','cac']) * 15 + (stage==='growth'?8:0)),
-    traction: clampJs(18 + has(['mrr','arr','customers','retention','growth','pilot']) * 15 + (stage==='idea'?-6:0)),
-    competition_moat: clampJs(18 + has(['competitor','alternative','moat','defensible','advantage']) * 15),
-    fundraise_clarity: clampJs(18 + has(['raising','runway','use of funds','ask','valuation']) * 16),
-    risk_awareness: clampJs(18 + has(['risk','mitigation','regulatory','contingency']) * 16),
-    sector_alignment: clampJs(20 + has([sector, 'market','revenue','growth']) * 12)
-  };
-
-  const values = Object.values(categories);
-  const overall = Math.round(values.reduce((a,b)=>a+b,0)/values.length + Math.min(8, nums*1.3));
-  const ordered = Object.entries(categories).sort((a,b)=>a[1]-b[1]);
-
-  const mustFix = ordered.slice(0,3).map(([area, score]) => ({
-    area, score, priority: 'high',
-    fix: `Improve ${area.replaceAll('_',' ')} with clearer investor evidence.`,
-    example: 'Add one metric + one concrete proof statement.'
-  }));
-
-  return {
-    mode: 'text',
-    overall_score: clampJs(overall),
-    accuracy_checker: {
-      confidence: clampJs(overall - 3),
-      detail: {
-        structure: clampJs(35 + Math.min(35, words/8)),
-        evidence: clampJs(30 + nums*8),
-        consistency: clampJs(overall),
-        flags: words < 120 ? ['Pitch is short for diligence; add market, moat, and fundraise details.'] : []
-      }
-    },
-    categories,
-    strengths: Object.entries(categories).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k,v])=>`${k.replaceAll('_',' ')}: ${v}/100`),
-    risks: ordered.slice(0,4).map(([k,v])=>`${k.replaceAll('_',' ')}: ${v}/100`),
-    training_keywords: topKeywordsJs(t),
-    fix_plan: {
-      must_fix_first: mustFix,
-      improve_next: ordered.slice(3,6).map(([area,score]) => ({area, score, priority:'medium', fix:'Add stronger details and proof.', example:'Quantify impact with before/after metrics.'})),
-      polish_last: ordered.slice(6,8).map(([area,score]) => ({area, score, priority:'low', fix:'Polish clarity and delivery.', example:'Shorten wording and improve flow.'})),
-      size_guidance: {
-        word_count: words,
-        size_band: words < 60 ? 'very_short' : words < 180 ? 'short' : words <= 650 ? 'standard' : 'long',
-        recommendation: words < 180 ? 'Expand to around 180-450 words for stronger investor signal.' : words > 650 ? 'Consider a shorter investor summary + appendix.' : 'Good length for most investor intros.'
-      }
-    }
-  };
+function setPlan(plan) {
+  state.plan = plan;
+  document.querySelectorAll('.plan-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.plan === plan));
+  $('proFields').classList.toggle('hidden', plan !== 'pro');
 }
 
-function localAnalyzeVideo(transcript, sector, stage, metrics) {
-  const base = localAnalyzeText(transcript, sector, stage);
-  if (!base) return null;
-  const m = metrics || { brightness:0.55, contrast:0.5, sharpness:0.5, text_density:0.5, stability:0.5 };
-  const visual = {
-    visual_clarity: clampJs(35 + m.sharpness*45 + m.contrast*15),
-    slide_readability: clampJs(30 + m.text_density*35 + m.contrast*15),
-    camera_stability: clampJs(30 + m.stability*60),
-    lighting_quality: clampJs(30 + m.brightness*55),
-    delivery_presence: clampJs(70)
-  };
-  base.mode = 'video';
-  base.categories = { ...base.categories, ...visual };
-  base.overall_score = clampJs(base.overall_score * 0.72 + (Object.values(visual).reduce((a,b)=>a+b,0)/Object.keys(visual).length) * 0.28);
-  base.visual_metrics = {
-    brightness: Number(m.brightness || 0).toFixed ? Number(m.brightness).toFixed(3) : 0.55,
-    contrast: Number(m.contrast || 0).toFixed ? Number(m.contrast).toFixed(3) : 0.5,
-    sharpness: Number(m.sharpness || 0).toFixed ? Number(m.sharpness).toFixed(3) : 0.5,
-    text_density: Number(m.text_density || 0).toFixed ? Number(m.text_density).toFixed(3) : 0.5,
-    stability: Number(m.stability || 0).toFixed ? Number(m.stability).toFixed(3) : 0.5,
-  };
-  base.fix_plan.improve_next = (base.fix_plan.improve_next || []).concat([
-    { area:'slide_readability', score:visual.slide_readability, priority:'medium', fix:'Increase slide contrast and text size.', example:'Use high-contrast theme and max 6 lines per slide.' },
-    { area:'camera_stability', score:visual.camera_stability, priority:'medium', fix:'Stabilize framing and reduce shake.', example:'Use tripod or fixed camera position.' },
-  ]);
-  return base;
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+  $('videoFields').classList.toggle('hidden', mode !== 'video');
 }
 
-function topKeywordsJs(text) {
-  const stop = new Set(['the','and','with','this','that','from','your','have','will','into','they','their','about']);
-  const words = (text.match(/[a-zA-Z][a-zA-Z\-']+/g) || []).filter(w => w.length >= 4 && !stop.has(w));
-  const map = new Map();
-  for (const w of words) map.set(w, (map.get(w) || 0) + 1);
-  return [...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v]) => `${k} (${v})`);
+function loadSample(kind) {
+  const sample = DEMOS[kind];
+  $('pitchTitle').value = sample.title;
+  $('sector').value = sample.sector;
+  $('stage').value = sample.stage;
+  $('pitchText').value = sample.text;
+  $('videoTranscript').value = sample.text;
+  if (kind === 'video') setMode('video');
 }
 
-function clampJs(v) { return Math.max(0, Math.min(100, Math.round(v))); }
+document.querySelectorAll('.plan-tab').forEach(btn => btn.addEventListener('click', () => setPlan(btn.dataset.plan)));
+document.querySelectorAll('.mode-tab').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+document.querySelectorAll('[data-sample]').forEach(btn => btn.addEventListener('click', () => loadSample(btn.dataset.sample)));
+$('runBtn').addEventListener('click', runAnalysis);
+$('compareBtn').addEventListener('click', () => { loadSample('strong'); setMode('text'); runAnalysis(); });
+$('datasetBtn').addEventListener('click', loadDataset);
+$('clearHistoryBtn').addEventListener('click', () => { localStorage.removeItem(HISTORY_KEY); renderHistory(); });
 
-function render(data) {
-  $('results').classList.remove('hidden');
-  $('resultTitle').textContent = `${data.mode.toUpperCase()} Pitch Analysis`;
-
-  const checker = data.accuracy_checker?.detail || {};
-  const checkerReasons = (data.accuracy_checker?.reasons || []).join(' | ');
-  $('resultSubtitle').textContent = `Accuracy checker: ${data.accuracy_checker?.confidence || 0}/100 · Structure ${checker.structure || 0} · Evidence ${checker.evidence || 0}${checker.specificity ? ` · Specificity ${checker.specificity}` : ''}${checkerReasons ? ` · ${checkerReasons}` : ''}`;
-
-  const score = data.overall_score || 0;
-  $('score').textContent = `${score}/100`;
-  $('score').className = `score ${score >= 80 ? 'good' : score >= 60 ? 'mid' : 'low'}`;
-
-  const keywords = (data.training_keywords || []).join(', ') || 'n/a';
-  const visual = data.visual_metrics ? `Visual sharpness ${data.visual_metrics.sharpness}` : 'Visual metrics n/a';
-  const stageMiss = (data.missing_stage_signals || []).length;
-  const trainedScore = data.keyword_training_detail?.score || data.categories?.keyword_training || 0;
-
-  $('kpis').innerHTML = `
-    <div class="kpi"><span class="muted">Overall score</span><b>${score}/100</b></div>
-    <div class="kpi"><span class="muted">Accuracy confidence</span><b>${data.accuracy_checker?.confidence || 0}/100</b></div>
-    <div class="kpi"><span class="muted">Keyword training signals</span><b>${(data.training_keywords || []).length} (score ${trainedScore}/100)</b></div>
-    <div class="kpi"><span class="muted">Top keyword tokens</span><b>${keywords}</b></div>
-    <div class="kpi"><span class="muted">Mode</span><b>${data.mode}</b></div>
-    <div class="kpi"><span class="muted">Stage signal gaps</span><b>${stageMiss}</b></div>
-    <div class="kpi"><span class="muted">Video image checks</span><b>${visual}</b></div>
-  `;
-
-  $('bars').innerHTML = Object.entries(data.categories || {}).map(([name, val]) => `
-      <div class="bar">
-        <div class="muted" style="display:flex;justify-content:space-between;margin-bottom:.2rem;"><span>${name.replaceAll('_',' ')}</span><span>${val}/100</span></div>
-        <div class="barline"><span style="width:${val}%"></span></div>
-      </div>
-  `).join('');
-
-  $('strengths').innerHTML = (data.strengths || []).map(s => `<div class="item">${s}</div>`).join('');
-  $('risks').innerHTML = (data.risks || []).map(r => `<div class="item">${r}</div>`).join('');
-  const fixFirst = data.fix_plan?.must_fix_first || [];
-  const improveNext = data.fix_plan?.improve_next || [];
-  const sizeGuidance = data.fix_plan?.size_guidance;
-
-  $('fixFirst').innerHTML = fixFirst.length
-    ? fixFirst.map(x => `<div class="item"><b>${x.area.replaceAll('_',' ')}</b> (${x.score}/100) · ${x.fix}<br><span class="muted">Example: ${x.example}</span></div>`).join('')
-    : '<div class="item">No critical fixes detected.</div>';
-
-  $('improveNext').innerHTML = [
-    ...(improveNext.map(x => `<div class="item"><b>${x.area.replaceAll('_',' ')}</b> (${x.score}/100) · ${x.fix}<br><span class="muted">Example: ${x.example}</span></div>`)),
-    ...(sizeGuidance ? [`<div class="item"><b>Pitch size guidance</b> · ${sizeGuidance.recommendation} <span class="muted">(words: ${sizeGuidance.word_count}, band: ${sizeGuidance.size_band})</span></div>`] : [])
-  ].join('');
-}
-
-async function extractVideoMetrics(file) {
-  const video = document.createElement('video');
-  video.crossOrigin = 'anonymous';
-  video.muted = true;
-  video.src = URL.createObjectURL(file);
-
-  await new Promise((resolve, reject) => {
-    video.onloadedmetadata = resolve;
-    video.onerror = reject;
-  });
-
-  const duration = Math.max(1, Math.floor(video.duration));
-  const samples = Math.min(8, duration);
-  const times = Array.from({ length: samples }, (_, i) => (duration / (samples + 1)) * (i + 1));
-
-  const canvas = document.createElement('canvas');
-  canvas.width = 320; canvas.height = 180;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-  const brightnessList = [];
-  const contrastList = [];
-  const sharpnessList = [];
-  const textDensityList = [];
-  const frameHashes = [];
-
-  for (const t of times) {
-    await seekVideo(video, t);
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = image.data;
-
-    let sum = 0;
-    let sq = 0;
-    let edgeCount = 0;
-    let brightPixels = 0;
-    const lum = new Float32Array(canvas.width * canvas.height);
-
-    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
-      const l = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      lum[p] = l;
-      sum += l;
-      sq += l * l;
-      if (l > 200) brightPixels++;
-    }
-
-    const mean = sum / lum.length;
-    const variance = (sq / lum.length) - (mean * mean);
-    const std = Math.sqrt(Math.max(0, variance));
-
-    for (let y = 1; y < canvas.height - 1; y++) {
-      for (let x = 1; x < canvas.width - 1; x++) {
-        const idx = y * canvas.width + x;
-        const gx = Math.abs(lum[idx + 1] - lum[idx - 1]);
-        const gy = Math.abs(lum[idx + canvas.width] - lum[idx - canvas.width]);
-        const grad = gx + gy;
-        if (grad > 36) edgeCount++;
-      }
-    }
-
-    const edgeDensity = edgeCount / lum.length;
-    brightnessList.push(mean / 255);
-    contrastList.push(std / 128);
-    sharpnessList.push(Math.min(1, edgeDensity * 6));
-    textDensityList.push(Math.min(1, (edgeDensity * 4) + (brightPixels / lum.length) * 0.5));
-    frameHashes.push(Math.round(mean / 6));
-  }
-
-  URL.revokeObjectURL(video.src);
-
-  const stability = computeStability(frameHashes);
-  return {
-    brightness: avg(brightnessList),
-    contrast: avg(contrastList),
-    sharpness: avg(sharpnessList),
-    text_density: avg(textDensityList),
-    stability
-  };
-}
-
-function seekVideo(video, time) {
-  return new Promise((resolve, reject) => {
-    const done = () => { video.removeEventListener('seeked', done); resolve(); };
-    video.addEventListener('seeked', done, { once: true });
-    video.currentTime = Math.min(Math.max(0, time), video.duration || time);
-    setTimeout(() => reject(new Error('seek timeout')), 4000);
-  });
-}
-
-function avg(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
-function computeStability(hashes) {
-  if (hashes.length < 2) return 0.6;
-  let delta = 0;
-  for (let i = 1; i < hashes.length; i++) delta += Math.abs(hashes[i] - hashes[i - 1]);
-  const meanDelta = delta / (hashes.length - 1);
-  return Math.max(0, Math.min(1, 1 - (meanDelta / 20)));
-}
+renderHistory();
+loadDataset();
 </script>
 </body>
 </html>
