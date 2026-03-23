@@ -3,120 +3,159 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AstraPitch AI — Unified Pitch Analyzer</title>
+  <title>AstraPitch AI — Pitch Analysis Workbench</title>
   <style>
     :root {
-      --bg:#08111f;
-      --bg2:#0d1730;
-      --panel:rgba(14,21,39,.86);
-      --line:rgba(102,198,255,.16);
-      --text:#ebf3ff;
-      --muted:#98a8c5;
-      --primary:#59d7ff;
-      --primary2:#8d63ff;
-      --good:#16c784;
-      --warn:#ffb020;
-      --bad:#ff5f6d;
-      --radius:22px;
-      --shadow:0 24px 80px rgba(0,0,0,.34);
+      --bg:#07111c;
+      --bg2:#0b1726;
+      --panel:#0b1523;
+      --panel-2:#0f1b2d;
+      --line:rgba(117,184,255,.14);
+      --text:#edf4ff;
+      --muted:#8da0bf;
+      --primary:#61d8ff;
+      --primary-2:#7f7cff;
+      --good:#2ad59a;
+      --warn:#ffb84f;
+      --bad:#ff6f7e;
+      --radius:20px;
+      --shadow:0 22px 70px rgba(0,0,0,.35);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     * { box-sizing:border-box; margin:0; padding:0; }
     body {
-      font-family:var(--sans);
-      background: radial-gradient(circle at top right, rgba(89,215,255,.12), transparent 32%), linear-gradient(180deg, #060d18 0%, #091323 28%, #08111f 100%);
-      color:var(--text);
       min-height:100vh;
+      color:var(--text);
+      font-family:var(--sans);
+      background:
+        radial-gradient(circle at top right, rgba(97,216,255,.08), transparent 28%),
+        radial-gradient(circle at left top, rgba(127,124,255,.08), transparent 24%),
+        linear-gradient(180deg, #040913 0%, #08111c 35%, #07111c 100%);
     }
-    .wrap { width:min(1280px, calc(100% - 32px)); margin:0 auto; }
+    .wrap { width:min(1380px, calc(100% - 32px)); margin:0 auto; }
+    .muted { color:var(--muted); }
     nav {
-      position:sticky; top:0; z-index:10; backdrop-filter: blur(18px);
-      background:rgba(7,12,21,.72); border-bottom:1px solid rgba(255,255,255,.06);
+      position:sticky; top:0; z-index:20; backdrop-filter:blur(16px);
+      background:rgba(4,9,18,.78); border-bottom:1px solid rgba(255,255,255,.05);
     }
-    .nav-inner { display:flex; justify-content:space-between; align-items:center; padding:16px 0; gap:12px; flex-wrap:wrap; }
-    .brand { display:flex; gap:14px; align-items:center; font-weight:800; }
-    .brand-badge { width:40px; height:40px; border-radius:14px; background:linear-gradient(135deg, var(--primary), var(--primary2)); display:grid; place-items:center; color:#04101a; font-weight:900; }
-    .pill-row, .mode-row, .sample-buttons, .action-row, .history-actions { display:flex; gap:10px; flex-wrap:wrap; }
-    .hero { padding:48px 0 24px; display:grid; grid-template-columns:1.2fr .9fr; gap:24px; }
-    .hero-card, .panel { background:linear-gradient(180deg, rgba(18,28,48,.88), rgba(12,20,34,.92)); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
-    .hero-card { padding:34px; }
-    .hero-card h1 { font-size:clamp(2.3rem, 5vw, 4rem); line-height:1.04; margin-bottom:16px; letter-spacing:-.04em; }
-    .gradient { background:linear-gradient(135deg, #fff, var(--primary) 48%, var(--primary2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
-    .sub { color:var(--muted); font-size:1.04rem; line-height:1.7; }
-    .hero-side { padding:28px; display:grid; gap:14px; }
-    .mini-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .mini-stat { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px; }
-    .mini-stat .label { color:var(--muted); font-size:.82rem; margin-bottom:7px; }
-    .mini-stat .value { font-size:1.35rem; font-weight:800; }
-    .small-note { color:var(--muted); line-height:1.6; font-size:.95rem; }
-    .grid { display:grid; grid-template-columns:380px 1fr; gap:24px; padding:20px 0 60px; }
+    .nav-inner { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; padding:16px 0; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand-logo {
+      width:42px; height:42px; border-radius:14px; display:grid; place-items:center;
+      background:linear-gradient(135deg, var(--primary), var(--primary-2)); color:#04111a; font-weight:900;
+      box-shadow:0 14px 32px rgba(97,216,255,.22);
+    }
+    .brand-text strong { display:block; letter-spacing:.02em; }
+    .brand-text span { color:var(--muted); font-size:.9rem; font-family:var(--mono); }
+    .nav-badges, .button-row, .toggle-row, .sample-buttons, .history-actions, .inline-badges { display:flex; gap:10px; flex-wrap:wrap; }
+    .badge {
+      display:inline-flex; align-items:center; gap:8px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04);
+      padding:8px 12px; font-size:.82rem; font-weight:700;
+    }
+    .hero { padding:32px 0 22px; display:grid; grid-template-columns:1.08fr .92fr; gap:24px; }
+    .panel, .hero-card {
+      background:linear-gradient(180deg, rgba(15,27,45,.96), rgba(10,18,30,.96));
+      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+    }
+    .hero-card { padding:30px; }
+    .hero-card h1 {
+      font-size:clamp(2.2rem, 4.5vw, 3.85rem); line-height:1.02; margin-bottom:16px; letter-spacing:-.045em;
+    }
+    .gradient { background:linear-gradient(135deg, #fff 0%, var(--primary) 46%, var(--primary-2) 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .sub { color:var(--muted); line-height:1.75; font-size:1.03rem; }
+    .hero-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-top:20px; }
+    .mini-card {
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px;
+    }
+    .mini-card .label { color:var(--muted); font-size:.8rem; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; }
+    .mini-card .value { font-size:1.25rem; font-weight:800; margin-top:8px; }
+    .terminal-note {
+      margin-top:20px; border:1px solid rgba(97,216,255,.15); background:rgba(8,15,26,.9); border-radius:18px; overflow:hidden;
+    }
+    .terminal-head {
+      display:flex; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,.06); font-family:var(--mono); font-size:.82rem; color:var(--muted);
+    }
+    .terminal-body { padding:16px; font-family:var(--mono); line-height:1.7; color:#bfe9ff; }
+    .layout { display:grid; grid-template-columns:390px 1fr; gap:24px; padding:8px 0 60px; }
     .panel { padding:22px; }
-    .panel h2, .panel h3 { font-size:1.08rem; margin-bottom:12px; }
-    .tag, .plan-tab, .mode-tab, .tiny-btn, .btn { cursor:pointer; }
-    .plan-tabs, .mode-tabs { display:grid; gap:12px; margin-bottom:18px; }
-    .plan-tabs { grid-template-columns:repeat(2, 1fr); }
+    .panel h2, .panel h3 { margin-bottom:12px; }
+    .config-tabs, .mode-tabs { display:grid; gap:10px; margin-bottom:16px; }
+    .config-tabs { grid-template-columns:1fr; }
     .mode-tabs { grid-template-columns:repeat(2, 1fr); }
-    .plan-tab, .mode-tab, .btn, .tiny-btn {
-      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); color:var(--text); border-radius:18px; padding:14px 16px;
-      transition:.18s ease; font:inherit;
+    .toggle, .mode-toggle, .btn, .tiny-btn {
+      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.035); color:var(--text);
+      border-radius:16px; padding:13px 15px; font:inherit; cursor:pointer; transition:.18s ease;
     }
-    .plan-tab.active, .mode-tab.active, .btn-primary {
-      border-color:rgba(89,215,255,.55); background:linear-gradient(180deg, rgba(89,215,255,.14), rgba(141,99,255,.1)); transform:translateY(-1px);
+    .toggle.active, .mode-toggle.active, .btn-primary {
+      border-color:rgba(97,216,255,.45); background:linear-gradient(180deg, rgba(97,216,255,.15), rgba(127,124,255,.12));
+      transform:translateY(-1px);
     }
-    .btn-primary { color:#04101a; font-weight:800; background:linear-gradient(135deg, var(--primary), var(--primary2)); }
-    .btn-secondary { background:rgba(255,255,255,.04); }
-    label { display:block; font-size:.92rem; color:var(--muted); margin:12px 0 8px; }
-    input[type=text], input[type=password], input[type=number], textarea, select {
-      width:100%; background:rgba(255,255,255,.03); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:14px 15px; font:inherit;
+    .btn-primary { color:#06121b; background:linear-gradient(135deg, var(--primary), var(--primary-2)); font-weight:900; }
+    .btn-secondary:hover, .tiny-btn:hover, .toggle:hover, .mode-toggle:hover { border-color:rgba(97,216,255,.25); }
+    label {
+      display:block; margin:13px 0 8px; font-size:.86rem; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:.07em;
     }
-    textarea { min-height:260px; resize:vertical; line-height:1.65; }
-    input:focus, textarea:focus, select:focus { outline:none; border-color:rgba(89,215,255,.45); box-shadow:0 0 0 4px rgba(89,215,255,.08); }
+    input[type=text], input[type=number], textarea, select {
+      width:100%; border-radius:16px; border:1px solid rgba(255,255,255,.08); background:#09121f; color:var(--text);
+      padding:14px 15px; font:inherit;
+    }
+    textarea { min-height:230px; resize:vertical; line-height:1.68; }
+    input:focus, textarea:focus, select:focus { outline:none; border-color:rgba(97,216,255,.4); box-shadow:0 0 0 4px rgba(97,216,255,.08); }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .note-box, .status-box { margin-top:14px; padding:14px; border-radius:18px; background:rgba(89,215,255,.06); border:1px solid rgba(89,215,255,.12); color:var(--muted); line-height:1.55; }
+    .info-box, .status-box, .how-box {
+      margin-top:14px; padding:14px 16px; border-radius:16px; line-height:1.65; border:1px solid rgba(97,216,255,.12); background:rgba(97,216,255,.06);
+    }
+    .info-box strong, .how-box strong { display:block; margin-bottom:6px; }
     .hidden { display:none; }
     .results-top { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap; }
     .score-shell { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
     .score-ring {
-      width:120px; height:120px; border-radius:50%;
-      background: radial-gradient(circle at center, rgba(8,17,31,1) 54%, transparent 55%), conic-gradient(var(--ring-color) calc(var(--score)*1%), rgba(255,255,255,.08) 0);
+      width:122px; height:122px; border-radius:50%;
+      background: radial-gradient(circle at center, rgba(7,17,28,1) 54%, transparent 55%), conic-gradient(var(--ring-color) calc(var(--score)*1%), rgba(255,255,255,.08) 0);
       display:grid; place-items:center;
+      box-shadow: inset 0 0 24px rgba(255,255,255,.03);
     }
-    .score-ring span { font-size:1.8rem; font-weight:900; }
-    .score-badges { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-    .badge { border-radius:999px; padding:9px 12px; font-size:.84rem; font-weight:700; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); }
-    .ok { color:#baf5d8; border-color:rgba(22,199,132,.25); background:rgba(22,199,132,.08); }
-    .warn { color:#ffe8b0; border-color:rgba(255,176,32,.25); background:rgba(255,176,32,.08); }
-    .bad { color:#ffc4ca; border-color:rgba(255,95,109,.25); background:rgba(255,95,109,.08); }
-    .section-grid, .cards-two, .compare-grid, .mini-grid { display:grid; gap:14px; }
-    .section-grid { grid-template-columns:repeat(3, 1fr); margin-top:22px; }
-    .cards-two, .compare-grid { grid-template-columns:1fr 1fr; margin-top:22px; }
-    .mini-grid { grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); margin-top:18px; }
-    .section-card, .list-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px; }
-    .section-card .top { display:flex; justify-content:space-between; margin-bottom:10px; }
-    .bar { height:10px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.07); }
-    .bar > span { display:block; height:100%; background:linear-gradient(135deg, var(--primary), var(--primary2)); }
-    .list-card ul { margin:10px 0 0 18px; color:var(--muted); line-height:1.8; }
-    .memo, .dataset-panel { margin-top:22px; padding:18px; border-radius:18px; background:linear-gradient(180deg, rgba(89,215,255,.07), rgba(141,99,255,.06)); border:1px solid rgba(89,215,255,.14); line-height:1.8; color:#dbe9ff; }
-    .history-list { display:grid; gap:12px; margin-top:12px; max-height:360px; overflow:auto; padding-right:4px; }
+    .score-ring span { font-size:1.85rem; font-weight:900; }
+    .score-summary { max-width:720px; }
+    .score-summary p { color:var(--muted); margin-top:8px; line-height:1.7; }
+    .section-grid, .cards-two, .mini-grid { display:grid; gap:14px; margin-top:18px; }
+    .section-grid { grid-template-columns:repeat(3, 1fr); }
+    .cards-two { grid-template-columns:1fr 1fr; }
+    .mini-grid { grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); }
+    .card {
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:16px;
+    }
+    .card-head { display:flex; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .bar { height:10px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.08); }
+    .bar > span { display:block; height:100%; background:linear-gradient(135deg, var(--primary), var(--primary-2)); }
+    .card ul { margin:10px 0 0 18px; color:var(--muted); line-height:1.8; }
+    .memo {
+      margin-top:20px; padding:18px; border-radius:18px; border:1px solid rgba(97,216,255,.16);
+      background:linear-gradient(180deg, rgba(97,216,255,.08), rgba(127,124,255,.07)); line-height:1.8;
+    }
+    .history-list { display:grid; gap:12px; margin-top:12px; max-height:390px; overflow:auto; padding-right:4px; }
     .history-item { border:1px solid rgba(255,255,255,.06); background:rgba(255,255,255,.03); border-radius:16px; padding:14px; }
-    code { color:#96eeff; }
-    @media (max-width: 1080px) {
-      .hero, .grid { grid-template-columns:1fr; }
-      .section-grid { grid-template-columns:repeat(2, 1fr); }
-    }
-    @media (max-width: 720px) {
-      .row, .cards-two, .compare-grid, .section-grid, .mini-stat-grid, .plan-tabs, .mode-tabs { grid-template-columns:1fr; }
-    }
+    code { color:#94eeff; font-family:var(--mono); }
+    @media (max-width: 1100px) { .hero, .layout { grid-template-columns:1fr; } .section-grid { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width: 760px) { .row, .cards-two, .section-grid, .hero-grid, .mode-tabs { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <nav>
     <div class="wrap nav-inner">
-      <div class="brand"><div class="brand-badge">A</div><span>AstraPitch AI</span></div>
-      <div class="pill-row">
-        <span class="badge">Unified project</span>
-        <span class="badge">Reliable backend link</span>
-        <span class="badge">Dataset-backed scoring</span>
+      <div class="brand">
+        <div class="brand-logo">A</div>
+        <div class="brand-text">
+          <strong>AstraPitch AI</strong>
+          <span>pitch-analysis-workbench.tsx-inspired UX</span>
+        </div>
+      </div>
+      <div class="nav-badges">
+        <span class="badge">Free keyword + dataset scoring</span>
+        <span class="badge">Video transcript support</span>
+        <span class="badge">Backend-ready LLM enrichment</span>
       </div>
     </div>
   </nav>
@@ -124,38 +163,49 @@
   <div class="wrap">
     <section class="hero">
       <div class="hero-card">
-        <h1><span class="gradient">One cohesive pitch analysis project</span> for text, video, rewrites, and training-backed scoring.</h1>
-        <p class="sub">This merged app combines the original backend API flow with the richer offline-trained UI ideas. The backend now uses an embedded dataset for similarity search, weighted signal scoring, rewrite guidance, and benchmark stats you can inspect directly from the interface.</p>
-        <div class="action-row" style="margin-top:24px;">
+        <h1><span class="gradient">Pitch analysis that actually explains itself.</span></h1>
+        <p class="sub">Paste a pitch or transcript, run the backend, and get a complete investor-style readout: category scores, benchmark matches, fix priorities, rewrite guidance, and an optional backend-only LLM layer when you wire it in. The frontend stays clean. The backend does the heavy lifting.</p>
+        <div class="button-row" style="margin-top:24px;">
           <button class="btn btn-primary" id="runBtn">Run analysis</button>
           <button class="btn btn-secondary" id="compareBtn">Analyze demo</button>
           <button class="btn btn-secondary" id="datasetBtn">Refresh dataset</button>
           <button class="btn btn-secondary" id="healthBtn">Check backend</button>
         </div>
-      </div>
-      <div class="hero-side hero-card">
-        <div class="mini-stat-grid">
-          <div class="mini-stat"><div class="label">Modes</div><div class="value">Text + Video</div></div>
-          <div class="mini-stat"><div class="label">Training</div><div class="value" id="datasetRowsHero">Loading…</div></div>
-          <div class="mini-stat"><div class="label">Backend</div><div class="value">Python HTTP API</div></div>
-          <div class="mini-stat"><div class="label">Output</div><div class="value">Fixes + Rewrite</div></div>
+        <div class="terminal-note">
+          <div class="terminal-head"><span>HOW_THIS_WORKS.sh</span><span>frontend → backend → scoring → rewrite</span></div>
+          <div class="terminal-body">
+            <div>$ python3 backend.py</div>
+            <div>$ paste pitch text or a video transcript</div>
+            <div>$ backend scores categories + similarity + fix plan</div>
+            <div>$ results render with clear next steps</div>
+          </div>
         </div>
-        <p class="small-note">Use <code>/api/training/dataset</code> to inspect the embedded training set. The free analysis endpoints now incorporate those examples instead of only static keyword heuristics.</p>
-        <div class="status-box" id="statusBox">Ready. Start the server with <code>python3 backend.py</code> and keep the backend URL as <code>http://127.0.0.1:8080</code>.</div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-grid">
+          <div class="mini-card"><div class="label">Mode</div><div class="value">Text + Video</div></div>
+          <div class="mini-card"><div class="label">Dataset</div><div class="value" id="datasetRowsHero">Loading…</div></div>
+          <div class="mini-card"><div class="label">Backend</div><div class="value">Python HTTP API</div></div>
+          <div class="mini-card"><div class="label">Output</div><div class="value">Full scored report</div></div>
+        </div>
+        <div class="how-box">
+          <strong>What users should expect</strong>
+          <div>The free workflow uses keyword and dataset-backed heuristics, plus transcript-specific delivery checks for video mode. If you later add a hosted model in the backend, the UI automatically benefits without exposing API-key fields here.</div>
+        </div>
+        <div class="status-box" id="statusBox">Ready. Start the server with <code>python3 backend.py</code> and keep the backend URL set to <code>http://127.0.0.1:8080</code>.</div>
       </div>
     </section>
 
-    <section class="grid">
+    <section class="layout">
       <aside class="panel">
-        <h2>Configuration</h2>
-        <div class="plan-tabs">
-          <button class="plan-tab active" data-plan="free">Integrated analysis</button>
-          <button class="plan-tab" data-plan="pro">Hosted model (soon)</button>
+        <h2>Analysis input</h2>
+        <div class="config-tabs">
+          <button class="toggle active" data-plan="free">Integrated backend analysis</button>
         </div>
 
         <div class="mode-tabs">
-          <button class="mode-tab active" data-mode="text">Text analysis</button>
-          <button class="mode-tab" data-mode="video">Video analysis</button>
+          <button class="mode-toggle active" data-mode="text">Text mode</button>
+          <button class="mode-toggle" data-mode="video">Video mode</button>
         </div>
 
         <label for="backendUrl">Backend URL</label>
@@ -185,14 +235,14 @@
         </div>
 
         <label for="pitchTitle">Pitch title</label>
-        <input id="pitchTitle" type="text" placeholder="Acme AI seed round" />
+        <input id="pitchTitle" type="text" placeholder="LedgerFlow Series A" />
 
         <label for="pitchText">Pitch text</label>
-        <textarea id="pitchText" placeholder="Paste the pitch here. Include the problem, solution, traction, market, moat, and the raise."></textarea>
+        <textarea id="pitchText" placeholder="Paste the written pitch here. The more concrete the proof points, the better the readout."></textarea>
 
         <div id="videoFields" class="hidden">
           <label for="videoTranscript">Video transcript</label>
-          <textarea id="videoTranscript" placeholder="Paste the video transcript here."></textarea>
+          <textarea id="videoTranscript" placeholder="Paste the transcript from the founder video or demo here."></textarea>
           <div class="row">
             <div>
               <label for="energy">Delivery energy (1-10)</label>
@@ -205,35 +255,34 @@
           </div>
         </div>
 
-        <div id="proFields" class="hidden">
-          <label for="proApiKey">Future API key</label>
-          <input id="proApiKey" type="password" placeholder="sk_live_xxx" />
-          <label for="proEndpoint">Future model endpoint</label>
-          <input id="proEndpoint" type="text" placeholder="https://your-api-domain/v1/pitch/analyze" />
-        </div>
-
         <div class="sample-buttons">
           <button class="tiny-btn" data-sample="strong">Load strong sample</button>
           <button class="tiny-btn" data-sample="weak">Load weak sample</button>
           <button class="tiny-btn" data-sample="video">Load video sample</button>
         </div>
 
-        <div class="note-box">
-          The frontend is now fully integrated with the backend schema: dataset stats, nearest examples, rewrite guidance, category scoring, and video metrics all render in one place.
+        <div class="info-box">
+          <strong>Free analysis path</strong>
+          <div>1) Score the pitch by section. 2) Compare it against embedded training examples. 3) Flag missing investor signals. 4) Return a rewrite and fix plan.</div>
         </div>
       </aside>
 
       <main class="panel">
         <h2>Results</h2>
-        <div id="resultsArea" class="muted">Run an analysis to see scores, fix plans, benchmark examples, and rewrite guidance.</div>
+        <div id="resultsArea" class="muted">Run an analysis to see scores, benchmark matches, rewrite guidance, and an explanation of how the result was generated.</div>
 
-        <div class="dataset-panel">
+        <div class="memo">
+          <strong style="display:block; margin-bottom:8px;">What this app does now</strong>
+          It is no longer a mock UI. The frontend calls a working backend, the dataset endpoint populates benchmark examples, and the analysis endpoints return full scoring objects for text and transcript-based video review.
+        </div>
+
+        <div class="memo">
           <h3 style="margin-bottom:10px;">Embedded training dataset</h3>
           <div id="datasetMeta" class="muted">Loading dataset stats…</div>
           <div id="datasetExamples" class="history-list"></div>
         </div>
 
-        <div class="dataset-panel">
+        <div class="memo">
           <h3 style="margin-bottom:10px;">Analysis history</h3>
           <div class="history-actions">
             <button class="tiny-btn" id="clearHistoryBtn">Clear local history</button>
@@ -246,8 +295,8 @@
 
 <script>
 const DEFAULT_BACKEND = 'http://127.0.0.1:8080';
-const state = { plan: 'free', mode: 'text', lastResult: null, dataset: null, backendHealthy: false };
-const HISTORY_KEY = 'astrapitch_history_v2';
+const state = { mode: 'text', lastResult: null, dataset: null, backendHealthy: false };
+const HISTORY_KEY = 'astrapitch_history_v3';
 
 const DEMOS = {
   strong: {
@@ -271,11 +320,11 @@ const DEMOS = {
 };
 
 function $(id) { return document.getElementById(id); }
-function escapeHtml(str) { return String(str).replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+function escapeHtml(str) { return String(str).replace(/[&<>\"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
 
 function setStatus(message, tone='') {
   $('statusBox').innerHTML = message;
-  $('statusBox').style.borderColor = tone === 'bad' ? 'rgba(255,95,109,.3)' : tone === 'ok' ? 'rgba(22,199,132,.3)' : 'rgba(89,215,255,.12)';
+  $('statusBox').style.borderColor = tone === 'bad' ? 'rgba(255,111,126,.32)' : tone === 'ok' ? 'rgba(42,213,154,.3)' : 'rgba(97,216,255,.12)';
 }
 
 function getBackendBase() {
@@ -285,27 +334,25 @@ function getBackendBase() {
 
 function ensureBackendUrl() {
   if (!$('backendUrl').value.trim()) $('backendUrl').value = DEFAULT_BACKEND;
-  if (location.protocol === 'file:' && $('backendUrl').value.trim() !== DEFAULT_BACKEND) {
-    $('backendUrl').value = DEFAULT_BACKEND;
-  }
+  if (location.protocol === 'file:' && $('backendUrl').value.trim() !== DEFAULT_BACKEND) $('backendUrl').value = DEFAULT_BACKEND;
 }
 
 function scoreClass(score) {
-  if (score >= 80) return { label:'Investor-ready signal', ring:'#16c784', badge:'ok' };
-  if (score >= 60) return { label:'Promising but uneven', ring:'#ffb020', badge:'warn' };
-  return { label:'Needs stronger proof', ring:'#ff5f6d', badge:'bad' };
+  if (score >= 80) return { label:'High-signal pitch', ring:'#2ad59a', badge:'ok' };
+  if (score >= 60) return { label:'Promising but uneven', ring:'#ffb84f', badge:'warn' };
+  return { label:'Needs stronger proof', ring:'#ff6f7e', badge:'bad' };
 }
 
-function renderScoreHeader(score, subtitle, badges=[]) {
+function renderScoreHeader(score, summary, badges=[]) {
   const meta = scoreClass(score);
   return `
     <div class="results-top">
       <div class="score-shell">
         <div class="score-ring" style="--score:${score}; --ring-color:${meta.ring};"><span>${score}</span></div>
-        <div>
+        <div class="score-summary">
           <h2>${meta.label}</h2>
-          <div class="muted">${escapeHtml(subtitle)}</div>
-          <div class="score-badges">${badges.join('')}</div>
+          <p>${escapeHtml(summary)}</p>
+          <div class="inline-badges" style="margin-top:12px;">${badges.join('')}</div>
         </div>
       </div>
     </div>`;
@@ -313,10 +360,10 @@ function renderScoreHeader(score, subtitle, badges=[]) {
 
 function renderSectionGrid(sectionScores) {
   return `<div class="section-grid">${Object.entries(sectionScores).map(([key, value]) => `
-      <div class="section-card">
-        <div class="top"><strong>${escapeHtml(key.replaceAll('_', ' '))}</strong><span>${value}/100</span></div>
-        <div class="bar"><span style="width:${value}%"></span></div>
-      </div>`).join('')}</div>`;
+    <div class="card">
+      <div class="card-head"><strong>${escapeHtml(key.replaceAll('_', ' '))}</strong><span>${value}/100</span></div>
+      <div class="bar"><span style="width:${value}%"></span></div>
+    </div>`).join('')}</div>`;
 }
 
 function formatList(items) {
@@ -326,7 +373,7 @@ function formatList(items) {
 
 function renderFixes(items) {
   if (!items || !items.length) return '<div class="muted">No fixes generated.</div>';
-  return items.map(item => `<div class="section-card"><strong>${escapeHtml(item.area.replaceAll('_', ' '))}</strong><div class="muted" style="margin-top:8px;">${escapeHtml(item.fix)}</div><div class="muted" style="margin-top:8px;"><em>${escapeHtml(item.example)}</em></div></div>`).join('');
+  return items.map(item => `<div class="card"><strong>${escapeHtml(item.area.replaceAll('_', ' '))}</strong><div class="muted" style="margin-top:8px;">${escapeHtml(item.fix)}</div><div class="muted" style="margin-top:8px;"><em>${escapeHtml(item.example)}</em></div></div>`).join('');
 }
 
 function renderExamples(items) {
@@ -339,43 +386,68 @@ function renderContributors(items) {
   return items.map(item => `<li><strong>${escapeHtml(item.token)}</strong>: ${item.impact > 0 ? '+' : ''}${item.impact}</li>`).join('');
 }
 
+function renderHowItWorks(items) {
+  if (!items || !items.length) return '<li class="muted">No execution notes available.</li>';
+  return items.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+}
+
 function renderResult(result) {
   const badges = [
     `<span class="badge">${escapeHtml(result.mode)}</span>`,
     `<span class="badge">${escapeHtml(result.accuracy_checker.size_band)}</span>`,
-    `<span class="badge ${scoreClass(result.accuracy_checker.confidence).badge}">confidence ${result.accuracy_checker.confidence}/100</span>`
+    `<span class="badge">dataset ${result.project_summary.dataset_rows} rows</span>`,
+    `<span class="badge">confidence ${result.accuracy_checker.confidence}/100</span>`
   ];
-  const subtitle = `Dataset-backed scoring using ${result.project_summary.dataset_rows} embedded training examples.`;
+  if (result.llm && result.llm.enabled) {
+    badges.push(`<span class="badge">LLM ${escapeHtml(result.llm.status)}</span>`);
+  }
+
+  const weakest = (result.execution_summary?.weakest_areas || []).join(', ') || 'none';
   const visualBlock = result.visual_metrics ? `
-    <div class="list-card">
+    <div class="card">
       <h3>Video metrics</h3>
       <ul>${Object.entries(result.visual_metrics).map(([key, value]) => `<li>${escapeHtml(key)}: ${value}</li>`).join('')}</ul>
     </div>` : '';
+  const llmBlock = result.llm && result.llm.enabled ? `
+    <div class="card">
+      <h3>Backend LLM layer</h3>
+      <ul>
+        <li>Status: ${escapeHtml(result.llm.status)}</li>
+        ${result.llm.summary ? `<li>${escapeHtml(result.llm.summary)}</li>` : ''}
+        ${result.llm.error ? `<li>${escapeHtml(result.llm.error)}</li>` : ''}
+        ${((result.llm.investor_readout || []).map(item => `<li>${escapeHtml(item)}</li>`).join(''))}
+      </ul>
+    </div>` : '<div class="card"><h3>Backend model layer</h3><ul><li>Frontend stays clean: no API key field exposed here.</li><li>If you configure the backend LLM, the result is enriched automatically.</li></ul></div>';
 
   $('resultsArea').innerHTML = `
-    ${renderScoreHeader(result.overall_score, subtitle, badges)}
-    <div class="memo">${escapeHtml(result.rewrite_suggestion)}</div>
+    ${renderScoreHeader(result.overall_score, `Weakest areas right now: ${weakest}. The report below shows how the score was created and what to fix first.`, badges)}
+    <div class="memo"><strong style="display:block; margin-bottom:8px;">Suggested rewrite</strong>${escapeHtml(result.rewrite_suggestion)}</div>
     ${renderSectionGrid(result.categories)}
     <div class="mini-grid">
-      <div class="section-card"><strong>Training keywords</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.training_keywords.join(', '))}</div></div>
-      <div class="section-card"><strong>Missing stage signals</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.missing_stage_signals.join(', ') || 'None')}</div></div>
-      <div class="section-card"><strong>Size guidance</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.fix_plan.size_guidance.recommendation)}</div></div>
+      <div class="card"><strong>Training keywords</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.training_keywords.join(', '))}</div></div>
+      <div class="card"><strong>Missing stage signals</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.missing_stage_signals.join(', ') || 'None')}</div></div>
+      <div class="card"><strong>Size guidance</strong><div class="muted" style="margin-top:10px;">${escapeHtml(result.fix_plan.size_guidance.recommendation)}</div></div>
+      <div class="card"><strong>Biggest gap</strong><div class="muted" style="margin-top:10px;">${escapeHtml((result.execution_summary?.biggest_gap || 'None').replaceAll('_', ' '))}</div></div>
     </div>
     <div class="cards-two">
-      <div class="list-card"><h3>Strengths</h3><ul>${formatList(result.strengths)}</ul></div>
-      <div class="list-card"><h3>Risks</h3><ul>${formatList(result.risks)}</ul></div>
+      <div class="card"><h3>How this score was produced</h3><ul>${renderHowItWorks(result.how_it_works)}</ul></div>
+      <div class="card"><h3>Accuracy checker</h3><ul>${formatList(result.accuracy_checker.reasons.concat(result.accuracy_checker.detail.flags || []))}</ul></div>
     </div>
     <div class="cards-two">
-      <div class="list-card"><h3>Fix first</h3>${renderFixes(result.fix_plan.must_fix_first)}</div>
-      <div class="list-card"><h3>Improve next</h3>${renderFixes(result.fix_plan.improve_next)}</div>
+      <div class="card"><h3>Strengths</h3><ul>${formatList(result.strengths)}</ul></div>
+      <div class="card"><h3>Risks</h3><ul>${formatList(result.risks)}</ul></div>
     </div>
     <div class="cards-two">
-      <div class="list-card"><h3>Closest training examples</h3><ul>${renderExamples(result.dataset_training_detail.nearest_examples)}</ul></div>
-      <div class="list-card"><h3>Learned token contributors</h3><ul>${renderContributors(result.dataset_training_detail.contributors)}</ul></div>
+      <div class="card"><h3>Fix first</h3>${renderFixes(result.fix_plan.must_fix_first)}</div>
+      <div class="card"><h3>Improve next</h3>${renderFixes(result.fix_plan.improve_next)}</div>
     </div>
     <div class="cards-two">
-      <div class="list-card"><h3>Accuracy checker</h3><ul>${formatList(result.accuracy_checker.reasons.concat(result.accuracy_checker.detail.flags || []))}</ul></div>
-      ${visualBlock || '<div class="list-card"><h3>Project summary</h3><ul><li>Unified frontend and backend project.</li><li>Training dataset exposed through the API.</li><li>Rewrite guidance is generated on every run.</li></ul></div>'}
+      <div class="card"><h3>Closest training examples</h3><ul>${renderExamples(result.dataset_training_detail.nearest_examples)}</ul></div>
+      <div class="card"><h3>Learned token contributors</h3><ul>${renderContributors(result.dataset_training_detail.contributors)}</ul></div>
+    </div>
+    <div class="cards-two">
+      ${visualBlock || '<div class="card"><h3>Execution summary</h3><ul><li>Strongest: ' + escapeHtml((result.execution_summary?.strongest_areas || []).join(', ') || 'none') + '</li><li>Weakest: ' + escapeHtml((result.execution_summary?.weakest_areas || []).join(', ') || 'none') + '</li><li>Confidence: ' + escapeHtml(String(result.execution_summary?.confidence || 'n/a')) + '</li></ul></div>'}
+      ${llmBlock}
     </div>`;
 }
 
@@ -387,12 +459,8 @@ async function apiFetch(path, payload, method='POST') {
     body: method === 'GET' ? undefined : JSON.stringify(payload || {})
   });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Request failed');
+  if (!response.ok) throw new Error(data.error || data.fix || 'Request failed');
   return data;
-}
-
-function currentText() {
-  return state.mode === 'video' ? $('videoTranscript').value.trim() : $('pitchText').value.trim();
 }
 
 function saveHistory(entry) {
@@ -420,7 +488,9 @@ async function checkBackend(showStatus = true) {
   try {
     const health = await apiFetch('/api/health', null, 'GET');
     state.backendHealthy = health.status === 'ok';
-    if (showStatus) setStatus(`Backend connected at <code>${escapeHtml(getBackendBase())}</code> with <strong>${health.dataset_rows}</strong> dataset rows loaded.`, 'ok');
+    if (showStatus) {
+      setStatus(`Backend connected at <code>${escapeHtml(getBackendBase())}</code> with <strong>${health.dataset_rows}</strong> dataset rows loaded.${health.llm_configured ? ' Backend LLM enrichment is configured.' : ' Running free local scoring only.'}`, 'ok');
+    }
     return health;
   } catch (error) {
     state.backendHealthy = false;
@@ -442,7 +512,7 @@ async function loadDataset() {
         <div class="muted" style="margin-top:6px;">${example.rating}/100 · ${escapeHtml(example.sector)} · ${escapeHtml(example.stage)} · ${escapeHtml(example.quality)}</div>
         <div class="muted" style="margin-top:8px;">${escapeHtml(example.pitch_preview)}${example.pitch_preview.length >= 220 ? '…' : ''}</div>
       </div>`).join('');
-    setStatus('Connected to backend and loaded the embedded training dataset.', 'ok');
+    setStatus('Connected to the backend and loaded the embedded training dataset.', 'ok');
   } catch (error) {
     $('datasetRowsHero').textContent = 'Unavailable';
     $('datasetMeta').textContent = `Could not load dataset: ${error.message}`;
@@ -454,19 +524,13 @@ async function loadDataset() {
 async function runAnalysis() {
   try {
     ensureBackendUrl();
-    if (!state.backendHealthy) {
-      await checkBackend(false);
-    }
-    if (state.plan === 'pro') {
-      const response = await apiFetch('/api/analyze/pro', { text: currentText(), apiKey: $('proApiKey').value.trim(), endpoint: $('proEndpoint').value.trim() });
-      renderResult(response);
-      return;
-    }
+    if (!state.backendHealthy) await checkBackend(false);
     const sector = $('sector').value;
     const stage = $('stage').value;
+    const title = $('pitchTitle').value.trim() || 'Untitled pitch';
     if (state.mode === 'video') {
       const transcript = $('videoTranscript').value.trim();
-      const response = await apiFetch('/api/analyze/free/video', {
+      const response = await apiFetch('/api/analyze/video', {
         transcript,
         sector,
         stage,
@@ -475,33 +539,24 @@ async function runAnalysis() {
       });
       state.lastResult = response;
       renderResult(response);
-      saveHistory({ title: $('pitchTitle').value.trim() || 'Untitled pitch', mode: 'video', score: response.overall_score, timestamp: new Date().toLocaleString(), snippet: transcript.slice(0, 120) });
-      setStatus('Video analysis completed using transcript, delivery inputs, and integrated visual heuristics.', 'ok');
+      saveHistory({ title, mode: 'video', score: response.overall_score, timestamp: new Date().toLocaleString(), snippet: transcript.slice(0, 120) });
+      setStatus('Video analysis completed using the transcript, delivery inputs, visual heuristics, and dataset-backed scoring.', 'ok');
       return;
     }
     const text = $('pitchText').value.trim();
-    const response = await apiFetch('/api/analyze/free/text', { text, sector, stage });
+    const response = await apiFetch('/api/analyze/text', { text, sector, stage });
     state.lastResult = response;
     renderResult(response);
-    saveHistory({ title: $('pitchTitle').value.trim() || 'Untitled pitch', mode: 'text', score: response.overall_score, timestamp: new Date().toLocaleString(), snippet: text.slice(0, 120) });
-    setStatus('Text analysis completed using category scoring plus the embedded training dataset.', 'ok');
+    saveHistory({ title, mode: 'text', score: response.overall_score, timestamp: new Date().toLocaleString(), snippet: text.slice(0, 120) });
+    setStatus('Text analysis completed using section scoring, benchmark matching, and rewrite generation.', 'ok');
   } catch (error) {
     setStatus(`Analysis failed: ${escapeHtml(error.message)}`, 'bad');
   }
 }
 
-function setPlan(plan) {
-  state.plan = plan;
-  document.querySelectorAll('.plan-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.plan === plan));
-  $('proFields').classList.toggle('hidden', plan !== 'pro');
-  if (plan === 'pro') {
-    setStatus('Hosted model mode is not wired up yet. Use Integrated analysis for the working end-to-end experience.', '');
-  }
-}
-
 function setMode(mode) {
   state.mode = mode;
-  document.querySelectorAll('.mode-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+  document.querySelectorAll('.mode-toggle').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
   $('videoFields').classList.toggle('hidden', mode !== 'video');
 }
 
@@ -513,13 +568,13 @@ function loadSample(kind) {
   $('pitchText').value = sample.text;
   $('videoTranscript').value = sample.text;
   if (kind === 'video') setMode('video');
+  if (kind !== 'video') setMode('text');
 }
 
-document.querySelectorAll('.plan-tab').forEach(btn => btn.addEventListener('click', () => setPlan(btn.dataset.plan)));
-document.querySelectorAll('.mode-tab').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+document.querySelectorAll('.mode-toggle').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
 document.querySelectorAll('[data-sample]').forEach(btn => btn.addEventListener('click', () => loadSample(btn.dataset.sample)));
 $('runBtn').addEventListener('click', runAnalysis);
-$('compareBtn').addEventListener('click', () => { loadSample('strong'); setMode('text'); runAnalysis(); });
+$('compareBtn').addEventListener('click', () => { loadSample('strong'); runAnalysis(); });
 $('datasetBtn').addEventListener('click', loadDataset);
 $('healthBtn').addEventListener('click', () => checkBackend(true));
 $('clearHistoryBtn').addEventListener('click', () => { localStorage.removeItem(HISTORY_KEY); renderHistory(); });
