@@ -186,13 +186,13 @@
         <textarea id="pitchText" placeholder="Paste your business pitch."></textarea>
 
         <div id="videoFields" class="hidden">
-          <label for="videoUrl">YouTube video URL</label>
+          <label for="videoUrl">YouTube video URL (paste only the URL)</label>
           <input id="videoUrl" type="text" placeholder="https://www.youtube.com/watch?v=..." />
           <div class="buttons" style="margin-top: 8px;">
             <button id="fetchTranscriptBtn">Fetch transcript from YouTube</button>
           </div>
-          <label for="videoTranscript">Transcript</label>
-          <textarea id="videoTranscript" placeholder="Transcript will appear here. You can also paste/edit it manually."></textarea>
+          <label for="videoTranscript">Transcript (auto-filled from URL)</label>
+          <textarea id="videoTranscript" placeholder="Transcript appears here after you paste a valid YouTube URL and click fetch."></textarea>
           <div class="row">
             <div>
               <label for="energy">Delivery energy (1-10)</label>
@@ -457,8 +457,11 @@ async function fetchTranscript() {
     return;
   }
   try {
+    // Product behavior: keep transcript flow simple for users.
+    // They should only need to paste a URL; backend handles ID extraction + cleaning.
     const data = await api('/api/video/transcript', { url });
     $('videoTranscript').value = data.transcript || '';
+    setMode('video');
     setStatus(`Transcript loaded for video ID <code>${esc(data.video_id)}</code>.`, 'ok');
   } catch (err) {
     setStatus(`Transcript fetch failed: ${esc(err.message)}`, 'bad');
@@ -466,6 +469,10 @@ async function fetchTranscript() {
 }
 
 async function runAnalysis() {
+  // HOW TO EXTEND API TIERS:
+  // 1) Add the new plan key in backend ANALYSIS_PLAN_DETAILS.
+  // 2) Add matching backend routes in /api/analyze/<plan>/<mode>.
+  // 3) Update this mapping so the frontend calls the new route.
   const sector = $('sector').value;
   const stage = $('stage').value;
   const title = $('pitchTitle').value.trim() || 'Untitled pitch';
