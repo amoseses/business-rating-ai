@@ -41,6 +41,11 @@ LLM_API_KEY = os.environ.get("PITCH_LLM_API_KEY", "").strip()
 LLM_TIMEOUT_SECONDS = float(os.environ.get("PITCH_LLM_TIMEOUT", "8"))
 
 ANALYSIS_PLAN_DETAILS = {
+    # HOW TO ADD A NEW API PLAN:
+    # 1) Add a plan key here (e.g. "enterprise").
+    # 2) Update resolve_analysis_plan() with path routing logic.
+    # 3) Add /api/analyze/<plan>/text and /api/analyze/<plan>/video route handling.
+    # 4) Update frontend plan select + routing in index.html.
     "free": {
         "label": "Free",
         "description": "Rules + dataset scoring only.",
@@ -68,6 +73,10 @@ SECTOR_KEYWORDS = {
 }
 
 CATEGORY_TERMS = {
+    # HOW TO EXTEND SCORING CATEGORIES:
+    # - Add a new "<category_name>": ["keyword", ...] entry here.
+    # - Add an optional entry in FIX_LIBRARY with fix guidance.
+    # - The analysis pipeline automatically scores and returns it.
     "problem_definition": ["problem", "pain", "friction", "inefficient", "broken", "manual"],
     "solution_quality": ["solution", "platform", "workflow", "automation", "product", "we built"],
     "market_strength": ["tam", "sam", "som", "market", "segment", "growth rate", "industry"],
@@ -326,11 +335,44 @@ def fetch_youtube_transcript(video_id):
             text = re.sub(r"\s+", " ", text).strip()
             if text:
                 cleaned.append(text)
-        transcript = " ".join(cleaned).strip()
+        transcript = normalize_transcript_text(" ".join(cleaned))
         if transcript:
             return transcript
 
     raise ValueError("Transcript not available for this YouTube video.")
+
+
+def normalize_transcript_text(raw_text):
+    """
+    Normalize transcript text so UI users get clean spoken content only.
+
+    This intentionally strips common caption noise like bracketed cues
+    ([Music], [Applause]), parenthetical stage notes, URLs, and repeated
+    consecutive segments that often appear in auto captions.
+    """
+    text = (raw_text or "").strip()
+    if not text:
+        return ""
+
+    text = unescape(text)
+    text = re.sub(r"https?://\S+|www\.\S+", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"\[[^\]]+\]|\([^)]+\)", " ", text)
+    text = re.sub(r"[♪♫]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+
+    # Deduplicate repeated adjacent sentence chunks (common in subtitles).
+    chunks = re.split(r"(?<=[.!?])\s+", text)
+    deduped = []
+    for chunk in chunks:
+        cleaned = chunk.strip()
+        if not cleaned:
+            continue
+        if deduped and deduped[-1].lower() == cleaned.lower():
+            continue
+        deduped.append(cleaned)
+
+    cleaned_text = " ".join(deduped)
+    return re.sub(r"\s+", " ", cleaned_text).strip()
 
 
 def dataset_vector(text):

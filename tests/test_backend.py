@@ -71,6 +71,14 @@ class BackendAnalysisTests(unittest.TestCase):
         self.assertEqual(backend.extract_youtube_video_id("https://www.youtube.com/shorts/dQw4w9WgXcQ"), "dQw4w9WgXcQ")
         self.assertIsNone(backend.extract_youtube_video_id("https://example.com/video"))
 
+    def test_normalize_transcript_text_removes_caption_noise(self):
+        raw = "[Music] Welcome to our demo. (Applause) Welcome to our demo. Learn more at https://example.com ♪"
+        cleaned = backend.normalize_transcript_text(raw)
+        self.assertNotIn("Music", cleaned)
+        self.assertNotIn("Applause", cleaned)
+        self.assertNotIn("http", cleaned)
+        self.assertIn("Welcome to our demo.", cleaned)
+
 
 if __name__ == "__main__":
     unittest.main()
