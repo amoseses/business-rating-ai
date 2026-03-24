@@ -81,6 +81,14 @@ class BackendIntegrationShapeTests(unittest.TestCase):
         result = backend.analyze_text({'text': STRONG_TEXT, 'sector': 'fintech', 'stage': 'growth'})
         self.assertTrue(result['how_it_works'])
         self.assertIn('status', result['llm'])
+        self.assertEqual(result['plan']['key'], 'free')
 
     def test_health_payload_exposes_llm_configuration_flag(self):
         self.assertTrue(callable(getattr(backend.Handler, 'do_GET', None)))
+
+    def test_pro_and_plus_plans_are_reported(self):
+        pro = backend.analyze_text({'text': STRONG_TEXT, 'sector': 'fintech', 'stage': 'growth'}, plan='pro')
+        plus = backend.analyze_video({'transcript': STRONG_TEXT, 'sector': 'fintech', 'stage': 'growth'}, plan='plus')
+        self.assertEqual(pro['plan']['key'], 'pro')
+        self.assertEqual(plus['plan']['key'], 'plus')
+        self.assertEqual(backend.resolve_analysis_plan('/api/analyze/plus/text'), 'plus')
