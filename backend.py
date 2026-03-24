@@ -40,6 +40,24 @@ LLM_ENDPOINT = os.environ.get("PITCH_LLM_ENDPOINT", "").strip()
 LLM_API_KEY = os.environ.get("PITCH_LLM_API_KEY", "").strip()
 LLM_TIMEOUT_SECONDS = float(os.environ.get("PITCH_LLM_TIMEOUT", "8"))
 
+ANALYSIS_PLAN_DETAILS = {
+    "free": {
+        "label": "Free",
+        "description": "Rules + dataset scoring only.",
+        "llm_enrichment": False,
+    },
+    "pro": {
+        "label": "Pro",
+        "description": "Dataset scoring + optional LLM enrichment if configured.",
+        "llm_enrichment": True,
+    },
+    "plus": {
+        "label": "Plus",
+        "description": "Same as Pro with dedicated plan tagging for client integrations.",
+        "llm_enrichment": True,
+    },
+}
+
 SECTOR_KEYWORDS = {
     "saas": ["arr", "mrr", "churn", "retention", "seat", "subscription", "pipeline", "expansion"],
     "fintech": ["compliance", "risk", "fraud", "payment", "underwriting", "capital", "apr", "interchange"],
@@ -518,7 +536,20 @@ def apply_llm_enrichment(result, llm_result):
     return enriched
 
 
-def analyze_text(payload):
+def finalize_result_with_plan(result, payload, plan):
+    chosen_plan = plan if plan in ANALYSIS_PLAN_DETAILS else "free"
+    plan_meta = dict(ANALYSIS_PLAN_DETAILS[chosen_plan])
+    plan_meta["key"] = chosen_plan
+    if not plan_meta["llm_enrichment"]:
+        llm_result = {"enabled": False, "status": "disabled_for_plan"}
+    else:
+        llm_result = maybe_call_llm(result["mode"], payload, result)
+    enriched = apply_llm_enrichment(result, llm_result)
+    enriched["plan"] = plan_meta
+    return enriched
+
+
+def _analyze_text_core(payload):
     text = (payload.get("text") or "").strip()
     sector = (payload.get("sector") or "general").lower()
     stage = (payload.get("stage") or "early").lower()
@@ -572,12 +603,12 @@ def analyze_text(payload):
         "how_it_works": build_how_it_works("text", sector, stage, words),
         "execution_summary": build_execution_summary(categories, missing_stage_terms, checker),
     }
-    return apply_llm_enrichment(result, maybe_call_llm("text", payload, result))
+    return result
 
 
-def analyze_video(payload):
+def analyze_video(payload, plan="free"):
     transcript = (payload.get("transcript") or "").strip()
-    base = analyze_text({"text": transcript, "sector": payload.get("sector", "general"), "stage": payload.get("stage", "early")})
+    base = _analyze_text_core({"text": transcript, "sector": payload.get("sector", "general"), "stage": payload.get("stage", "early")})
     metrics = payload.get("image_metrics") or {}
     brightness = float(metrics.get("brightness", 0.55))
     contrast = float(metrics.get("contrast", 0.5))
@@ -613,7 +644,21 @@ def analyze_video(payload):
         "5. Added transcript delivery and visual heuristics to estimate on-camera clarity.",
     ]
     base["execution_summary"] = build_execution_summary(base["categories"], base["missing_stage_signals"], base["accuracy_checker"])
-    return apply_llm_enrichment(base, maybe_call_llm("video", payload, base))
+    return finalize_result_with_plan(base, payload, plan)
+
+
+def analyze_text(payload, plan="free"):
+    return finalize_result_with_plan(_analyze_text_core(payload), payload, plan)
+
+
+def resolve_analysis_plan(path):
+    if "/plus/" in path:
+        return "plus"
+    if "/pro/" in path:
+        return "pro"
+    if "/free/" in path:
+        return "free"
+    return "free"
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -655,6 +700,7 @@ class Handler(BaseHTTPRequestHandler):
                 "status": "ok",
                 "dataset_rows": DATASET_PROFILE["stats"]["rows"],
                 "llm_configured": bool(LLM_ENDPOINT and LLM_API_KEY),
+                "plans": ANALYSIS_PLAN_DETAILS,
             })
         if parsed.path == "/api/training/dataset":
             preview = [{**{key: example[key] for key in ["id", "sector", "stage", "rating", "quality"]}, "pitch_preview": example["pitch"][:220]} for example in TRAINING_DATASET]
@@ -668,17 +714,17 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             return self._json_response({"error": "Invalid JSON"}, 400)
 
-        if parsed.path in ("/api/analyze/free/text", "/api/analyze/text"):
+        if parsed.path in ("/api/analyze/text", "/api/analyze/free/text", "/api/analyze/pro/text", "/api/analyze/plus/text"):
             text = (payload.get("text") or "").strip()
             if len(text) < 12:
                 return self._json_response({"error": "Pitch is too short to analyze.", "fix": "Provide at least 12 characters and ideally 180+ words."}, 400)
-            return self._json_response(analyze_text(payload))
+            return self._json_response(analyze_text(payload, plan=resolve_analysis_plan(parsed.path)))
 
-        if parsed.path in ("/api/analyze/free/video", "/api/analyze/video"):
+        if parsed.path in ("/api/analyze/video", "/api/analyze/free/video", "/api/analyze/pro/video", "/api/analyze/plus/video"):
             transcript = (payload.get("transcript") or "").strip()
             if len(transcript) < 12:
                 return self._json_response({"error": "Transcript is too short to analyze.", "fix": "Provide at least 12 characters and ideally 180+ words."}, 400)
-            return self._json_response(analyze_video(payload))
+            return self._json_response(analyze_video(payload, plan=resolve_analysis_plan(parsed.path)))
 
         if parsed.path == "/api/video/transcript":
             source = (payload.get("url") or payload.get("video_url") or payload.get("video_id") or "").strip()

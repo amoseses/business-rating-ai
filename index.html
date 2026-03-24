@@ -52,6 +52,7 @@
       padding: 11px 14px;
       color: #cae6ff;
     }
+    .small-note { margin-top: 8px; color: var(--muted); font-size: .9rem; line-height: 1.5; }
     .layout {
       display: grid;
       grid-template-columns: 360px 1fr;
@@ -170,6 +171,14 @@
           </div>
         </div>
 
+        <label for="analysisPlan">Plan</label>
+        <select id="analysisPlan">
+          <option value="free" selected>Free (rules + dataset)</option>
+          <option value="pro">Pro (backend + optional LLM)</option>
+          <option value="plus">Plus (API tier with plan tagging)</option>
+        </select>
+        <div class="small-note" id="planHelp">Free plan runs local logic if backend is offline.</div>
+
         <label for="pitchTitle">Pitch title</label>
         <input id="pitchTitle" type="text" placeholder="Startup name + round" />
 
@@ -242,7 +251,9 @@ const DEMOS = {
 const state = {
   mode: 'text',
   backendBase: null,
-  backendConnected: false
+  backendConnected: false,
+  plan: 'free',
+  plansFromBackend: null
 };
 
 function $(id) { return document.getElementById(id); }
@@ -273,15 +284,34 @@ async function connectBackend() {
       if (res.ok && data.status === 'ok') {
         state.backendBase = base;
         state.backendConnected = true;
-        setStatus(`Connected to backend at <code>${esc(base)}</code>. Full analysis mode is active.`, 'ok');
+        state.plansFromBackend = data.plans || null;
+        setStatus(`Connected to backend at <code>${esc(base)}</code>. API tiers (free/pro/plus) are available.`, 'ok');
+        refreshPlanHelp();
         return true;
       }
     } catch (_) {}
   }
   state.backendConnected = false;
   state.backendBase = null;
+  state.plansFromBackend = null;
   setStatus('Backend not reachable. Offline fallback mode is active so you can still run analysis.', 'neutral');
+  refreshPlanHelp();
   return false;
+}
+
+function refreshPlanHelp() {
+  const selected = $('analysisPlan').value;
+  state.plan = selected;
+  if (!state.backendConnected) {
+    $('planHelp').textContent = selected === 'free'
+      ? 'Backend offline: running local Free fallback.'
+      : `Backend offline: ${selected.toUpperCase()} falls back to local Free scoring only.`;
+    return;
+  }
+  const details = state.plansFromBackend?.[selected];
+  $('planHelp').textContent = details
+    ? `${details.label}: ${details.description}`
+    : `${selected.toUpperCase()} plan selected via backend API endpoint.`;
 }
 
 function keywordHits(text, words) {
@@ -443,8 +473,9 @@ async function runAnalysis() {
   let result;
   try {
     if (state.backendConnected) {
+      const planPath = state.plan === 'plus' ? 'plus' : state.plan === 'pro' ? 'pro' : 'free';
       if (state.mode === 'video') {
-        result = await api('/api/analyze/video', {
+        result = await api(`/api/analyze/${planPath}/video`, {
           transcript: $('videoTranscript').value.trim(),
           sector,
           stage,
@@ -452,9 +483,9 @@ async function runAnalysis() {
           image_metrics: { brightness: 0.68, contrast: 0.7, sharpness: 0.73, text_density: 0.66, stability: 0.78 }
         });
       } else {
-        result = await api('/api/analyze/text', { text: $('pitchText').value.trim(), sector, stage });
+        result = await api(`/api/analyze/${planPath}/text`, { text: $('pitchText').value.trim(), sector, stage });
       }
-      setStatus(`Analysis completed in backend mode at <code>${esc(state.backendBase)}</code>.`, 'ok');
+      setStatus(`Analysis completed in backend mode at <code>${esc(state.backendBase)}</code> using <strong>${esc(state.plan.toUpperCase())}</strong>.`, 'ok');
     } else {
       result = state.mode === 'video'
         ? localAnalyzeVideo({ transcript: $('videoTranscript').value.trim(), sector, stage, delivery: { energy: Number($('energy').value) / 10, pace: Number($('pace').value) / 10 } })
@@ -477,6 +508,7 @@ async function init() {
   $('sampleWeakBtn').addEventListener('click', () => fillSample('weak'));
   $('clearHistoryBtn').addEventListener('click', () => { localStorage.removeItem(HISTORY_KEY); loadHistory(); });
   $('fetchTranscriptBtn').addEventListener('click', fetchTranscript);
+  $('analysisPlan').addEventListener('change', refreshPlanHelp);
 
   loadHistory();
   await connectBackend();
