@@ -64,6 +64,13 @@ class BackendAnalysisTests(unittest.TestCase):
         self.assertTrue(result["rewrite_suggestion"])
         self.assertTrue(result["fix_plan"]["must_fix_first"])
 
+    def test_extract_youtube_video_id_supports_common_formats(self):
+        self.assertEqual(backend.extract_youtube_video_id("dQw4w9WgXcQ"), "dQw4w9WgXcQ")
+        self.assertEqual(backend.extract_youtube_video_id("https://www.youtube.com/watch?v=dQw4w9WgXcQ"), "dQw4w9WgXcQ")
+        self.assertEqual(backend.extract_youtube_video_id("https://youtu.be/dQw4w9WgXcQ"), "dQw4w9WgXcQ")
+        self.assertEqual(backend.extract_youtube_video_id("https://www.youtube.com/shorts/dQw4w9WgXcQ"), "dQw4w9WgXcQ")
+        self.assertIsNone(backend.extract_youtube_video_id("https://example.com/video"))
+
 
 if __name__ == "__main__":
     unittest.main()
@@ -77,4 +84,3 @@ class BackendIntegrationShapeTests(unittest.TestCase):
 
     def test_health_payload_exposes_llm_configuration_flag(self):
         self.assertTrue(callable(getattr(backend.Handler, 'do_GET', None)))
-

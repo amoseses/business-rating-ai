@@ -4,10 +4,11 @@ import math
 import os
 import re
 from collections import Counter
+from html import unescape
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
@@ -253,6 +254,65 @@ def build_dataset_profile(dataset):
 
 
 DATASET_PROFILE = build_dataset_profile(TRAINING_DATASET)
+
+
+def extract_youtube_video_id(url_or_id):
+    value = (url_or_id or "").strip()
+    if not value:
+        return None
+    if re.fullmatch(r"[A-Za-z0-9_-]{11}", value):
+        return value
+
+    parsed = urlparse(value)
+    host = parsed.netloc.lower().replace("www.", "")
+    if host in {"youtube.com", "m.youtube.com"}:
+        query_id = parse_qs(parsed.query).get("v", [None])[0]
+        if query_id and re.fullmatch(r"[A-Za-z0-9_-]{11}", query_id):
+            return query_id
+        if parsed.path.startswith("/shorts/"):
+            short_id = parsed.path.split("/shorts/", 1)[1].split("/", 1)[0]
+            if re.fullmatch(r"[A-Za-z0-9_-]{11}", short_id):
+                return short_id
+    if host == "youtu.be":
+        short_id = parsed.path.strip("/").split("/", 1)[0]
+        if re.fullmatch(r"[A-Za-z0-9_-]{11}", short_id):
+            return short_id
+    return None
+
+
+def fetch_youtube_transcript(video_id):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id or ""):
+        raise ValueError("Invalid YouTube video ID.")
+
+    candidates = [
+        f"https://www.youtube.com/api/timedtext?lang=en&v={video_id}",
+        f"https://www.youtube.com/api/timedtext?lang=en&kind=asr&v={video_id}",
+        f"https://www.youtube.com/api/timedtext?lang=en-US&kind=asr&v={video_id}",
+    ]
+
+    for url in candidates:
+        req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        try:
+            with urlopen(req, timeout=8) as response:
+                xml = response.read().decode("utf-8", errors="ignore")
+        except (HTTPError, URLError, TimeoutError):
+            continue
+
+        segments = re.findall(r"<text[^>]*>(.*?)</text>", xml, flags=re.DOTALL)
+        if not segments:
+            continue
+        cleaned = []
+        for seg in segments:
+            text = unescape(seg)
+            text = re.sub(r"<[^>]+>", "", text)
+            text = re.sub(r"\s+", " ", text).strip()
+            if text:
+                cleaned.append(text)
+        transcript = " ".join(cleaned).strip()
+        if transcript:
+            return transcript
+
+    raise ValueError("Transcript not available for this YouTube video.")
 
 
 def dataset_vector(text):
@@ -619,6 +679,17 @@ class Handler(BaseHTTPRequestHandler):
             if len(transcript) < 12:
                 return self._json_response({"error": "Transcript is too short to analyze.", "fix": "Provide at least 12 characters and ideally 180+ words."}, 400)
             return self._json_response(analyze_video(payload))
+
+        if parsed.path == "/api/video/transcript":
+            source = (payload.get("url") or payload.get("video_url") or payload.get("video_id") or "").strip()
+            video_id = extract_youtube_video_id(source)
+            if not video_id:
+                return self._json_response({"error": "Please provide a valid YouTube link or video ID."}, 400)
+            try:
+                transcript = fetch_youtube_transcript(video_id)
+            except ValueError as exc:
+                return self._json_response({"error": str(exc)}, 400)
+            return self._json_response({"video_id": video_id, "transcript": transcript})
 
         self._json_response({"error": "Not found"}, 404)
 
