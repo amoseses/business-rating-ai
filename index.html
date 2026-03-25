@@ -128,6 +128,7 @@
     .item.clickable:hover { border-color: rgba(98,215,255,.35); }
     .history-pitch { margin-top: 8px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 8px; white-space: pre-wrap; line-height: 1.5; }
     .muted { color: var(--muted); }
+    .feedback-row { display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
     @media (max-width: 980px) { .layout { grid-template-columns:1fr; } }
     @media (max-width: 680px) { .row { grid-template-columns:1fr; } }
   </style>
@@ -251,7 +252,9 @@ const state = {
   backendBase: null,
   backendConnected: false,
   plan: 'plus',
-  plansFromBackend: null
+  plansFromBackend: null,
+  llmConfigured: false,
+  lastResult: null
 };
 
 function $(id) { return document.getElementById(id); }
@@ -283,6 +286,7 @@ async function connectBackend() {
         state.backendBase = base;
         state.backendConnected = true;
         state.plansFromBackend = data.plans || null;
+        state.llmConfigured = Boolean(data.llm_configured);
         setStatus(`Connected to backend at <code>${esc(base)}</code>. API tiers (free/pro/plus) are available.`, 'ok');
         refreshPlanHelp();
         return true;
@@ -292,6 +296,7 @@ async function connectBackend() {
   state.backendConnected = false;
   state.backendBase = null;
   state.plansFromBackend = null;
+  state.llmConfigured = false;
   setStatus('Backend not reachable. Offline fallback mode is active so you can still run analysis.', 'neutral');
   refreshPlanHelp();
   return false;
@@ -305,9 +310,12 @@ function refreshPlanHelp() {
     return;
   }
   const details = state.plansFromBackend?.[selected];
+  const llmHint = selected === 'plus' && !state.llmConfigured
+    ? ' Set PITCH_LLM_ENDPOINT and PITCH_LLM_API_KEY in the backend environment to use your GPT API key.'
+    : '';
   $('planHelp').textContent = details
-    ? `${details.label}: ${details.description}`
-    : `${selected.toUpperCase()} plan selected via backend API endpoint.`;
+    ? `${details.label}: ${details.description}${llmHint}`
+    : `${selected.toUpperCase()} plan selected via backend API endpoint.${llmHint}`;
 }
 
 function keywordHits(text, words) {
@@ -392,7 +400,18 @@ function renderResult(result) {
 
       <div class="card"><h3>Rewrite guidance</h3><div class="muted">${esc(result.rewrite_suggestion || 'No rewrite suggestion generated.')}</div></div>
       ${(result.llm && result.llm.status !== 'api_only') ? `<div class="card"><h3>Plus LLM readout</h3><div class="muted">${esc(result.llm.summary || 'No LLM summary available.')}</div></div>` : ''}
+      <div class="card">
+        <h3>Teach the model from your feedback</h3>
+        <div class="muted">This updates the training dataset so future pitch scoring learns from your signal.</div>
+        <div class="feedback-row">
+          <button id="feedbackGoodBtn">👍 Accurate score</button>
+          <button id="feedbackBadBtn">👎 Needs retraining</button>
+        </div>
+      </div>
     </div>`;
+
+  $('feedbackGoodBtn')?.addEventListener('click', () => submitFeedback('good'));
+  $('feedbackBadBtn')?.addEventListener('click', () => submitFeedback('bad'));
 }
 
 function loadHistory() {
@@ -499,12 +518,47 @@ async function runAnalysis() {
         : localAnalyzeText({ text: $('pitchText').value.trim(), sector, stage });
       setStatus('Analysis completed in offline fallback mode.', 'ok');
     }
+    state.lastResult = result;
     renderResult(result);
     const snippet = (state.mode === 'video' ? $('videoTranscript').value : $('pitchText').value).trim().slice(0, 120);
     const fullText = (state.mode === 'video' ? $('videoTranscript').value : $('pitchText').value).trim();
     saveHistory({ title, mode: result.mode || state.mode, score: result.overall_score, timestamp: new Date().toLocaleString(), snippet, fullText, expanded: false });
   } catch (err) {
     setStatus(`Analysis failed: ${esc(err.message)}`, 'bad');
+  }
+}
+
+
+
+async function submitFeedback(sentiment) {
+  if (!state.lastResult) {
+    setStatus('Run an analysis first, then send feedback.', 'bad');
+    return;
+  }
+  if (!state.backendConnected) {
+    setStatus('Feedback-based training requires backend mode.', 'bad');
+    return;
+  }
+
+  const content = state.mode === 'video' ? $('videoTranscript').value.trim() : $('pitchText').value.trim();
+  const baseline = Number(state.lastResult.overall_score || 70);
+  const rating = sentiment === 'good' ? Math.min(98, baseline + 8) : Math.max(35, baseline - 15);
+  const quality = sentiment === 'good' ? 'strong' : 'weak';
+
+  try {
+    const payload = {
+      sector: $('sector').value,
+      stage: $('stage').value,
+      rating,
+      quality,
+    };
+    if (state.mode === 'video') payload.transcript = content;
+    else payload.text = content;
+
+    const data = await api('/api/training/feedback', payload);
+    setStatus(`Feedback saved (${esc(data.added)}). Dataset now has ${esc(data.dataset_rows)} rows.`, 'ok');
+  } catch (err) {
+    setStatus(`Feedback save failed: ${esc(err.message)}`, 'bad');
   }
 }
 
