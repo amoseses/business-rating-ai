@@ -53,12 +53,12 @@ ANALYSIS_PLAN_DETAILS = {
     },
     "pro": {
         "label": "Pro",
-        "description": "Dataset scoring + optional LLM enrichment if configured.",
-        "llm_enrichment": True,
+        "description": "Production API shape and deterministic scoring (no LLM generation).",
+        "llm_enrichment": False,
     },
     "plus": {
         "label": "Plus",
-        "description": "Same as Pro with dedicated plan tagging for client integrations.",
+        "description": "Pro API + LLM-grade readout with adaptive dataset learning hooks.",
         "llm_enrichment": True,
     },
 }
@@ -281,6 +281,12 @@ def build_dataset_profile(dataset):
 
 
 DATASET_PROFILE = build_dataset_profile(TRAINING_DATASET)
+
+
+def refresh_dataset_profile():
+    global DATASET_PROFILE
+    DATASET_PROFILE = build_dataset_profile(TRAINING_DATASET)
+    return DATASET_PROFILE
 
 
 def extract_youtube_video_id(url_or_id):
@@ -537,7 +543,7 @@ def build_execution_summary(categories, missing_stage_terms, checker):
     }
 
 
-def maybe_call_llm(mode, payload, analysis):
+def maybe_call_hosted_llm(mode, payload, analysis):
     if not LLM_ENDPOINT or not LLM_API_KEY:
         return {"enabled": False, "status": "not_configured"}
 
@@ -560,6 +566,53 @@ def maybe_call_llm(mode, payload, analysis):
         return {"enabled": True, "status": "error", "error": str(exc)}
 
 
+def local_plus_llm(mode, payload, analysis):
+    dataset_detail = analysis.get("dataset_training_detail") or {}
+    nearest = dataset_detail.get("nearest_examples") or []
+    nearest_label = ", ".join(f"{item['id']} ({item['rating']})" for item in nearest[:2]) or "no close neighbors"
+    strongest = (analysis.get("execution_summary") or {}).get("strongest_areas", [])[:2]
+    weakest = (analysis.get("execution_summary") or {}).get("weakest_areas", [])[:2]
+    missing = (analysis.get("missing_stage_signals") or [])[:2]
+    stage = payload.get("stage", "early")
+    sector = payload.get("sector", "general")
+    score = int(analysis.get("overall_score", 0))
+
+    summary = (
+        f"Plus model readout: {sector} / {stage} signal at {score}/100. "
+        f"Strongest areas: {', '.join(strongest) if strongest else 'n/a'}. "
+        f"Primary gaps: {', '.join(weakest) if weakest else 'n/a'}."
+    )
+    investor_readout = [
+        f"Nearest learned examples: {nearest_label}.",
+        "Lead with one hard metric in sentence one, then explain workflow and moat in sentence two.",
+        "Use the raise sentence to tie capital directly to measurable milestones.",
+    ]
+    if missing:
+        investor_readout.append(f"Missing stage cues for {stage}: {', '.join(missing)}.")
+
+    next_steps = [
+        "Collect 5 latest customer proof points (retention, conversion, expansion).",
+        "Re-run Plus after updating metrics to validate confidence movement.",
+    ]
+    rewrite = (
+        f"We solve a measurable {sector} problem for a specific buyer, prove traction with hard numbers, "
+        f"and are raising capital to hit explicit {stage}-stage milestones with clear risk controls."
+    )
+    delta = 2 if score >= 65 else 1
+    return {
+        "enabled": True,
+        "status": "ok",
+        "provider": "local_plus",
+        "output": {
+            "summary": summary,
+            "investor_readout": investor_readout,
+            "next_steps": next_steps,
+            "rewrite": rewrite,
+            "score_delta": delta,
+        },
+    }
+
+
 def apply_llm_enrichment(result, llm_result):
     enriched = dict(result)
     enriched["llm"] = {"enabled": llm_result.get("enabled", False), "status": llm_result.get("status", "not_configured")}
@@ -567,6 +620,8 @@ def apply_llm_enrichment(result, llm_result):
     if llm_result.get("status") == "ok":
         score_delta = int(output.get("score_delta", 0)) if str(output.get("score_delta", "")).lstrip("-").isdigit() else 0
         enriched["overall_score"] = clamp(enriched["overall_score"] + max(-5, min(5, score_delta)))
+        if llm_result.get("provider"):
+            enriched["llm"]["provider"] = llm_result.get("provider")
         enriched["llm"]["summary"] = output.get("summary", "")
         enriched["llm"]["investor_readout"] = output.get("investor_readout") or []
         enriched["llm"]["next_steps"] = output.get("next_steps") or []
@@ -582,10 +637,14 @@ def finalize_result_with_plan(result, payload, plan):
     chosen_plan = plan if plan in ANALYSIS_PLAN_DETAILS else "free"
     plan_meta = dict(ANALYSIS_PLAN_DETAILS[chosen_plan])
     plan_meta["key"] = chosen_plan
-    if not plan_meta["llm_enrichment"]:
+    if chosen_plan == "pro":
+        llm_result = {"enabled": False, "status": "api_only"}
+    elif not plan_meta["llm_enrichment"]:
         llm_result = {"enabled": False, "status": "disabled_for_plan"}
     else:
-        llm_result = maybe_call_llm(result["mode"], payload, result)
+        llm_result = maybe_call_hosted_llm(result["mode"], payload, result)
+        if llm_result.get("status") in {"not_configured", "error"}:
+            llm_result = local_plus_llm(result["mode"], payload, result)
     enriched = apply_llm_enrichment(result, llm_result)
     enriched["plan"] = plan_meta
     return enriched
@@ -742,6 +801,7 @@ class Handler(BaseHTTPRequestHandler):
                 "status": "ok",
                 "dataset_rows": DATASET_PROFILE["stats"]["rows"],
                 "llm_configured": bool(LLM_ENDPOINT and LLM_API_KEY),
+                "learning_enabled": True,
                 "plans": ANALYSIS_PLAN_DETAILS,
             })
         if parsed.path == "/api/training/dataset":
@@ -778,6 +838,31 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 return self._json_response({"error": str(exc)}, 400)
             return self._json_response({"video_id": video_id, "transcript": transcript})
+
+        if parsed.path == "/api/training/feedback":
+            content = (payload.get("text") or payload.get("transcript") or "").strip()
+            sector = (payload.get("sector") or "general").lower()
+            stage = (payload.get("stage") or "early").lower()
+            rating = int(payload.get("rating", 70))
+            quality = (payload.get("quality") or ("strong" if rating >= 80 else "mixed" if rating >= 60 else "weak")).lower()
+            if len(content) < 40:
+                return self._json_response({"error": "Feedback sample too short. Provide at least 40 characters."}, 400)
+            training_row = {
+                "id": f"user-{len(TRAINING_DATASET)+1:04d}",
+                "sector": sector if sector in SECTOR_KEYWORDS else "general",
+                "stage": stage if stage in STAGE_EXPECTATIONS else "early",
+                "rating": clamp(rating),
+                "quality": quality,
+                "pitch": content,
+            }
+            TRAINING_DATASET.append(training_row)
+            profile = refresh_dataset_profile()
+            return self._json_response({
+                "status": "ok",
+                "added": training_row["id"],
+                "dataset_rows": profile["stats"]["rows"],
+                "avg_rating": profile["stats"]["avg_rating"],
+            })
 
         self._json_response({"error": "Not found"}, 404)
 
