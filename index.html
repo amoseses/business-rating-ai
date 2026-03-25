@@ -135,8 +135,8 @@
 <body>
   <div class="container">
     <section class="hero">
-      <h1>Clear pitch scoring. Real dataset. No fake demo fluff.</h1>
-      <p>Paste your pitch and get a practical report: strengths, risks, benchmark similarity, and a rewrite plan. The app now works in two ways: connected backend mode or an automatic offline fallback so analysis still runs.</p>
+      <h1>Video-first pitch scoring with Pro + Plus plans.</h1>
+      <p>Paste a YouTube link or transcript and get practical scoring. Pro is API-grade deterministic analysis. Plus adds LLM-style investor readout and adaptive learning hooks.</p>
       <div class="status-strip" id="statusBox">Checking backend connection…</div>
     </section>
 
@@ -144,8 +144,8 @@
       <aside class="panel">
         <h3>Input</h3>
         <div class="mode">
-          <button class="mode-btn active" data-mode="text">Text</button>
-          <button class="mode-btn" data-mode="video">Video transcript</button>
+          <button class="mode-btn" data-mode="text">Text</button>
+          <button class="mode-btn active" data-mode="video">Video transcript</button>
         </div>
 
         <div class="row">
@@ -173,16 +173,15 @@
 
         <label for="analysisPlan">Plan</label>
         <select id="analysisPlan">
-          <option value="free" selected>Free (rules + dataset)</option>
-          <option value="pro">Pro (backend + optional LLM)</option>
-          <option value="plus">Plus (API tier with plan tagging)</option>
+          <option value="pro">Pro (deterministic API)</option>
+          <option value="plus" selected>Plus (LLM + adaptive learning)</option>
         </select>
-        <div class="small-note" id="planHelp">Free plan runs local logic if backend is offline.</div>
+        <div class="small-note" id="planHelp">Plus uses backend LLM readout with local fallback when needed.</div>
 
         <label for="pitchTitle">Pitch title</label>
         <input id="pitchTitle" type="text" placeholder="Startup name + round" />
 
-        <label for="pitchText">Pitch text</label>
+        <label for="pitchText">Pitch text (optional when using video mode)</label>
         <textarea id="pitchText" placeholder="Paste your business pitch."></textarea>
 
         <div id="videoFields" class="hidden">
@@ -207,8 +206,7 @@
 
         <div class="buttons">
           <button class="primary" id="runBtn">Run analysis</button>
-          <button id="sampleStrongBtn">Strong sample</button>
-          <button id="sampleWeakBtn">Weak sample</button>
+          <button id="sampleStrongBtn">Load sample</button>
         </div>
       </aside>
 
@@ -249,10 +247,10 @@ const DEMOS = {
 };
 
 const state = {
-  mode: 'text',
+  mode: 'video',
   backendBase: null,
   backendConnected: false,
-  plan: 'free',
+  plan: 'plus',
   plansFromBackend: null
 };
 
@@ -303,9 +301,7 @@ function refreshPlanHelp() {
   const selected = $('analysisPlan').value;
   state.plan = selected;
   if (!state.backendConnected) {
-    $('planHelp').textContent = selected === 'free'
-      ? 'Backend offline: running local Free fallback.'
-      : `Backend offline: ${selected.toUpperCase()} falls back to local Free scoring only.`;
+    $('planHelp').textContent = `Backend offline: ${selected.toUpperCase()} UX remains, analysis runs local fallback. Video transcript fetch requires backend.`;
     return;
   }
   const details = state.plansFromBackend?.[selected];
@@ -395,6 +391,7 @@ function renderResult(result) {
       </div>
 
       <div class="card"><h3>Rewrite guidance</h3><div class="muted">${esc(result.rewrite_suggestion || 'No rewrite suggestion generated.')}</div></div>
+      ${(result.llm && result.llm.status !== 'api_only') ? `<div class="card"><h3>Plus LLM readout</h3><div class="muted">${esc(result.llm.summary || 'No LLM summary available.')}</div></div>` : ''}
     </div>`;
 }
 
@@ -439,7 +436,7 @@ function fillSample(type) {
   $('stage').value = s.stage;
   $('pitchText').value = s.text;
   $('videoTranscript').value = s.text;
-  setMode('text');
+  setMode('video');
 }
 
 async function loadDataset() {
@@ -479,8 +476,11 @@ async function runAnalysis() {
 
   let result;
   try {
+    if (state.mode === 'video' && !$('videoTranscript').value.trim() && $('videoUrl').value.trim() && state.backendConnected) {
+      await fetchTranscript();
+    }
     if (state.backendConnected) {
-      const planPath = state.plan === 'plus' ? 'plus' : state.plan === 'pro' ? 'pro' : 'free';
+      const planPath = state.plan === 'pro' ? 'pro' : 'plus';
       if (state.mode === 'video') {
         result = await api(`/api/analyze/${planPath}/video`, {
           transcript: $('videoTranscript').value.trim(),
@@ -512,11 +512,11 @@ async function init() {
   document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
   $('runBtn').addEventListener('click', runAnalysis);
   $('sampleStrongBtn').addEventListener('click', () => fillSample('strong'));
-  $('sampleWeakBtn').addEventListener('click', () => fillSample('weak'));
   $('clearHistoryBtn').addEventListener('click', () => { localStorage.removeItem(HISTORY_KEY); loadHistory(); });
   $('fetchTranscriptBtn').addEventListener('click', fetchTranscript);
   $('analysisPlan').addEventListener('change', refreshPlanHelp);
 
+  setMode('video');
   loadHistory();
   await connectBackend();
   await loadDataset();
