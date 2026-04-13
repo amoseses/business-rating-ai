@@ -11,8 +11,11 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
+from stripe_data import get_plan, public_stripe_config
+
 ROOT = Path(__file__).resolve().parent
 INDEX_PATH = ROOT / "index.html"
+STRIPE_CONFIG_PATH = ROOT / "stripe-config.js"
 
 # ---------------------------------------------------------------------------
 # OPTIONAL PLUS / LLM BACKEND SECTION
@@ -796,6 +799,14 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(html)
             return
+        if parsed.path == "/stripe-config.js":
+            script = STRIPE_CONFIG_PATH.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/javascript; charset=utf-8")
+            self.send_header("Content-Length", str(len(script)))
+            self.end_headers()
+            self.wfile.write(script)
+            return
         if parsed.path == "/api/health":
             return self._json_response({
                 "status": "ok",
@@ -803,10 +814,13 @@ class Handler(BaseHTTPRequestHandler):
                 "llm_configured": bool(LLM_ENDPOINT and LLM_API_KEY),
                 "learning_enabled": True,
                 "plans": ANALYSIS_PLAN_DETAILS,
+                "payments_enabled": True,
             })
         if parsed.path == "/api/training/dataset":
             preview = [{**{key: example[key] for key in ["id", "sector", "stage", "rating", "quality"]}, "pitch_preview": example["pitch"][:220]} for example in TRAINING_DATASET]
             return self._json_response({"stats": DATASET_PROFILE["stats"], "examples": preview})
+        if parsed.path == "/api/payments/plans":
+            return self._json_response(public_stripe_config())
         self._json_response({"error": "Not found"}, 404)
 
     def do_POST(self):
@@ -863,6 +877,22 @@ class Handler(BaseHTTPRequestHandler):
                 "dataset_rows": profile["stats"]["rows"],
                 "avg_rating": profile["stats"]["avg_rating"],
             })
+
+        if parsed.path == "/api/payments/checkout-session":
+            plan_id = (payload.get("plan_id") or "").strip()
+            plan = get_plan(plan_id)
+            if not plan:
+                return self._json_response({"error": "Unknown plan id."}, 400)
+            if plan.get("payment_link"):
+                return self._json_response({
+                    "status": "ok",
+                    "provider": "stripe_payment_link",
+                    "checkout_url": plan["payment_link"],
+                })
+            return self._json_response({
+                "error": "Stripe payment link not configured for this plan.",
+                "fix": f"Set STRIPE_PAYMENT_LINK_{'PRO' if plan_id == 'pro_monthly' else 'PLUS'} in backend environment.",
+            }, 400)
 
         self._json_response({"error": "Not found"}, 404)
 
