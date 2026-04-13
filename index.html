@@ -3,579 +3,120 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AstraPitch — Business Pitch Analyzer</title>
+  <title>AstraPitch — Analysis + Plans</title>
   <style>
-    :root {
-      --bg: #07101b;
-      --bg-soft: #0c1a2b;
-      --panel: #0f1d31;
-      --line: rgba(131, 194, 255, 0.18);
-      --text: #ecf3ff;
-      --muted: #93a5c5;
-      --accent: #62d7ff;
-      --accent-2: #8a7dff;
-      --good: #2ed39a;
-      --bad: #ff7084;
-      --radius: 18px;
-      --shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-      --sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      min-height: 100vh;
-      font-family: var(--sans);
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(98, 215, 255, .1), transparent 26%),
-        radial-gradient(circle at top right, rgba(138, 125, 255, .12), transparent 28%),
-        linear-gradient(180deg, #040912 0%, #07101b 100%);
-    }
-    .container { width: min(1160px, calc(100% - 28px)); margin: 0 auto; }
-    .hero { padding: 28px 0 18px; }
-    .hero h1 {
-      font-size: clamp(2rem, 4.2vw, 3.2rem);
-      line-height: 1.06;
-      letter-spacing: -0.03em;
-      margin-bottom: 12px;
-      background: linear-gradient(135deg, #f8fcff 0%, var(--accent) 56%, var(--accent-2) 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    .hero p { color: var(--muted); max-width: 880px; line-height: 1.7; }
-    .status-strip {
-      margin-top: 18px;
-      border: 1px solid var(--line);
-      background: rgba(99, 153, 255, 0.08);
-      border-radius: 14px;
-      padding: 11px 14px;
-      color: #cae6ff;
-    }
-    .small-note { margin-top: 8px; color: var(--muted); font-size: .9rem; line-height: 1.5; }
-    .layout {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 18px;
-      padding: 14px 0 34px;
-    }
-    .panel {
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(15, 29, 49, .96), rgba(11, 22, 37, .96));
-      box-shadow: var(--shadow);
-      padding: 18px;
-    }
-    h2 { margin-bottom: 12px; font-size: 1.7rem; }
-    h3 { margin-bottom: 8px; font-size: 1.14rem; }
-    label {
-      display: block;
-      margin: 12px 0 7px;
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: .8rem;
-      text-transform: uppercase;
-      letter-spacing: .07em;
-    }
-    input[type=text], textarea, select, input[type=number] {
-      width: 100%;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.11);
-      background: #081322;
-      color: var(--text);
-      padding: 12px;
-      font: inherit;
-    }
-    textarea { min-height: 190px; resize: vertical; line-height: 1.6; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .buttons, .mode { display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px; }
-    button {
-      border: 1px solid rgba(255,255,255,.13);
-      border-radius: 12px;
-      background: rgba(255,255,255,.05);
-      color: var(--text);
-      padding: 11px 13px;
-      font: inherit;
-      cursor: pointer;
-    }
-    button.primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: #07101b;
-      font-weight: 800;
-      border-color: rgba(125, 222, 255, .55);
-    }
-    button.active { border-color: rgba(98,215,255,.5); background: rgba(98,215,255,.16); }
-    button:hover { border-color: rgba(98,215,255,.38); }
-    .hidden { display:none; }
-    .result-shell { display:grid; gap: 12px; }
-    .score-line { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
-    .score-badge {
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-weight: 700;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.11);
-    }
-    .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px; }
-    .card { border:1px solid rgba(255,255,255,.1); border-radius: 12px; background: rgba(255,255,255,.03); padding: 12px; }
-    .card ul { margin: 8px 0 0 16px; color: var(--muted); line-height: 1.6; }
-    .bar { height: 9px; background: rgba(255,255,255,.08); border-radius: 999px; overflow:hidden; margin-top: 8px; }
-    .bar span { display:block; height:100%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
-    .history { margin-top: 16px; }
-    .list { display:grid; gap:8px; max-height:260px; overflow:auto; padding-right: 2px; }
-    .item { border:1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); border-radius: 10px; padding:10px; }
-    .item.clickable { cursor: pointer; }
-    .item.clickable:hover { border-color: rgba(98,215,255,.35); }
-    .history-pitch { margin-top: 8px; border-top: 1px solid rgba(255,255,255,.08); padding-top: 8px; white-space: pre-wrap; line-height: 1.5; }
-    .muted { color: var(--muted); }
-    .feedback-row { display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
-    @media (max-width: 980px) { .layout { grid-template-columns:1fr; } }
-    @media (max-width: 680px) { .row { grid-template-columns:1fr; } }
+    :root{--bg:#07101b;--panel:#0d1a2d;--line:rgba(131,194,255,.18);--text:#ecf3ff;--muted:#8ea5c5;--accent:#62d7ff;--accent2:#8a7dff;--good:#2ed39a;--bad:#ff7084}
+    *{box-sizing:border-box;margin:0;padding:0} body{font-family:Inter,system-ui,sans-serif;background:linear-gradient(180deg,#040912,#07101b);color:var(--text)}
+    .wrap{width:min(1180px,calc(100% - 28px));margin:0 auto;padding:24px 0 36px}
+    .hero{display:grid;gap:10px;margin-bottom:14px}.hero h1{font-size:clamp(2rem,4vw,3rem);background:linear-gradient(135deg,#fff,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .status{border:1px solid var(--line);padding:10px 12px;border-radius:12px;background:rgba(99,153,255,.08)}
+    .grid{display:grid;grid-template-columns:360px 1fr;gap:16px}.panel{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:16px}
+    .stack{display:grid;gap:10px}.muted{color:var(--muted)} label{font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;display:block}
+    input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#091426;color:var(--text)} textarea{min-height:170px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px} button{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--text);cursor:pointer}
+    .primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#05101d;font-weight:700}.mode.active{border-color:rgba(98,215,255,.5);background:rgba(98,215,255,.16)}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.card{border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;background:rgba(255,255,255,.03)}
+    .bar{height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:8px}.bar span{display:block;height:100%;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+    .history{max-height:220px;overflow:auto;display:grid;gap:8px}.item{padding:9px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)}
+    .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}.plan{border:1px solid rgba(255,255,255,.12);padding:12px;border-radius:12px;background:rgba(255,255,255,.03)}
+    .price{font-size:1.35rem;font-weight:800;margin-top:4px}
+    @media (max-width:960px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="wrap">
     <section class="hero">
-      <h1>Video-first pitch scoring with Pro + Plus plans.</h1>
-      <p>Paste a YouTube link or transcript and get practical scoring. Pro is API-grade deterministic analysis. Plus adds LLM-style investor readout and adaptive learning hooks.</p>
-      <div class="status-strip" id="statusBox">Checking backend connection…</div>
+      <h1>AstraPitch: cleaned main app with analysis + integrated payments.</h1>
+      <p class="muted">Single main HTML. Backend analysis remains the source of truth for accurate scoring, with offline fallback if needed.</p>
+      <div id="status" class="status">Checking backend connection…</div>
     </section>
 
-    <section class="layout">
-      <aside class="panel">
+    <section class="grid">
+      <aside class="panel stack">
         <h3>Input</h3>
-        <div class="mode">
-          <button class="mode-btn" data-mode="text">Text</button>
-          <button class="mode-btn active" data-mode="video">Video transcript</button>
+        <div class="btns">
+          <button class="mode" data-mode="text">Text</button>
+          <button class="mode active" data-mode="video">Video transcript</button>
         </div>
-
         <div class="row">
-          <div>
-            <label for="sector">Sector</label>
-            <select id="sector">
-              <option value="general">General</option>
-              <option value="saas">SaaS</option>
-              <option value="fintech">FinTech</option>
-              <option value="healthtech">HealthTech</option>
-              <option value="ai">AI</option>
-              <option value="consumer">Consumer</option>
-            </select>
-          </div>
-          <div>
-            <label for="stage">Stage</label>
-            <select id="stage">
-              <option value="idea">Idea</option>
-              <option value="mvp">MVP</option>
-              <option value="early" selected>Early revenue</option>
-              <option value="growth">Growth</option>
-            </select>
-          </div>
+          <div><label>Sector</label><select id="sector"><option value="general">General</option><option value="saas">SaaS</option><option value="fintech">FinTech</option><option value="healthtech">HealthTech</option><option value="ai">AI</option><option value="consumer">Consumer</option></select></div>
+          <div><label>Stage</label><select id="stage"><option value="idea">Idea</option><option value="mvp">MVP</option><option value="early" selected>Early revenue</option><option value="growth">Growth</option></select></div>
         </div>
 
-        <label for="analysisPlan">Plan</label>
-        <select id="analysisPlan">
-          <option value="pro">Pro (deterministic API)</option>
-          <option value="plus" selected>Plus (LLM + adaptive learning)</option>
-        </select>
-        <div class="small-note" id="planHelp">Plus uses backend LLM readout with local fallback when needed.</div>
+        <label>Plan</label>
+        <select id="analysisPlan"><option value="pro">Pro</option><option value="plus" selected>Plus</option></select>
+        <div id="planHelp" class="muted">Plus uses backend LLM readout when configured.</div>
 
-        <label for="pitchTitle">Pitch title</label>
-        <input id="pitchTitle" type="text" placeholder="Startup name + round" />
+        <label>Pitch title</label><input id="pitchTitle" type="text" placeholder="Startup + round" />
+        <label>Pitch text</label><textarea id="pitchText" placeholder="Paste pitch text."></textarea>
 
-        <label for="pitchText">Pitch text (optional when using video mode)</label>
-        <textarea id="pitchText" placeholder="Paste your business pitch."></textarea>
-
-        <div id="videoFields" class="hidden">
-          <label for="videoUrl">YouTube video URL (paste only the URL)</label>
-          <input id="videoUrl" type="text" placeholder="https://www.youtube.com/watch?v=..." />
-          <div class="buttons" style="margin-top: 8px;">
-            <button id="fetchTranscriptBtn">Fetch transcript from YouTube</button>
-          </div>
-          <label for="videoTranscript">Transcript (auto-filled from URL)</label>
-          <textarea id="videoTranscript" placeholder="Transcript appears here after you paste a valid YouTube URL and click fetch."></textarea>
+        <div id="videoFields">
+          <label>YouTube URL</label><input id="videoUrl" type="text" placeholder="https://www.youtube.com/watch?v=..." />
+          <div class="btns"><button id="fetchTranscriptBtn">Fetch transcript</button></div>
+          <label>Transcript</label><textarea id="videoTranscript" placeholder="Transcript appears here after fetch."></textarea>
           <div class="row">
-            <div>
-              <label for="energy">Delivery energy (1-10)</label>
-              <input id="energy" type="number" min="1" max="10" value="7" />
-            </div>
-            <div>
-              <label for="pace">Delivery pace (1-10)</label>
-              <input id="pace" type="number" min="1" max="10" value="7" />
-            </div>
+            <div><label>Energy (1-10)</label><input id="energy" type="number" min="1" max="10" value="7"></div>
+            <div><label>Pace (1-10)</label><input id="pace" type="number" min="1" max="10" value="7"></div>
           </div>
         </div>
 
-        <div class="buttons">
+        <div class="btns">
           <button class="primary" id="runBtn">Run analysis</button>
-          <button id="sampleStrongBtn">Load sample</button>
+          <button id="sampleBtn">Load sample</button>
         </div>
       </aside>
 
-      <main class="panel">
+      <main class="panel stack">
         <h2>Results</h2>
-        <div id="resultsArea" class="muted">Run analysis to generate a scored report.</div>
+        <div id="results" class="muted">Run analysis to generate report.</div>
 
-        <div class="history">
-          <h3>Recent analyses</h3>
-          <div class="muted">Click any saved pitch to view the full text/transcript.</div>
-          <div class="buttons" style="margin-top: 8px;"><button id="clearHistoryBtn">Clear history</button></div>
-          <div class="list" id="historyList"></div>
-        </div>
+        <h3>Payment plans (Stripe-integrated data)</h3>
+        <div id="paymentPlans" class="plans"><div class="muted">Loading payment options…</div></div>
+
+        <h3>Recent analyses</h3>
+        <div class="btns"><button id="clearHistoryBtn">Clear history</button></div>
+        <div id="history" class="history"></div>
       </main>
     </section>
   </div>
 
+<script src="/stripe-config.js"></script>
 <script>
-const HISTORY_KEY = 'astrapitch_history_v4';
-const BACKEND_CANDIDATES = [
-  location.protocol.startsWith('http') ? location.origin : '',
-  'http://127.0.0.1:8080'
-].filter(Boolean);
+const HISTORY_KEY='astrapitch_history_v5';
+const BACKENDS=[location.protocol.startsWith('http')?location.origin:'','http://127.0.0.1:8080'].filter(Boolean);
+const state={backend:null,connected:false,mode:'video',plan:'plus',last:null};
+const sample='We help B2B software platforms launch embedded payments in 14 days instead of 4 months. Our orchestration layer routes transactions across processors, automates KYC and chargeback workflows, and gives finance teams an audit-ready ledger. We serve 46 software platforms, processed $182M annualized volume last quarter, and grew ARR from $1.1M to $2.8M in 11 months with 121% net revenue retention. We charge a SaaS subscription plus interchange share, maintain 81% gross margin, and are raising $4M to expand enterprise sales and bank partnerships while holding compliance risk low through quarterly external reviews.';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-const DEMOS = {
-  strong: {
-    title: 'LedgerFlow Series A',
-    sector: 'fintech',
-    stage: 'growth',
-    text: 'We help B2B software platforms launch embedded payments in 14 days instead of 4 months. Our orchestration layer routes transactions across processors, automates KYC and chargeback workflows, and gives finance teams an audit-ready ledger. We serve 46 software platforms, processed $182M annualized volume last quarter, and grew ARR from $1.1M to $2.8M in 11 months with 121% net revenue retention. We charge a SaaS subscription plus interchange share, maintain 81% gross margin, and are raising $4M to expand enterprise sales and bank partnerships while holding compliance risk low through quarterly external reviews.'
-  },
-  weak: {
-    title: 'WorldChanger',
-    sector: 'general',
-    stage: 'idea',
-    text: 'We are building a revolutionary platform for everyone. The market is huge and there is basically no competition. Our product will change the world very fast and we expect explosive growth soon. We are raising money to build more features.'
-  }
-};
+function setStatus(msg,t='n'){$('status').innerHTML=msg;$('status').style.borderColor=t==='ok'?'rgba(46,211,154,.45)':t==='bad'?'rgba(255,112,132,.45)':'var(--line)';}
+async function api(path,payload,method='POST'){const r=await fetch(`${state.backend}${path}`,{method,headers:{'Content-Type':'application/json'},body:method==='GET'?undefined:JSON.stringify(payload||{})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed');return d;}
 
-const state = {
-  mode: 'video',
-  backendBase: null,
-  backendConnected: false,
-  plan: 'plus',
-  plansFromBackend: null,
-  llmConfigured: false,
-  lastResult: null
-};
+async function connect(){for(const b of BACKENDS){try{const r=await fetch(`${b}/api/health`);const d=await r.json();if(r.ok&&d.status==='ok'){state.backend=b;state.connected=true;setStatus(`Connected: <code>${esc(b)}</code>`, 'ok');return;}}catch{}}setStatus('Backend unavailable. Offline fallback analysis only; payments and transcript fetch need backend.');}
 
-function $(id) { return document.getElementById(id); }
-function esc(v) { return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+function setMode(mode){state.mode=mode;document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('active',x.dataset.mode===mode));$('videoFields').style.display=mode==='video'?'block':'none';}
+function localAnalyze(text){const words=(text.match(/[a-zA-Z][a-zA-Z\-']+/g)||[]).length;const nums=(text.match(/\$?\d+(?:\.\d+)?(?:%|k|m|b|x)?/gi)||[]).length;const score=Math.min(96,Math.round(35+words/6+nums*3));return {mode:state.mode,overall_score:score,categories:{problem_definition:Math.min(100,30+words/8),traction:Math.min(100,24+nums*12),business_model:Math.min(100,30+nums*7),market_strength:Math.min(100,25+nums*8)},strengths:['Good concrete details.'],risks:['Add sharper milestones if score < 80.'],rewrite_suggestion:'Lead with a measurable problem, then traction, then funding ask + milestones.'};}
 
-function setStatus(message, tone = 'neutral') {
-  $('statusBox').innerHTML = message;
-  $('statusBox').style.borderColor = tone === 'bad' ? 'rgba(255,112,132,.45)' : tone === 'ok' ? 'rgba(46,211,154,.45)' : 'var(--line)';
+function render(res){const cards=Object.entries(res.categories||{}).map(([k,v])=>`<div class='card'><strong>${esc(k.replaceAll('_',' '))}</strong><div class='muted'>${v}/100</div><div class='bar'><span style='width:${v}%'></span></div></div>`).join('');
+  $('results').innerHTML=`<div class='stack'><h3>Overall: ${res.overall_score}/100</h3><div class='cards'>${cards}</div><div class='cards'><div class='card'><strong>Strengths</strong><ul>${(res.strengths||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div class='card'><strong>Risks</strong><ul>${(res.risks||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div><div class='card'><strong>Rewrite guidance</strong><div class='muted'>${esc(res.rewrite_suggestion||'')}</div></div></div>`;
 }
 
-async function api(path, payload, method = 'POST') {
-  if (!state.backendBase) throw new Error('Backend not connected.');
-  const res = await fetch(`${state.backendBase}${path}`, {
-    method,
-    headers: {'Content-Type': 'application/json'},
-    body: method === 'GET' ? undefined : JSON.stringify(payload || {})
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
-}
+function saveHistory(title,score,text){const list=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');list.unshift({title,score,mode:state.mode,time:new Date().toLocaleString(),snippet:text.slice(0,120)});localStorage.setItem(HISTORY_KEY,JSON.stringify(list.slice(0,12)));renderHistory();}
+function renderHistory(){const list=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');$('history').innerHTML=list.length?list.map(x=>`<div class='item'><strong>${esc(x.title)}</strong><div class='muted'>${esc(x.mode)} · ${x.score}/100 · ${esc(x.time)}</div><div class='muted'>${esc(x.snippet)}</div></div>`).join(''):'<div class="muted">No analyses yet.</div>';}
 
-async function connectBackend() {
-  for (const base of BACKEND_CANDIDATES) {
-    try {
-      const res = await fetch(`${base}/api/health`);
-      const data = await res.json();
-      if (res.ok && data.status === 'ok') {
-        state.backendBase = base;
-        state.backendConnected = true;
-        state.plansFromBackend = data.plans || null;
-        state.llmConfigured = Boolean(data.llm_configured);
-        setStatus(`Connected to backend at <code>${esc(base)}</code>. API tiers (free/pro/plus) are available.`, 'ok');
-        refreshPlanHelp();
-        return true;
-      }
-    } catch (_) {}
-  }
-  state.backendConnected = false;
-  state.backendBase = null;
-  state.plansFromBackend = null;
-  state.llmConfigured = false;
-  setStatus('Backend not reachable. Offline fallback mode is active so you can still run analysis.', 'neutral');
-  refreshPlanHelp();
-  return false;
-}
+async function run(){const text=state.mode==='video'?$('videoTranscript').value.trim():$('pitchText').value.trim();if(text.length<12){setStatus('Please provide a longer pitch text/transcript.', 'bad');return;}
+  try{let res;if(state.connected){const path=`/api/analyze/${$('analysisPlan').value}/${state.mode}`;const payload=state.mode==='video'?{transcript:text,sector:$('sector').value,stage:$('stage').value,delivery:{energy:Number($('energy').value)/10,pace:Number($('pace').value)/10}}:{text,sector:$('sector').value,stage:$('stage').value};res=await api(path,payload);setStatus(`Analysis completed with ${esc($('analysisPlan').value.toUpperCase())}.`,'ok');}else{res=localAnalyze(text);setStatus('Analysis completed in offline fallback.','ok');}
+    state.last=res;render(res);saveHistory($('pitchTitle').value.trim()||'Untitled',res.overall_score,text);
+  }catch(e){setStatus(`Analysis failed: ${esc(e.message)}`,'bad');}}
 
-function refreshPlanHelp() {
-  const selected = $('analysisPlan').value;
-  state.plan = selected;
-  if (!state.backendConnected) {
-    $('planHelp').textContent = `Backend offline: ${selected.toUpperCase()} UX remains, analysis runs local fallback. Video transcript fetch requires backend.`;
-    return;
-  }
-  const details = state.plansFromBackend?.[selected];
-  const llmHint = selected === 'plus' && !state.llmConfigured
-    ? ' Set PITCH_LLM_ENDPOINT and PITCH_LLM_API_KEY in the backend environment to use your GPT API key.'
-    : '';
-  $('planHelp').textContent = details
-    ? `${details.label}: ${details.description}${llmHint}`
-    : `${selected.toUpperCase()} plan selected via backend API endpoint.${llmHint}`;
-}
+async function fetchTranscript(){if(!state.connected){setStatus('Backend is required for transcript fetching.', 'bad');return;}try{const data=await api('/api/video/transcript',{url:$('videoUrl').value.trim()});$('videoTranscript').value=data.transcript||'';setStatus(`Transcript loaded for ${esc(data.video_id)}.`, 'ok');}catch(e){setStatus(`Transcript fetch failed: ${esc(e.message)}`,'bad');}}
 
-function keywordHits(text, words) {
-  const lower = text.toLowerCase();
-  return words.reduce((acc, term) => acc + (lower.includes(term) ? 1 : 0), 0);
-}
+async function loadPayments(){if(!state.connected){$('paymentPlans').innerHTML='<div class="muted">Connect backend to load Stripe plans.</div>';return;}try{const cfg=await window.ASTRA_STRIPE.load(state.backend);$('paymentPlans').innerHTML=(cfg.plans||[]).map(plan=>`<div class='plan'><strong>${esc(plan.name)}</strong><div class='price'>${window.ASTRA_STRIPE.formatUsd(plan.price_usd)}/${esc(plan.interval)}</div><div class='muted'>${esc(plan.description)}</div><ul>${(plan.features||[]).map(f=>`<li>${esc(f)}</li>`).join('')}</ul><div class='btns'><button data-plan='${esc(plan.id)}' class='buyBtn primary'>Start ${esc(plan.name)}</button></div></div>`).join('');document.querySelectorAll('.buyBtn').forEach(btn=>btn.addEventListener('click',()=>startCheckout(btn.dataset.plan)));}catch(e){$('paymentPlans').innerHTML=`<div class='muted'>Failed to load plans: ${esc(e.message)}</div>`;}}
 
-function localAnalyzeText({text, sector, stage}) {
-  const words = (text.match(/[a-zA-Z][a-zA-Z\-']+/g) || []).length;
-  const numeric = (text.match(/\$?\d+(?:\.\d+)?(?:%|k|m|b|x)?/gi) || []).length;
-  const sectorTerms = {
-    general: ['market', 'customer', 'revenue'],
-    saas: ['arr', 'retention', 'churn'],
-    fintech: ['payment', 'compliance', 'risk'],
-    healthtech: ['patient', 'clinical', 'provider'],
-    ai: ['model', 'dataset', 'accuracy'],
-    consumer: ['cohort', 'engagement', 'ltv']
-  };
-  const categories = {
-    problem_definition: Math.min(100, 30 + keywordHits(text, ['problem','pain','manual','broken']) * 14 + words / 8),
-    solution_quality: Math.min(100, 28 + keywordHits(text, ['platform','workflow','automation','product']) * 14 + words / 9),
-    market_strength: Math.min(100, 24 + keywordHits(text, ['tam','sam','market','segment']) * 16 + numeric * 6),
-    business_model: Math.min(100, 24 + keywordHits(text, ['pricing','subscription','margin','revenue']) * 14 + numeric * 5),
-    traction: Math.min(100, 18 + keywordHits(text, ['arr','mrr','customers','retention','growth','pilot']) * 14 + numeric * 6),
-    fundraise_clarity: Math.min(100, 20 + keywordHits(text, ['raising','runway','milestone','use of funds']) * 16 + numeric * 4),
-    sector_alignment: Math.min(100, 22 + keywordHits(text, sectorTerms[sector] || sectorTerms.general) * 18),
-    stage_alignment: Math.min(100, 30 + keywordHits(text, [stage, 'growth', 'revenue', 'pilot', 'retention']) * 11)
-  };
+async function startCheckout(planId){try{const data=await api('/api/payments/checkout-session',{plan_id:planId});if(data.checkout_url){window.open(data.checkout_url,'_blank');setStatus('Opened Stripe checkout in a new tab.','ok');return;}setStatus('Checkout URL missing from payment response.','bad');}catch(e){setStatus(`Payment setup needed: ${esc(e.message)}`,'bad');}}
 
-  const overall = Math.round(Object.values(categories).reduce((a,b)=>a+b,0) / Object.values(categories).length);
-  const ordered = Object.entries(categories).sort((a,b)=>b[1]-a[1]);
-  const weakest = ordered.slice(-3).map(([k])=>k);
-  const strongest = ordered.slice(0,3).map(([k])=>k);
-
-  return {
-    mode: 'text',
-    overall_score: overall,
-    categories: Object.fromEntries(Object.entries(categories).map(([k,v]) => [k, Math.round(v)])),
-    strengths: strongest.map(k => `${k.replaceAll('_', ' ')} is currently strong.`),
-    risks: weakest.map(k => `Improve ${k.replaceAll('_', ' ')} with concrete data.`),
-    rewrite_suggestion: `Lead with one painful customer problem, add hard numbers for traction, then state your raise amount and milestones.`
-  };
-}
-
-function localAnalyzeVideo(payload) {
-  const base = localAnalyzeText({ text: payload.transcript || '', sector: payload.sector, stage: payload.stage });
-  const energy = Number(payload.delivery?.energy || 0.7);
-  const pace = Number(payload.delivery?.pace || 0.7);
-  base.mode = 'video';
-  base.categories.visual_clarity = Math.round(45 + (energy * 24) + (pace * 16));
-  base.categories.delivery_presence = Math.round(42 + (energy * 34));
-  const avg = Object.values(base.categories).reduce((a,b)=>a+b,0)/Object.values(base.categories).length;
-  base.overall_score = Math.round(avg);
-  return base;
-}
-
-function renderResult(result) {
-  const tone = result.overall_score >= 80 ? 'var(--good)' : result.overall_score >= 60 ? '#ffb84f' : 'var(--bad)';
-  const categoryCards = Object.entries(result.categories || {}).map(([name, score]) => `
-    <div class="card">
-      <strong>${esc(name.replaceAll('_', ' '))}</strong>
-      <div class="muted" style="margin-top: 4px;">${score}/100</div>
-      <div class="bar"><span style="width:${score}%;"></span></div>
-    </div>`).join('');
-
-  $('resultsArea').innerHTML = `
-    <div class="result-shell">
-      <div class="score-line">
-        <div>
-          <div class="muted">Mode: ${esc(result.mode || state.mode)}</div>
-          <h3 style="margin-top:4px;">Overall score: <span style="color:${tone};">${result.overall_score}</span>/100</h3>
-        </div>
-        <div class="score-badge">${result.overall_score >= 80 ? 'Investor-ready signal' : result.overall_score >= 60 ? 'Promising, needs polish' : 'Needs major revision'}</div>
-      </div>
-
-      <div class="cards">${categoryCards}</div>
-
-      <div class="cards">
-        <div class="card"><h3>Strengths</h3><ul>${(result.strengths || []).map(x => `<li>${esc(x)}</li>`).join('') || '<li>None yet</li>'}</ul></div>
-        <div class="card"><h3>Risks</h3><ul>${(result.risks || []).map(x => `<li>${esc(x)}</li>`).join('') || '<li>None yet</li>'}</ul></div>
-      </div>
-
-      <div class="card"><h3>Rewrite guidance</h3><div class="muted">${esc(result.rewrite_suggestion || 'No rewrite suggestion generated.')}</div></div>
-      ${(result.llm && result.llm.status !== 'api_only') ? `<div class="card"><h3>Plus LLM readout</h3><div class="muted">${esc(result.llm.summary || 'No LLM summary available.')}</div></div>` : ''}
-      <div class="card">
-        <h3>Teach the model from your feedback</h3>
-        <div class="muted">This updates the training dataset so future pitch scoring learns from your signal.</div>
-        <div class="feedback-row">
-          <button id="feedbackGoodBtn">👍 Accurate score</button>
-          <button id="feedbackBadBtn">👎 Needs retraining</button>
-        </div>
-      </div>
-    </div>`;
-
-  $('feedbackGoodBtn')?.addEventListener('click', () => submitFeedback('good'));
-  $('feedbackBadBtn')?.addEventListener('click', () => submitFeedback('bad'));
-}
-
-function loadHistory() {
-  const items = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-  $('historyList').innerHTML = items.length ? items.map((item, idx) => `
-    <div class="item clickable" data-history-idx="${idx}">
-      <strong>${esc(item.title)}</strong>
-      <div class="muted" style="margin-top: 4px;">${esc(item.mode)} · ${item.score}/100 · ${esc(item.timestamp)}</div>
-      <div class="muted" style="margin-top: 6px;">${esc(item.snippet)}</div>
-      ${item.expanded ? `<div class="history-pitch muted">${esc(item.fullText || 'No pitch text saved.')}</div>` : ''}
-    </div>`).join('') : '<div class="muted">No saved analyses yet.</div>';
-  document.querySelectorAll('[data-history-idx]').forEach(el => {
-    el.addEventListener('click', () => toggleHistoryItem(Number(el.dataset.historyIdx)));
-  });
-}
-
-function toggleHistoryItem(index) {
-  const items = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-  items.forEach((item, idx) => { item.expanded = idx === index ? !item.expanded : false; });
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
-  loadHistory();
-}
-
-function saveHistory(entry) {
-  const list = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-  list.unshift(entry);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 12)));
-  loadHistory();
-}
-
-function setMode(mode) {
-  state.mode = mode;
-  document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
-  $('videoFields').classList.toggle('hidden', mode !== 'video');
-}
-
-function fillSample(type) {
-  const s = DEMOS[type];
-  $('pitchTitle').value = s.title;
-  $('sector').value = s.sector;
-  $('stage').value = s.stage;
-  $('pitchText').value = s.text;
-  $('videoTranscript').value = s.text;
-  setMode('video');
-}
-
-async function loadDataset() {
-  // Dataset panel intentionally removed from UI.
-}
-
-async function fetchTranscript() {
-  const url = $('videoUrl').value.trim();
-  if (!url) {
-    setStatus('Paste a YouTube URL first, then click fetch transcript.', 'bad');
-    return;
-  }
-  if (!state.backendConnected) {
-    setStatus('Transcript fetch needs backend mode. Start backend.py then try again.', 'bad');
-    return;
-  }
-  try {
-    // Product behavior: keep transcript flow simple for users.
-    // They should only need to paste a URL; backend handles ID extraction + cleaning.
-    const data = await api('/api/video/transcript', { url });
-    $('videoTranscript').value = data.transcript || '';
-    setMode('video');
-    setStatus(`Transcript loaded for video ID <code>${esc(data.video_id)}</code>.`, 'ok');
-  } catch (err) {
-    setStatus(`Transcript fetch failed: ${esc(err.message)}`, 'bad');
-  }
-}
-
-async function runAnalysis() {
-  // HOW TO EXTEND API TIERS:
-  // 1) Add the new plan key in backend ANALYSIS_PLAN_DETAILS.
-  // 2) Add matching backend routes in /api/analyze/<plan>/<mode>.
-  // 3) Update this mapping so the frontend calls the new route.
-  const sector = $('sector').value;
-  const stage = $('stage').value;
-  const title = $('pitchTitle').value.trim() || 'Untitled pitch';
-
-  let result;
-  try {
-    if (state.mode === 'video' && !$('videoTranscript').value.trim() && $('videoUrl').value.trim() && state.backendConnected) {
-      await fetchTranscript();
-    }
-    if (state.backendConnected) {
-      const planPath = state.plan === 'pro' ? 'pro' : 'plus';
-      if (state.mode === 'video') {
-        result = await api(`/api/analyze/${planPath}/video`, {
-          transcript: $('videoTranscript').value.trim(),
-          sector,
-          stage,
-          delivery: { energy: Number($('energy').value) / 10, pace: Number($('pace').value) / 10 },
-          image_metrics: { brightness: 0.68, contrast: 0.7, sharpness: 0.73, text_density: 0.66, stability: 0.78 }
-        });
-      } else {
-        result = await api(`/api/analyze/${planPath}/text`, { text: $('pitchText').value.trim(), sector, stage });
-      }
-      setStatus(`Analysis completed in backend mode at <code>${esc(state.backendBase)}</code> using <strong>${esc(state.plan.toUpperCase())}</strong>.`, 'ok');
-    } else {
-      result = state.mode === 'video'
-        ? localAnalyzeVideo({ transcript: $('videoTranscript').value.trim(), sector, stage, delivery: { energy: Number($('energy').value) / 10, pace: Number($('pace').value) / 10 } })
-        : localAnalyzeText({ text: $('pitchText').value.trim(), sector, stage });
-      setStatus('Analysis completed in offline fallback mode.', 'ok');
-    }
-    state.lastResult = result;
-    renderResult(result);
-    const snippet = (state.mode === 'video' ? $('videoTranscript').value : $('pitchText').value).trim().slice(0, 120);
-    const fullText = (state.mode === 'video' ? $('videoTranscript').value : $('pitchText').value).trim();
-    saveHistory({ title, mode: result.mode || state.mode, score: result.overall_score, timestamp: new Date().toLocaleString(), snippet, fullText, expanded: false });
-  } catch (err) {
-    setStatus(`Analysis failed: ${esc(err.message)}`, 'bad');
-  }
-}
-
-
-
-async function submitFeedback(sentiment) {
-  if (!state.lastResult) {
-    setStatus('Run an analysis first, then send feedback.', 'bad');
-    return;
-  }
-  if (!state.backendConnected) {
-    setStatus('Feedback-based training requires backend mode.', 'bad');
-    return;
-  }
-
-  const content = state.mode === 'video' ? $('videoTranscript').value.trim() : $('pitchText').value.trim();
-  const baseline = Number(state.lastResult.overall_score || 70);
-  const rating = sentiment === 'good' ? Math.min(98, baseline + 8) : Math.max(35, baseline - 15);
-  const quality = sentiment === 'good' ? 'strong' : 'weak';
-
-  try {
-    const payload = {
-      sector: $('sector').value,
-      stage: $('stage').value,
-      rating,
-      quality,
-    };
-    if (state.mode === 'video') payload.transcript = content;
-    else payload.text = content;
-
-    const data = await api('/api/training/feedback', payload);
-    setStatus(`Feedback saved (${esc(data.added)}). Dataset now has ${esc(data.dataset_rows)} rows.`, 'ok');
-  } catch (err) {
-    setStatus(`Feedback save failed: ${esc(err.message)}`, 'bad');
-  }
-}
-
-async function init() {
-  document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
-  $('runBtn').addEventListener('click', runAnalysis);
-  $('sampleStrongBtn').addEventListener('click', () => fillSample('strong'));
-  $('clearHistoryBtn').addEventListener('click', () => { localStorage.removeItem(HISTORY_KEY); loadHistory(); });
-  $('fetchTranscriptBtn').addEventListener('click', fetchTranscript);
-  $('analysisPlan').addEventListener('change', refreshPlanHelp);
-
-  setMode('video');
-  loadHistory();
-  await connectBackend();
-  await loadDataset();
-}
-
+async function init(){document.querySelectorAll('.mode').forEach(x=>x.addEventListener('click',()=>setMode(x.dataset.mode)));$('runBtn').addEventListener('click',run);$('sampleBtn').addEventListener('click',()=>{$('pitchTitle').value='LedgerFlow Series A';$('pitchText').value=sample;$('videoTranscript').value=sample;});$('fetchTranscriptBtn').addEventListener('click',fetchTranscript);$('analysisPlan').addEventListener('change',()=>state.plan=$('analysisPlan').value);$('clearHistoryBtn').addEventListener('click',()=>{localStorage.removeItem(HISTORY_KEY);renderHistory();});
+  setMode('video');renderHistory();await connect();await loadPayments();}
 init();
 </script>
 </body>
