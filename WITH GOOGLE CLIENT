@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AstraPitch AI — Working Offline Beta</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg:#07111f;
+    --bg2:#0d1830;
+    --card:rgba(13,22,41,.82);
+    --card2:rgba(20,31,55,.92);
+    --line:rgba(125,211,252,.16);
+    --line2:rgba(255,255,255,.08);
+    --text:#eef6ff;
+    --muted:#9eb0cb;
+    --faint:#6f809d;
+    --blue:#60d8ff;
+    --violet:#9b72ff;
+    --green:#22c55e;
+    --amber:#f59e0b;
+    --red:#fb7185;
+    --shadow:0 24px 90px rgba(0,0,0,.38);
+    --radius:22px;
+    --sans:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body {
+    min-height:100vh;
+    font-family:var(--sans);
+    color:var(--text);
+    background:
+      radial-gradient(circle at 12% 8%, rgba(96,216,255,.16), transparent 30%),
+      radial-gradient(circle at 86% 6%, rgba(155,114,255,.16), transparent 28%),
+      radial-gradient(circle at 50% 110%, rgba(34,197,94,.08), transparent 38%),
+      linear-gradient(180deg, #050b14 0%, var(--bg) 36%, #091324 100%);
+    overflow-x:hidden;
+  }
+  body:before {
+    content:"";
+    position:fixed;
+    inset:0;
+    background-image:
+      radial-gradient(1px 1px at 30px 80px, rgba(255,255,255,.30), transparent),
+      radial-gradient(1px 1px at 160px 190px, rgba(255,255,255,.18), transparent),
+      radial-gradient(1px 1px at 310px 120px, rgba(255,255,255,.24), transparent),
+      radial-gradient(1px 1px at 500px 240px, rgba(255,255,255,.18), transparent);
+    background-size:540px 300px;
+    opacity:.36;
+    z-index:-2;
+  }
+  .shell { width:min(1180px, calc(100% - 32px)); margin:0 auto; }
+  .topbar {
+    position:sticky;
+    top:0;
+    z-index:10;
+    backdrop-filter: blur(18px);
+    background:rgba(5,11,20,.72);
+    border-bottom:1px solid var(--line2);
+  }
+  .nav { height:74px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+  .brand { display:flex; align-items:center; gap:12px; font-weight:850; letter-spacing:.4px; }
+  .mark {
+    width:38px; height:38px; border-radius:14px;
+    display:grid; place-items:center;
+    background:linear-gradient(135deg, var(--blue), var(--violet));
+    color:#06101e;
+    font-weight:950;
+    box-shadow:0 12px 32px rgba(96,216,255,.24);
+  }
+  .nav-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .pill {
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.045);
+    color:var(--muted);
+    border-radius:999px;
+    padding:9px 13px;
+    font-size:.88rem;
+  }
+  .hero { padding:56px 0 26px; display:grid; grid-template-columns:1.15fr .85fr; gap:28px; align-items:center; }
+  .eyebrow { color:var(--blue); font-weight:800; letter-spacing:.12em; font-size:.75rem; text-transform:uppercase; margin-bottom:14px; }
+  h1 { font-size:clamp(2.3rem, 5vw, 5.6rem); line-height:.95; letter-spacing:-.07em; max-width:790px; }
+  .gradient { background:linear-gradient(135deg, #fff, var(--blue), var(--violet)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero p { margin-top:20px; color:var(--muted); font-size:1.08rem; max-width:700px; }
+  .hero-card {
+    padding:22px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(15,26,49,.86), rgba(11,18,34,.78));
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+  .mini-row { display:flex; justify-content:space-between; gap:18px; padding:13px 0; border-bottom:1px solid var(--line2); }
+  .mini-row:last-child { border-bottom:0; }
+  .mini-label { color:var(--faint); font-size:.83rem; }
+  .mini-value { font-weight:850; color:#fff; text-align:right; }
+  .section { padding:28px 0 80px; }
+  .workspace {
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  .panel {
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, var(--card), rgba(8,15,28,.82));
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+  .panel-inner { padding:22px; }
+  .panel-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .panel-title h2, .panel-title h3 { font-size:1.02rem; letter-spacing:-.02em; }
+  label { display:block; color:var(--muted); font-size:.87rem; margin:15px 0 7px; }
+  input, textarea, select {
+    width:100%;
+    border:1px solid rgba(125,211,252,.16);
+    background:rgba(6,12,23,.72);
+    color:var(--text);
+    border-radius:15px;
+    padding:12px 13px;
+    font:inherit;
+    outline:none;
+    transition:border-color .18s, box-shadow .18s, background .18s;
+  }
+  textarea { min-height:260px; resize:vertical; line-height:1.55; }
+  input:focus, textarea:focus, select:focus { border-color:rgba(96,216,255,.62); box-shadow:0 0 0 4px rgba(96,216,255,.10); }
+  .tabs { display:grid; grid-template-columns:1fr; gap:10px; margin:10px 0 18px; }
+  .tab-btn {
+    width:100%;
+    text-align:left;
+    cursor:pointer;
+    border:1px solid var(--line2);
+    color:var(--muted);
+    background:rgba(255,255,255,.035);
+    border-radius:16px;
+    padding:14px;
+    transition:.18s ease;
+  }
+  .tab-btn strong { display:block; color:var(--text); margin-bottom:2px; }
+  .tab-btn span { font-size:.83rem; }
+  .tab-btn.active {
+    border-color:rgba(96,216,255,.54);
+    background:linear-gradient(135deg, rgba(96,216,255,.16), rgba(155,114,255,.11));
+    box-shadow:0 14px 36px rgba(96,216,255,.08);
+  }
+  .btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:15px; }
+  button, .link-btn {
+    border:0;
+    cursor:pointer;
+    border-radius:14px;
+    padding:12px 14px;
+    color:var(--text);
+    font-weight:800;
+    font-family:inherit;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+  button:hover, .link-btn:hover { transform:translateY(-1px); }
+  .btn-primary { background:linear-gradient(135deg, var(--blue), var(--violet)); color:#06101e; box-shadow:0 16px 36px rgba(96,216,255,.22); }
+  .btn-secondary { background:rgba(255,255,255,.055); border:1px solid var(--line); color:var(--text); }
+  .btn-ghost { background:transparent; border:1px solid var(--line2); color:var(--muted); }
+  .btn-danger { background:rgba(251,113,133,.12); border:1px solid rgba(251,113,133,.24); color:#fecdd3; }
+  .wide { width:100%; }
+  .input-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .status-line {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:14px;
+    color:var(--muted);
+    font-size:.9rem;
+  }
+  .dot { width:9px; height:9px; border-radius:999px; background:var(--green); box-shadow:0 0 22px rgba(34,197,94,.8); flex:0 0 auto; }
+  .results { display:none; margin-top:20px; }
+  .results.show { display:block; }
+  .score-hero {
+    display:grid;
+    grid-template-columns:170px 1fr;
+    gap:20px;
+    align-items:center;
+    padding:22px;
+    border:1px solid var(--line);
+    background:linear-gradient(135deg, rgba(96,216,255,.12), rgba(155,114,255,.10));
+    border-radius:var(--radius);
+  }
+  .score-circle {
+    width:148px;
+    height:148px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    border:1px solid rgba(255,255,255,.14);
+    background:radial-gradient(circle at 30% 25%, rgba(255,255,255,.20), transparent 34%), rgba(4,10,19,.56);
+    box-shadow:inset 0 0 40px rgba(96,216,255,.10);
+  }
+  .score-circle span { font-size:2.7rem; font-weight:950; letter-spacing:-.06em; }
+  .tag-row { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+  .tag { padding:7px 10px; border-radius:999px; border:1px solid var(--line2); background:rgba(255,255,255,.045); color:var(--muted); font-size:.82rem; }
+  .tag.good { color:#bbf7d0; border-color:rgba(34,197,94,.25); background:rgba(34,197,94,.10); }
+  .tag.warn { color:#fde68a; border-color:rgba(245,158,11,.25); background:rgba(245,158,11,.10); }
+  .tag.bad { color:#fecdd3; border-color:rgba(251,113,133,.25); background:rgba(251,113,133,.10); }
+  .memo { color:var(--muted); line-height:1.65; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
+  .grid-3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-top:16px; }
+  .small-card {
+    padding:16px;
+    border:1px solid var(--line2);
+    background:rgba(255,255,255,.035);
+    border-radius:18px;
+  }
+  .small-card h4 { font-size:.92rem; margin-bottom:9px; }
+  .small-card p, .small-card li { color:var(--muted); font-size:.92rem; line-height:1.55; }
+  ul.clean { list-style:none; display:grid; gap:8px; }
+  ul.clean li { position:relative; padding-left:19px; }
+  ul.clean li:before { content:""; position:absolute; left:0; top:.62em; width:7px; height:7px; border-radius:50%; background:var(--blue); }
+  .section-score { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line2); }
+  .section-score:last-child { border-bottom:0; }
+  .bar { flex:1; height:8px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; min-width:90px; }
+  .bar span { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg, var(--blue), var(--violet)); width:50%; }
+  .section-name { min-width:112px; color:var(--muted); font-size:.88rem; }
+  .section-num { width:36px; text-align:right; font-weight:850; }
+  .rewrite-box { display:none; margin-top:16px; }
+  .rewrite-box.show { display:block; }
+  .rewrite-text {
+    white-space:pre-wrap;
+    color:#dceeff;
+    line-height:1.65;
+  }
+  .source-note { color:var(--faint); font-size:.82rem; margin-top:8px; line-height:1.45; }
+  .history { display:none; margin-top:16px; }
+  .history.show { display:block; }
+  .history-item { padding:12px; border:1px solid var(--line2); border-radius:14px; margin-top:10px; background:rgba(255,255,255,.03); }
+  .history-item strong { display:block; margin-bottom:4px; }
+  .toast { position:fixed; right:18px; bottom:18px; z-index:50; padding:13px 15px; border:1px solid var(--line); border-radius:16px; background:rgba(7,13,24,.92); color:var(--text); box-shadow:var(--shadow); display:none; max-width:320px; }
+  .toast.show { display:block; animation:pop .18s ease; }
+  @keyframes pop { from { transform:translateY(8px); opacity:0; } to { transform:none; opacity:1; } }
+  .hidden { display:none !important; }
+  .muted { color:var(--muted); }
+  .mono { font-family:var(--mono); }
+  @media (max-width: 960px) {
+    .hero { grid-template-columns:1fr; padding-top:34px; }
+    .workspace { grid-template-columns:1fr; }
+    .grid-2, .grid-3, .score-hero { grid-template-columns:1fr; }
+    .score-circle { width:130px; height:130px; }
+  }
+
+  .entry-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 22px;
+    background: rgba(3, 8, 18, .78);
+    backdrop-filter: blur(18px);
+  }
+  .entry-overlay.show { display: flex; }
+  .entry-card {
+    width: min(560px, 100%);
+    border: 1px solid rgba(125,211,252,.18);
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at 10% 0%, rgba(96,216,255,.18), transparent 36%),
+      radial-gradient(circle at 92% 10%, rgba(155,114,255,.16), transparent 34%),
+      rgba(10, 18, 34, .96);
+    box-shadow: 0 30px 120px rgba(0,0,0,.52);
+    padding: 28px;
+  }
+  .entry-top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+  .entry-title { font-size: clamp(1.8rem, 5vw, 3rem); line-height:1.02; letter-spacing:-.055em; margin: 10px 0 12px; }
+  .entry-text { color: var(--muted); font-size: 1rem; max-width: 46ch; }
+  .entry-close {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    border: 1px solid var(--line2);
+    background: rgba(255,255,255,.05);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.1rem;
+  }
+  .entry-actions {
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-top:22px;
+  }
+  .google-shell {
+    min-height: 44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 10px;
+    border: 1px solid var(--line2);
+    border-radius: 16px;
+    background: rgba(255,255,255,.04);
+  }
+  .entry-note { color: var(--faint); font-size:.88rem; margin-top: 12px; }
+
+  @media (max-width: 560px) {
+    .nav { height:auto; padding:14px 0; align-items:flex-start; flex-direction:column; }
+    .input-grid { grid-template-columns:1fr; }
+    textarea { min-height:230px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="entry-overlay show" id="entryOverlay" role="dialog" aria-modal="true" aria-labelledby="entryTitle">
+    <div class="entry-card">
+      <div class="entry-top">
+        <div class="brand"><div class="mark">A</div><div>AstraPitch AI</div></div>
+        <button class="entry-close" id="entryCloseBtn" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="eyebrow">Free beta · Google client ready</div>
+      <h1 class="entry-title" id="entryTitle">Start with AstraPitch.</h1>
+      <p class="entry-text">Sign in with Google if available, or continue directly into the free beta. Basic and Plus stay free; Pro is still under construction.</p>
+      <div class="entry-actions">
+        <div class="google-shell"><div id="googleButton"><span class="source-note">Loading Google sign-in…</span></div></div>
+        <button class="btn-primary" id="continueGuestBtn" type="button">Continue to app</button>
+      </div>
+      <p class="entry-note" id="entryStatus">Google sign-in requires localhost or HTTPS. The app still works without signing in.</p>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="shell nav">
+      <div class="brand"><div class="mark">A</div><div>AstraPitch AI</div></div>
+      <div class="nav-actions">
+        <span class="pill" id="modelStatus">Loading offline model…</span>
+        <span class="pill" id="loginStatus">Guest</span>
+        <button class="btn-secondary" id="topAnalyzeBtn" type="button">Analyze</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Free beta · offline model</div>
+        <h1>Pitch grading that feels like an <span class="gradient">investor memo.</span></h1>
+        <p>Test Basic, Plus, and Pro layouts without any paywall. Basic uses a simple rubric. Plus uses a trained offline pitch model built into the page. Pro is ready for your future external LLM, but it stays under construction for now.</p>
+        <div class="btn-row">
+          <button class="btn-primary" id="heroSampleBtn" type="button">Load strong sample</button>
+          <button class="btn-secondary" id="heroStartBtn" type="button">Start analyzing</button>
+        </div>
+      </div>
+      <aside class="hero-card">
+        <div class="mini-row"><div><div class="mini-label">Basic</div><div class="mini-value">Rubric scorer</div></div><span class="tag good">Works now</span></div>
+        <div class="mini-row"><div><div class="mini-label">Plus</div><div class="mini-value">Offline trained model</div></div><span class="tag good">Free beta</span></div>
+        <div class="mini-row"><div><div class="mini-label">Pro</div><div class="mini-value">Future LLM/API</div></div><span class="tag warn">Under construction</span></div>
+      </aside>
+    </section>
+
+    <section class="section" id="app">
+      <div class="workspace">
+        <aside class="panel">
+          <div class="panel-inner">
+            <div class="panel-title"><h2>Mode</h2></div>
+            <div class="tabs">
+              <button class="tab-btn active" id="basicTab" type="button"><strong>Basic</strong><span>Fast original-style grading.</span></button>
+              <button class="tab-btn" id="plusTab" type="button"><strong>Plus</strong><span>Offline trained model, still free.</span></button>
+              <button class="tab-btn" id="proTab" type="button"><strong>Pro</strong><span>Under construction.</span></button>
+            </div>
+
+            <label for="personaSelect">Investor lens</label>
+            <select id="personaSelect">
+              <option value="friendly">Friendly angel</option>
+              <option value="seedvc" selected>Seed VC</option>
+              <option value="b2b">Hard-nosed B2B investor</option>
+              <option value="consumer">Consumer growth investor</option>
+            </select>
+
+            <label for="stageSelect">Stage</label>
+            <select id="stageSelect">
+              <option>Idea</option>
+              <option selected>Pre-seed</option>
+              <option>Seed</option>
+              <option>Series A</option>
+            </select>
+
+            <label for="industrySelect">Industry</label>
+            <select id="industrySelect">
+              <option selected>Marketplace</option>
+              <option>AI SaaS</option>
+              <option>Fintech</option>
+              <option>HealthTech</option>
+              <option>EdTech</option>
+              <option>ClimateTech</option>
+              <option>Cybersecurity</option>
+              <option>Robotics</option>
+              <option>Logistics</option>
+              <option>PropTech</option>
+              <option>Consumer</option>
+            </select>
+
+            <div class="btn-row">
+              <button class="btn-secondary wide" id="sampleBtn" type="button">Load Airbnb-style sample</button>
+              <button class="btn-ghost wide" id="sourceBtn" type="button">Open sample source</button>
+            </div>
+            <p class="source-note">The sample is written in the style of Airbnb’s early marketplace pitch, using a public pitch-deck reference as the source link.</p>
+
+            <div class="btn-row">
+              <button class="btn-ghost" id="historyBtn" type="button">History</button>
+              <button class="btn-danger" id="clearHistoryBtn" type="button">Clear history</button>
+            </div>
+          </div>
+        </aside>
+
+        <section>
+          <div class="panel">
+            <div class="panel-inner">
+              <div class="panel-title"><h2>Pitch input</h2><span class="pill" id="activeModePill">Basic</span></div>
+              <div class="input-grid">
+                <div>
+                  <label for="pitchTitle">Pitch title</label>
+                  <input id="pitchTitle" placeholder="e.g., Airbnb seed pitch" />
+                </div>
+                <div>
+                  <label for="inputType">Input type</label>
+                  <select id="inputType">
+                    <option>Elevator pitch</option>
+                    <option selected>Fundraising pitch</option>
+                    <option>Deck copy</option>
+                    <option>Founder intro</option>
+                  </select>
+                </div>
+              </div>
+
+              <label for="pitchText">Pitch text</label>
+              <textarea id="pitchText" placeholder="Paste your business pitch here. Be specific: problem, customer, solution, traction, market, business model, moat, team, and ask."></textarea>
+
+              <div class="btn-row">
+                <button class="btn-primary" id="analyzeBtn" type="button">Analyze pitch</button>
+                <button class="btn-secondary" id="compareBtn" type="button">Compare Basic vs Plus</button>
+                <button class="btn-secondary" id="rewriteBtn" type="button">Rewrite stronger</button>
+                <button class="btn-ghost" id="clearBtn" type="button">Clear</button>
+              </div>
+              <div class="status-line"><span class="dot"></span><span id="statusText">Ready. No external API calls.</span></div>
+            </div>
+          </div>
+
+          <div class="results" id="results">
+            <div class="score-hero">
+              <div class="score-circle"><span id="scoreNumber">--</span></div>
+              <div>
+                <div class="tag-row" id="tagRow"></div>
+                <h2 id="resultHeadline">Analysis ready</h2>
+                <p class="memo" id="memoText"></p>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="small-card"><h4>Section scores</h4><div id="sectionScores"></div></div>
+              <div class="small-card"><h4>Why this score?</h4><ul class="clean" id="whyList"></ul></div>
+            </div>
+
+            <div class="grid-3">
+              <div class="small-card"><h4>Investor red flags</h4><ul class="clean" id="redFlags"></ul></div>
+              <div class="small-card"><h4>Missing proof</h4><ul class="clean" id="missingProof"></ul></div>
+              <div class="small-card"><h4>Investor questions</h4><ul class="clean" id="questionsList"></ul></div>
+            </div>
+
+            <div class="grid-2">
+              <div class="small-card"><h4>10-slide deck bullets</h4><ul class="clean" id="deckBullets"></ul></div>
+              <div class="small-card"><h4>Closest embedded examples</h4><ul class="clean" id="nearestList"></ul></div>
+            </div>
+
+            <div class="rewrite-box" id="rewriteBox">
+              <div class="small-card">
+                <div class="panel-title"><h3>Rewrite</h3><button class="btn-secondary" id="scoreRewriteBtn" type="button">Score rewrite</button></div>
+                <div class="rewrite-text" id="rewriteText"></div>
+                <p class="source-note" id="rewriteScore"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="history" id="historyPanel">
+            <div class="small-card"><h4>Saved history</h4><div id="historyList"></div></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const SAMPLE_SOURCE_URL = 'https://www.failory.com/pitch-deck/airbnb';
+const AIRBNB_SAMPLE = {
+  title: 'Airbnb-style marketplace pitch',
+  industry: 'Marketplace',
+  stage: 'Seed',
+  text: 'Airbnb lets travelers book rooms and spare spaces from local hosts instead of relying only on hotels. The problem is simple: during major events, hotels become expensive or sold out while many residents have unused space. Hosts earn money from space they already have, guests get more affordable and local places to stay, and Airbnb takes a commission on each booking. The marketplace creates trust through profiles, reviews, payments, and a simple booking flow. Early demand is strongest around conferences and high-compression travel events, giving us a focused go-to-market wedge. We are raising capital to grow host supply, increase booking volume, improve trust and safety, and become the default marketplace for unique short-term stays.'
+};
+
+const GOOGLE_CLIENT_ID = '683057480054-16s3qg9fmgvkjug2qbgf8dudce9es3c9.apps.googleusercontent.com';
+let signedInUser = null;
+let googleInitAttempts = 0;
+
+function hideEntryOverlay() {
+  const overlay = el('entryOverlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+function showEntryOverlay() {
+  const overlay = el('entryOverlay');
+  if (overlay) overlay.classList.add('show');
+}
+
+function decodeGoogleCredential(jwt) {
+  try {
+    const payload = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(atob(payload).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(json);
+  } catch (err) {
+    return {};
+  }
+}
+
+function handleGoogleCredential(response) {
+  const payload = decodeGoogleCredential(response && response.credential ? response.credential : '');
+  signedInUser = {
+    name: payload.name || 'Google user',
+    email: payload.email || ''
+  };
+  const label = signedInUser.email || signedInUser.name;
+  if (el('loginStatus')) el('loginStatus').textContent = label.length > 26 ? label.slice(0, 23) + '…' : label;
+  if (el('entryStatus')) el('entryStatus').textContent = 'Signed in as ' + label + '.';
+  showToast('Signed in with Google.');
+  hideEntryOverlay();
+}
+
+function initGoogleClient() {
+  const buttonTarget = el('googleButton');
+  if (!buttonTarget) return;
+
+  if (window.google && window.google.accounts && window.google.accounts.id) {
+    try {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        auto_select: false,
+        cancel_on_tap_outside: false
+      });
+      buttonTarget.innerHTML = '';
+      window.google.accounts.id.renderButton(buttonTarget, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'pill',
+        width: 280
+      });
+      if (el('entryStatus')) el('entryStatus').textContent = 'Google client loaded. You can sign in or continue without signing in.';
+      return;
+    } catch (err) {
+      buttonTarget.innerHTML = '<span class="source-note">Google sign-in could not render here.</span>';
+      if (el('entryStatus')) el('entryStatus').textContent = 'Continue to app still works. For Google sign-in, run this on localhost or HTTPS.';
+      return;
+    }
+  }
+
+  googleInitAttempts += 1;
+  if (googleInitAttempts < 40) {
+    setTimeout(initGoogleClient, 250);
+  } else {
+    buttonTarget.innerHTML = '<span class="source-note">Google sign-in unavailable in this environment.</span>';
+    if (el('entryStatus')) el('entryStatus').textContent = 'Continue to app still works. Google sign-in may not load from a local file.';
+  }
+}
+
+
+const TERMS = {
+  problem: ['problem','pain','waste','manual','expensive','slow','fragmented','inefficient','risk','delay','shortage','sold out','compliance','missed','cost'],
+  solution: ['solution','platform','software','tool','marketplace','system','automates','enables','helps','connects','predicts','workflow','dashboard'],
+  market: ['market','tam','sam','som','customer','customers','buyer','segment','industry','wedge','beachhead','enterprise','smb','consumer'],
+  traction: ['users','customers','revenue','mrr','arr','pilot','pilots','paid','bookings','retention','growth','waitlist','partnership','usage','conversion'],
+  business: ['pricing','subscription','commission','margin','revenue model','per seat','per location','usage-based','takes a','transaction','saas'],
+  moat: ['moat','defensible','proprietary','unique','advantage','network effects','data advantage','switching costs','integrations','patent'],
+  team: ['founder','team','experience','built','domain','advisor','operator','technical','sales','background'],
+  ask: ['raising','investment','capital','funding','round','ask','runway','hire','scale','expand'],
+  hype: ['revolutionary','game-changing','world-changing','disrupt','everyone','massive','huge','best','leading','ultimate','next generation'],
+  vague: ['many industries','everyone','businesses','users','things','stuff','very large','soon','eventually','figuring out','all-in-one']
+};
+
+const SECTION_NAMES = ['Problem','Solution','Market','Business model','Traction','Moat','Team','Ask'];
+const FEATURE_NAMES = ['wordScore','problem','solution','market','business','traction','moat','team','ask','metrics','specificity','structure','clarity','hypePenalty','vaguePenalty'];
+
+let currentMode = 'basic';
+let model = null;
+let latestAnalysis = null;
+let latestRewrite = '';
+
+function el(id) { return document.getElementById(id); }
+function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+function round(x) { return Math.round(Number.isFinite(x) ? x : 0); }
+function textLower(text) { return String(text || '').toLowerCase(); }
+function tokenize(text) { return textLower(text).replace(/[^a-z0-9%$\.\s-]/g, ' ').split(/\s+/).filter(Boolean); }
+function countMatches(text, arr) { const low = textLower(text); return arr.reduce((n, term) => n + (low.includes(term) ? 1 : 0), 0); }
+function moneyCount(text) { return (String(text).match(/\$\s?\d|\d+\s?(k|m|b|million|billion)|\d+%/gi) || []).length; }
+function sentenceCount(text) { return Math.max(1, (String(text).match(/[.!?]+/g) || []).length); }
+function wordCount(text) { return tokenize(text).length; }
+function uniqueRatio(tokens) { return tokens.length ? new Set(tokens).size / tokens.length : 0; }
+
+function analyzeInputQuality(text) {
+  const raw = String(text || '').trim();
+  const tokens = tokenize(raw);
+  const letters = (raw.match(/[a-z]/gi) || []).length;
+  const vowels = (raw.match(/[aeiou]/gi) || []).length;
+  const spaces = (raw.match(/\s/g) || []).length;
+  const wc = tokens.length;
+  const vowelRatio = letters ? vowels / letters : 0;
+  const knownBusinessHits = Object.keys(TERMS).filter(k => !['hype','vague'].includes(k)).reduce((sum,k)=>sum+countMatches(raw, TERMS[k]),0);
+  const weirdSingleToken = wc <= 2 && letters >= 5 && spaces === 0 && knownBusinessHits === 0;
+  const tooShort = wc < 18;
+  const gibberish = weirdSingleToken || (letters > 0 && (vowelRatio < 0.18 || vowelRatio > 0.72) && knownBusinessHits === 0 && wc < 8);
+  const repeated = tokens.length > 8 && uniqueRatio(tokens) < 0.35;
+  let quality = 100;
+  if (tooShort) quality -= 45;
+  if (wc < 8) quality -= 30;
+  if (gibberish) quality -= 65;
+  if (repeated) quality -= 35;
+  if (knownBusinessHits === 0) quality -= 30;
+  return { wordCount: wc, tooShort, gibberish, repeated, knownBusinessHits, quality: clamp(quality, 0, 100), lowSignal: quality < 45 || gibberish };
+}
+
+function featureVector(text) {
+  const wc = wordCount(text);
+  const sc = sentenceCount(text);
+  const avgSentence = wc / sc;
+  const metrics = moneyCount(text);
+  const p = countMatches(text, TERMS.problem);
+  const s = countMatches(text, TERMS.solution);
+  const m = countMatches(text, TERMS.market);
+  const b = countMatches(text, TERMS.business);
+  const t = countMatches(text, TERMS.traction);
+  const moat = countMatches(text, TERMS.moat);
+  const team = countMatches(text, TERMS.team);
+  const ask = countMatches(text, TERMS.ask);
+  const hype = countMatches(text, TERMS.hype);
+  const vague = countMatches(text, TERMS.vague);
+  const structureCount = [p,s,m,b,t,moat,team,ask].filter(x => x > 0).length;
+  const wordScore = wc < 35 ? wc / 35 : wc <= 220 ? 1 : clamp(1 - ((wc - 220) / 420), .35, 1);
+  const clarity = clamp(1 - Math.abs(avgSentence - 19) / 28, 0, 1);
+  const specificity = clamp((metrics * .18) + (t > 0 ? .22 : 0) + (b > 0 ? .16 : 0) + (m > 0 ? .13 : 0) + (moat > 0 ? .13 : 0) + (ask > 0 ? .08 : 0), 0, 1);
+  return {
+    wordScore,
+    problem: clamp(p/3,0,1), solution: clamp(s/3,0,1), market: clamp(m/3,0,1), business: clamp(b/2,0,1), traction: clamp(t/3,0,1), moat: clamp(moat/2,0,1), team: clamp(team/2,0,1), ask: clamp(ask/2,0,1),
+    metrics: clamp(metrics/5,0,1), specificity, structure: structureCount/8, clarity,
+    hypePenalty: clamp(hype/5,0,1), vaguePenalty: clamp(vague/4,0,1)
+  };
+}
+
+function vectorToArray(v) { return FEATURE_NAMES.map(name => v[name] || 0); }
+
+function buildTrainingDatabase() {
+  const industries = ['AI SaaS','Fintech','HealthTech','EdTech','ClimateTech','Cybersecurity','Marketplace','Ecommerce','Robotics','AgTech','PropTech','Logistics','LegalTech','HRTech','Consumer'];
+  const targets = {
+    'AI SaaS':'revenue teams','Fintech':'small businesses','HealthTech':'clinic operators','EdTech':'school districts','ClimateTech':'facility managers','Cybersecurity':'security teams','Marketplace':'local buyers and sellers','Ecommerce':'online merchants','Robotics':'warehouse operators','AgTech':'farm managers','PropTech':'property managers','Logistics':'dispatch teams','LegalTech':'law firms','HRTech':'people teams','Consumer':'busy families'
+  };
+  const problems = {
+    'AI SaaS':'manual analysis slows decisions and hides important customer signals',
+    'Fintech':'cash-flow tools are fragmented and expensive for smaller companies',
+    'HealthTech':'patients wait too long while clinics waste staff hours on manual intake',
+    'EdTech':'teachers lack real-time visibility into which students are falling behind',
+    'ClimateTech':'buildings waste energy because teams cannot see where losses happen',
+    'Cybersecurity':'mid-market teams miss threats because alerts are noisy and disconnected',
+    'Marketplace':'supply and demand are fragmented across trust-poor channels',
+    'Ecommerce':'merchants lose revenue because inventory, ads, and support are disconnected',
+    'Robotics':'operators still rely on unsafe repetitive manual handling',
+    'AgTech':'growers lack accurate field-level forecasts and waste inputs',
+    'PropTech':'maintenance teams lose time coordinating tenants, vendors, and owners',
+    'Logistics':'dispatchers still use spreadsheets and calls to handle route exceptions',
+    'LegalTech':'legal teams spend expensive hours reviewing routine documents',
+    'HRTech':'hiring teams lose candidates because screening and follow-up are slow',
+    'Consumer':'people struggle to coordinate daily services through scattered apps'
+  };
+  const solutions = {
+    'AI SaaS':'an AI workflow platform that summarizes signals and recommends next actions',
+    'Fintech':'a finance dashboard that forecasts cash flow and automates collections',
+    'HealthTech':'a patient intake and triage platform integrated into clinic workflows',
+    'EdTech':'a learning analytics tool that flags risk and recommends interventions',
+    'ClimateTech':'a building intelligence platform that detects energy waste in real time',
+    'Cybersecurity':'a threat-prioritization engine that connects alerts to business risk',
+    'Marketplace':'a trusted marketplace with profiles, payments, reviews, and matching',
+    'Ecommerce':'an operating system for inventory, ads, and customer support decisions',
+    'Robotics':'a modular robot that automates repetitive material movement',
+    'AgTech':'a predictive field analytics platform for input planning and yield risk',
+    'PropTech':'a maintenance coordination platform with vendor routing and status tracking',
+    'Logistics':'a dispatch automation layer for assignment, rerouting, and exception handling',
+    'LegalTech':'a contract review assistant that highlights risk and drafts revisions',
+    'HRTech':'a hiring workflow platform that scores candidates and automates follow-up',
+    'Consumer':'a mobile marketplace that helps families book trusted local services'
+  };
+  const traction = [
+    '12 paid pilots, $18k in monthly recurring revenue, and 21% month-over-month usage growth',
+    '47 paying customers, 82% logo retention, and a repeatable outbound sales motion',
+    '3 enterprise pilots, a $240k contracted pipeline, and usage expanding across teams',
+    '1,900 beta users, 38% weekly active usage, and strong referral-driven growth',
+    '8 design partners, signed LOIs, and clear conversion milestones for the next quarter'
+  ];
+  const rows = [];
+  let id = 1;
+  for (const industry of industries) {
+    const target = targets[industry];
+    const problem = problems[industry];
+    const solution = solutions[industry];
+    for (let i = 0; i < 9; i++) {
+      rows.push({ id:id++, tier:'poor', rating:10 + (i % 13), industry, stage:'Idea', pitch:`We are making a revolutionary platform for ${industry}. It can help everyone and change the world. The market is very large and we are still figuring out the customer, pricing, and launch plan. We believe investors should join early because this could become huge.` });
+      rows.push({ id:id++, tier:'weak', rating:28 + (i % 14), industry, stage:'Idea', pitch:`We are building software for ${target}. The idea is to make work easier and save time. The product is early and we do not yet have clear traction, pricing, or a focused customer segment, but the opportunity seems large.` });
+      rows.push({ id:id++, tier:'fair', rating:46 + (i % 13), industry, stage:'Pre-seed', pitch:`We help ${target} solve a real problem: ${problem}. Our solution is ${solution}. The product is in pilot testing and early users say it saves time, but we still need stronger retention data, clearer pricing, and a sharper go-to-market wedge.` });
+      rows.push({ id:id++, tier:'solid', rating:64 + (i % 10), industry, stage:'Pre-seed', pitch:`We help ${target} address ${problem}. Our solution is ${solution}. The product integrates with existing tools, gives managers measurable visibility, and uses a subscription model. We have early pilots, customer interviews, and a focused wedge in the ${industry} market. We are raising capital to improve onboarding, convert pilots, and scale sales.` });
+      rows.push({ id:id++, tier:'strong', rating:76 + (i % 9), industry, stage:'Seed', pitch:`We help ${target} fix ${problem}. Our solution is ${solution}. Customers use it because it reduces manual work, improves decisions, and connects directly into their existing workflows. We have ${traction[i % traction.length]}. The model is subscription-based with strong expansion potential, and our advantage comes from workflow data, integrations, and domain-specific automation. We are raising $1.2M to hire engineering and sales, expand pilots, and reach $100k MRR.` });
+      rows.push({ id:id++, tier:'excellent', rating:88 + (i % 8), industry, stage:'Seed', pitch:`We help ${target} solve ${problem}. Our product is ${solution}, focused first on a narrow beachhead where the pain is urgent and budgets are clear. We have ${traction[(i+2) % traction.length]}. The business model is a high-margin subscription or transaction fee, with expansion through integrations and network effects. The team combines technical execution, domain experience, and early sales learning. We are raising $2M to scale the repeatable channel, deepen the proprietary data advantage, and reach the next financing milestone.` });
+    }
+  }
+  rows.push({id:id++, tier:'excellent', rating:94, industry:'Marketplace', stage:'Seed', pitch:AIRBNB_SAMPLE.text});
+  return rows;
+}
+
+function solveLinearSystem(A, b) {
+  const n = b.length;
+  const M = A.map((row, i) => row.slice().concat([b[i]]));
+  for (let col=0; col<n; col++) {
+    let pivot = col;
+    for (let r=col+1; r<n; r++) if (Math.abs(M[r][col]) > Math.abs(M[pivot][col])) pivot = r;
+    if (Math.abs(M[pivot][col]) < 1e-9) continue;
+    [M[col], M[pivot]] = [M[pivot], M[col]];
+    const div = M[col][col];
+    for (let c=col; c<=n; c++) M[col][c] /= div;
+    for (let r=0; r<n; r++) {
+      if (r === col) continue;
+      const factor = M[r][col];
+      for (let c=col; c<=n; c++) M[r][c] -= factor * M[col][c];
+    }
+  }
+  return M.map(row => row[n] || 0);
+}
+
+function trainModel(rows) {
+  const X = rows.map(r => [1].concat(vectorToArray(featureVector(r.pitch))));
+  const y = rows.map(r => r.rating / 100);
+  const n = X[0].length;
+  const lambda = 0.12;
+  const XtX = Array.from({length:n}, () => Array(n).fill(0));
+  const Xty = Array(n).fill(0);
+  for (let i=0; i<X.length; i++) {
+    for (let a=0; a<n; a++) {
+      Xty[a] += X[i][a] * y[i];
+      for (let b=0; b<n; b++) XtX[a][b] += X[i][a] * X[i][b];
+    }
+  }
+  for (let i=1; i<n; i++) XtX[i][i] += lambda;
+  const weights = solveLinearSystem(XtX, Xty);
+  return { rows, weights };
+}
+
+function dot(a, b) { let s = 0; for (let i=0; i<a.length; i++) s += a[i] * b[i]; return s; }
+function cosine(a, b) { const d = dot(a,b); const na = Math.sqrt(dot(a,a)); const nb = Math.sqrt(dot(b,b)); return (!na || !nb) ? 0 : d/(na*nb); }
+
+function predictPlus(text) {
+  const quality = analyzeInputQuality(text);
+  if (quality.lowSignal) {
+    const score = quality.gibberish ? 6 : clamp(12 + quality.wordCount, 8, 28);
+    return buildAnalysis('plus', score, text, quality, null, []);
+  }
+  const f = featureVector(text);
+  const x = [1].concat(vectorToArray(f));
+  const learned = clamp(dot(model.weights, x) * 100, 1, 99);
+  const neighbors = nearestExamples(text, 4);
+  const neighborScore = neighbors.length ? neighbors.reduce((s,n)=>s + n.rating * n.similarity,0) / Math.max(0.001, neighbors.reduce((s,n)=>s+n.similarity,0)) : learned;
+  const heuristic = basicScore(text);
+  const score = clamp((learned * .50) + (neighborScore * .25) + (heuristic * .25), 1, 99);
+  return buildAnalysis('plus', score, text, quality, f, neighbors);
+}
+
+function basicScore(text) {
+  const quality = analyzeInputQuality(text);
+  if (quality.lowSignal) return quality.gibberish ? 8 : clamp(14 + quality.wordCount, 8, 30);
+  const f = featureVector(text);
+  let score = 8;
+  score += 13*f.problem + 12*f.solution + 11*f.market + 10*f.business + 16*f.traction + 9*f.moat + 8*f.team + 7*f.ask + 8*f.metrics + 8*f.clarity + 8*f.wordScore;
+  score -= 10*f.hypePenalty + 12*f.vaguePenalty;
+  return clamp(score, 1, 96);
+}
+
+function nearestExamples(text, k) {
+  const input = vectorToArray(featureVector(text));
+  return model.rows.map(row => ({...row, similarity: cosine(input, vectorToArray(featureVector(row.pitch))) }))
+    .filter(x => Number.isFinite(x.similarity))
+    .sort((a,b) => b.similarity - a.similarity)
+    .slice(0,k);
+}
+
+function sectionScores(text) {
+  const f = featureVector(text);
+  return {
+    Problem: round(f.problem*100),
+    Solution: round(f.solution*100),
+    Market: round(f.market*100),
+    'Business model': round(f.business*100),
+    Traction: round(f.traction*100),
+    Moat: round(f.moat*100),
+    Team: round(f.team*100),
+    Ask: round(f.ask*100)
+  };
+}
+
+function buildAnalysis(mode, rawScore, text, quality, f, neighbors) {
+  const score = round(rawScore);
+  const sections = sectionScores(text);
+  const missing = Object.entries(sections).filter(([,v]) => v < 35).map(([k]) => k);
+  const flags = [];
+  const proof = [];
+  if (quality.gibberish) flags.push('The input looks like random text rather than a business pitch.');
+  if (quality.tooShort) flags.push('The pitch is too short to judge seriously.');
+  if (sections.Traction < 35) { flags.push('Traction is weak or missing.'); proof.push('Add users, revenue, pilots, retention, bookings, or growth rate.'); }
+  if (sections['Business model'] < 35) { flags.push('The revenue model is unclear.'); proof.push('State pricing, commission, subscription, margin, or transaction model.'); }
+  if (sections.Market < 35) proof.push('Name the target customer, beachhead market, or TAM/SAM/SOM.');
+  if (sections.Moat < 35) proof.push('Explain why competitors cannot easily copy this.');
+  if (sections.Ask < 35) proof.push('State how much you are raising and what milestone the capital reaches.');
+  if (!flags.length) flags.push('No major red flag, but investors will still pressure-test traction, market size, and defensibility.');
+  if (!proof.length) proof.push('Add one harder metric: retention, CAC, payback period, gross margin, or contracted pipeline.');
+
+  const label = score >= 85 ? 'Investor-ready' : score >= 70 ? 'Strong but improvable' : score >= 52 ? 'Promising but incomplete' : score >= 30 ? 'Early / weak' : 'Not pitch-ready';
+  const confidence = quality.wordCount >= 90 && quality.knownBusinessHits >= 5 ? 'High' : quality.wordCount >= 45 ? 'Medium' : 'Low';
+  const why = [];
+  if (score >= 70) why.push('The pitch includes multiple investor-relevant signals instead of only generic claims.');
+  if (sections.Problem >= 55 && sections.Solution >= 55) why.push('Problem and solution are both identifiable.');
+  if (sections.Traction >= 55) why.push('There is some evidence of market pull or early validation.');
+  if (sections.Traction < 35) why.push('Score is capped because traction/proof is missing or vague.');
+  if (sections.Moat < 35) why.push('Defensibility is not yet clear enough for a strong investor score.');
+  if (quality.gibberish || quality.tooShort) why.push('Low-signal input triggered the quality guardrail.');
+  if (!why.length) why.push('The score comes from section coverage, specificity, metrics, and clarity.');
+
+  const persona = el('personaSelect') ? el('personaSelect').value : 'seedvc';
+  const memo = makeMemo(score, label, sections, persona, mode, confidence);
+  const questions = makeQuestions(sections, persona);
+  const deck = makeDeckBullets(text, sections);
+  return { mode, score, label, confidence, memo, sections, redFlags:flags, missingProof:proof, why, questions, deck, neighbors: neighbors || [] };
+}
+
+function makeMemo(score, label, sections, persona, mode, confidence) {
+  const lens = {
+    friendly:'An angel investor would likely focus on whether the founder story and customer pain feel credible.',
+    seedvc:'A seed VC would focus on whether this can become a venture-scale company with proof of pull.',
+    b2b:'A B2B investor would pressure-test buyer urgency, sales cycle, pricing power, and retention.',
+    consumer:'A consumer investor would pressure-test acquisition loops, retention, trust, and marketplace liquidity.'
+  }[persona] || '';
+  const modeText = mode === 'plus' ? 'The offline trained model' : 'The basic rubric';
+  const weak = Object.entries(sections).filter(([,v])=>v<40).map(([k])=>k.toLowerCase()).slice(0,3);
+  const strong = Object.entries(sections).filter(([,v])=>v>=65).map(([k])=>k.toLowerCase()).slice(0,3);
+  return `${modeText} gives this a ${score}/100 (${label}) with ${confidence.toLowerCase()} confidence. ${lens} Strongest areas: ${strong.length ? strong.join(', ') : 'not enough yet'}. Weakest areas: ${weak.length ? weak.join(', ') : 'mostly complete'}. The next improvement should be adding concrete proof, not more hype.`;
+}
+
+function makeQuestions(sections, persona) {
+  const qs = [];
+  if (sections.Traction < 55) qs.push('What evidence proves customers want this now?');
+  if (sections.Market < 55) qs.push('Who is the first narrow customer segment and why now?');
+  if (sections['Business model'] < 55) qs.push('How exactly do you make money and what are the margins?');
+  if (sections.Moat < 55) qs.push('Why will this be hard to copy after competitors notice it?');
+  if (persona === 'b2b') qs.push('Who signs the contract, what budget does it come from, and how long is the sales cycle?');
+  if (persona === 'consumer') qs.push('What acquisition loop makes growth cheaper over time?');
+  if (persona === 'friendly') qs.push('What founder insight makes you unusually likely to solve this?');
+  if (qs.length < 4) qs.push('What milestone does this raise unlock in the next 12–18 months?');
+  return qs.slice(0,5);
+}
+
+function makeDeckBullets(text, sections) {
+  return [
+    'Title: one-line description of what the company does.',
+    'Problem: painful, specific, and urgent customer problem.',
+    'Solution: simple product explanation with clear user benefit.',
+    'Market: first beachhead plus larger market expansion path.',
+    'Traction: strongest metric, pilot, revenue, usage, or waitlist proof.',
+    'Business model: pricing, margin, or commission mechanics.',
+    'Competition/moat: why you win and why it gets stronger over time.',
+    'Team/ask: why this team, how much you are raising, and the milestone.'
+  ];
+}
+
+function analyzeBasic() { return buildAnalysis('basic', basicScore(getPitch()), getPitch(), analyzeInputQuality(getPitch()), featureVector(getPitch()), []); }
+function analyzePlus() { return predictPlus(getPitch()); }
+function getPitch() { return (el('pitchText').value || '').trim(); }
+function getTitle() { return (el('pitchTitle').value || 'Untitled pitch').trim(); }
+
+function setMode(mode) {
+  currentMode = mode;
+  ['basic','plus','pro'].forEach(m => {
+    const btn = el(m + 'Tab');
+    if (btn) btn.classList.toggle('active', m === mode);
+  });
+  el('activeModePill').textContent = mode === 'basic' ? 'Basic' : mode === 'plus' ? 'Plus' : 'Pro';
+  showToast(mode === 'pro' ? 'Pro is under construction.' : `${el('activeModePill').textContent} mode selected.`);
+}
+
+function runAnalysis() {
+  if (currentMode === 'pro') return renderPro();
+  const pitch = getPitch();
+  if (!pitch) return showToast('Paste a pitch first.');
+  latestAnalysis = currentMode === 'plus' ? analyzePlus() : analyzeBasic();
+  renderAnalysis(latestAnalysis);
+  saveHistory(latestAnalysis);
+  el('statusText').textContent = `${latestAnalysis.mode === 'plus' ? 'Plus offline model' : 'Basic rubric'} complete.`;
+}
+
+function compareBasicPlus() {
+  const pitch = getPitch();
+  if (!pitch) return showToast('Paste a pitch first.');
+  const basic = analyzeBasic();
+  const plus = analyzePlus();
+  latestAnalysis = plus;
+  renderAnalysis(plus, basic);
+  saveHistory(plus, basic);
+  el('statusText').textContent = `Comparison complete: Basic ${basic.score}, Plus ${plus.score}.`;
+}
+
+function renderPro() {
+  el('results').classList.add('show');
+  el('scoreNumber').textContent = '--';
+  el('resultHeadline').textContent = 'Pro is under construction';
+  el('memoText').textContent = 'This mode is reserved for your future external LLM/API. Basic and Plus are fully usable in this free beta.';
+  el('tagRow').innerHTML = '<span class="tag warn">Future LLM/API</span><span class="tag">No call made</span>';
+  el('sectionScores').innerHTML = '';
+  fillList('whyList', ['Pro intentionally does not call any external service yet.', 'Add your hosted LLM later inside the Pro analysis function.']);
+  fillList('redFlags', ['Under construction.']);
+  fillList('missingProof', ['Use Basic or Plus to grade pitches now.']);
+  fillList('questionsList', ['What external model will Pro use?', 'Will Pro save pitch history server-side?']);
+  fillList('deckBullets', ['Pro output placeholder.']);
+  fillList('nearestList', ['No model examples shown in Pro placeholder.']);
+  el('rewriteBox').classList.remove('show');
+}
+
+function renderAnalysis(a, basicCompare) {
+  el('results').classList.add('show');
+  el('scoreNumber').textContent = a.score;
+  el('resultHeadline').textContent = `${a.label}`;
+  el('memoText').textContent = a.memo;
+  const tagClass = a.score >= 75 ? 'good' : a.score >= 50 ? 'warn' : 'bad';
+  el('tagRow').innerHTML = `<span class="tag ${tagClass}">${a.mode === 'plus' ? 'Plus offline model' : 'Basic rubric'}</span><span class="tag">Confidence: ${a.confidence}</span>${basicCompare ? `<span class="tag">Basic: ${basicCompare.score}</span><span class="tag good">Plus: ${a.score}</span>` : ''}`;
+  renderSections(a.sections);
+  fillList('whyList', a.why);
+  fillList('redFlags', a.redFlags);
+  fillList('missingProof', a.missingProof);
+  fillList('questionsList', a.questions);
+  fillList('deckBullets', a.deck);
+  const near = a.neighbors && a.neighbors.length ? a.neighbors.map(n => `${n.industry} ${n.stage}: ${n.rating}/100 match (${Math.round(n.similarity*100)}%)`) : ['Available in Plus mode after analysis.'];
+  fillList('nearestList', near);
+}
+
+function renderSections(sections) {
+  el('sectionScores').innerHTML = Object.entries(sections).map(([name,value]) => `<div class="section-score"><div class="section-name">${escapeHTML(name)}</div><div class="bar"><span style="width:${clamp(value,0,100)}%"></span></div><div class="section-num">${value}</div></div>`).join('');
+}
+
+function fillList(id, items) {
+  el(id).innerHTML = (items && items.length ? items : ['No issues found.']).map(item => `<li>${escapeHTML(item)}</li>`).join('');
+}
+
+function escapeHTML(str) { return String(str).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
+
+function loadSample() {
+  el('pitchTitle').value = AIRBNB_SAMPLE.title;
+  el('industrySelect').value = AIRBNB_SAMPLE.industry;
+  el('stageSelect').value = AIRBNB_SAMPLE.stage;
+  el('pitchText').value = AIRBNB_SAMPLE.text;
+  setMode('plus');
+  showToast('Loaded the Airbnb-style sample.');
+}
+
+function openSource() { window.open(SAMPLE_SOURCE_URL, '_blank', 'noopener,noreferrer'); }
+function scrollApp() { el('app').scrollIntoView({behavior:'smooth', block:'start'}); }
+function clearPitch() { el('pitchTitle').value=''; el('pitchText').value=''; el('results').classList.remove('show'); el('rewriteBox').classList.remove('show'); showToast('Cleared.'); }
+
+function rewritePitch() {
+  const pitch = getPitch();
+  if (!pitch) return showToast('Paste a pitch first.');
+  const a = currentMode === 'plus' ? analyzePlus() : analyzeBasic();
+  const industry = el('industrySelect').value;
+  const stage = el('stageSelect').value;
+  const missing = a.missingProof.slice(0,3).join(' ');
+  latestRewrite = `We help a focused group of ${industry} customers solve a painful operational problem with a product that is easier, faster, and more measurable than the current workaround.\n\nThe sharper version of this pitch should lead with the customer pain, explain the product in one sentence, and then prove demand with concrete evidence. For this ${stage} stage company, the strongest next version should include traction such as users, revenue, paid pilots, retention, booking volume, or signed LOIs.\n\nBusiness model: state whether revenue comes from subscription, commission, usage-based pricing, or services, and include one metric that shows pricing power or margin potential.\n\nMoat: explain why the company gets harder to copy over time through data, workflow integration, network effects, brand trust, or distribution.\n\nNext raise: state the amount being raised and the milestone it unlocks. ${missing}`;
+  el('rewriteText').textContent = latestRewrite;
+  el('rewriteScore').textContent = 'Click “Score rewrite” to estimate the improved version.';
+  el('rewriteBox').classList.add('show');
+  showToast('Rewrite generated.');
+}
+
+function scoreRewrite() {
+  if (!latestRewrite) return showToast('Generate a rewrite first.');
+  const oldText = el('pitchText').value;
+  el('pitchText').value = latestRewrite;
+  const a = currentMode === 'plus' ? analyzePlus() : analyzeBasic();
+  el('pitchText').value = oldText;
+  el('rewriteScore').textContent = `Estimated rewritten score: ${a.score}/100 (${a.label}).`;
+}
+
+function showToast(msg) {
+  const t = el('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove('show'), 2300);
+}
+
+function saveHistory(a, basic) {
+  try {
+    const key = 'astrapitch_history_v1';
+    const history = JSON.parse(localStorage.getItem(key) || '[]');
+    history.unshift({ title:getTitle(), mode:a.mode, score:a.score, label:a.label, basicScore:basic ? basic.score : null, time:new Date().toLocaleString() });
+    localStorage.setItem(key, JSON.stringify(history.slice(0,12)));
+    renderHistory();
+  } catch (e) { /* localStorage can fail in private contexts */ }
+}
+
+function renderHistory() {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('astrapitch_history_v1') || '[]'); } catch(e) {}
+  el('historyList').innerHTML = history.length ? history.map(h => `<div class="history-item"><strong>${escapeHTML(h.title)}</strong><span class="muted">${escapeHTML(h.mode)} · ${h.score}/100 · ${escapeHTML(h.label)}${h.basicScore !== null ? ` · Basic ${h.basicScore}` : ''}<br>${escapeHTML(h.time)}</span></div>`).join('') : '<p class="muted">No analyses saved yet.</p>';
+}
+
+function toggleHistory() { el('historyPanel').classList.toggle('show'); renderHistory(); }
+function clearHistory() { try { localStorage.removeItem('astrapitch_history_v1'); } catch(e) {} renderHistory(); showToast('History cleared.'); }
+
+function boot() {
+  const rows = buildTrainingDatabase();
+  model = trainModel(rows);
+  el('modelStatus').textContent = `${rows.length.toLocaleString()} embedded examples loaded`;
+  
+  // Button event listeners with error checking
+  const bindings = [
+    ['basicTab','click',()=>setMode('basic')], 
+    ['plusTab','click',()=>setMode('plus')], 
+    ['proTab','click',()=>setMode('pro')],
+    ['analyzeBtn','click',runAnalysis], 
+    ['topAnalyzeBtn','click',()=>{scrollApp(); runAnalysis();}], 
+    ['compareBtn','click',compareBasicPlus],
+    ['rewriteBtn','click',rewritePitch], 
+    ['scoreRewriteBtn','click',scoreRewrite], 
+    ['clearBtn','click',clearPitch],
+    ['sampleBtn','click',loadSample], 
+    ['heroSampleBtn','click',()=>{loadSample(); scrollApp();}], 
+    ['heroStartBtn','click',scrollApp], 
+    ['sourceBtn','click',openSource],
+    ['historyBtn','click',toggleHistory], 
+    ['clearHistoryBtn','click',clearHistory],
+    ['continueGuestBtn','click',()=>{ hideEntryOverlay(); showToast('Entered free beta.'); }],
+    ['entryCloseBtn','click',hideEntryOverlay]
+  ];
+  
+  // Attach all event listeners and log any missing elements
+  bindings.forEach(([id, evt, fn]) => { 
+    const node = el(id); 
+    if (node) {
+      node.addEventListener(evt, fn);
+    } else {
+      console.warn(`Button element not found: ${id}`);
+    }
+  });
+  
+  renderHistory();
+  setMode('basic');
+  el('statusText').textContent = 'Ready. No external API calls.';
+  showEntryOverlay();
+  initGoogleClient();
+}
+
+// Boot function with proper DOMContentLoaded handling
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
+</script>
+</body>
+</html>
