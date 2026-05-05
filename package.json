@@ -1,0 +1,12 @@
+{
+  "name": "business-rating-ai",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "stripe": "^16.12.0"
+  }
+}
