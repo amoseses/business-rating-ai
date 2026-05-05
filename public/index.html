@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Business Rating AI</title>
+  <style>body{font-family:Arial;max-width:900px;margin:20px auto;padding:0 16px}textarea{width:100%;height:220px}button{margin:8px 8px 8px 0;padding:10px 14px}.card{border:1px solid #ddd;border-radius:10px;padding:14px;margin-top:14px}</style>
+</head>
+<body>
+  <h1>Business Rating AI</h1>
+  <p>Run analysis with Data plan or Plus plan, and upgrade with Stripe Checkout.</p>
+
+  <div class="card">
+    <strong>Plan</strong><br/>
+    <label><input type="radio" name="plan" value="data" checked> Data plan</label>
+    <label><input type="radio" name="plan" value="plus"> Plus plan</label>
+    <div>
+      <button id="checkoutBtn">Upgrade selected plan</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="pitch">Pitch text</label>
+    <textarea id="pitch" placeholder="Paste your business pitch..."></textarea>
+    <div>
+      <button id="analyzeBtn">Analyze</button>
+    </div>
+  </div>
+
+  <div class="card" id="result" style="display:none"></div>
+
+<script>
+function selectedPlan(){return document.querySelector('input[name="plan"]:checked').value;}
+
+async function startCheckout(){
+  const res = await fetch('/api/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:selectedPlan()})});
+  const data = await res.json();
+  if(!res.ok){alert(data.error||'Checkout failed');return;}
+  window.location.href = data.url;
+}
+
+async function analyze(){
+  const pitch = document.getElementById('pitch').value.trim();
+  const res = await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pitch,plan:selectedPlan()})});
+  const data = await res.json();
+  const el = document.getElementById('result');
+  if(!res.ok){el.style.display='block';el.innerHTML=`<h3>Error</h3><p>${data.error||'Unknown error'}</p>`;return;}
+  el.style.display='block';
+  el.innerHTML = `<h2>Score: ${data.score}/100</h2><p><strong>${data.label}</strong> · Plan: ${data.plan} · Words: ${data.wordCount}</p>
+  <h3>Sections</h3><pre>${JSON.stringify(data.sections,null,2)}</pre>
+  <h3>Recommendations</h3><ul>${data.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+}
+
+document.getElementById('checkoutBtn').addEventListener('click',startCheckout);
+document.getElementById('analyzeBtn').addEventListener('click',analyze);
+</script>
+</body>
+</html>
