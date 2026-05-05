@@ -4,11 +4,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Business Rating AI</title>
-  <style>body{font-family:Arial;max-width:900px;margin:20px auto;padding:0 16px}textarea{width:100%;height:220px}button{margin:8px 8px 8px 0;padding:10px 14px}.card{border:1px solid #ddd;border-radius:10px;padding:14px;margin-top:14px}</style>
+  <style>
+    body{font-family:Arial;max-width:900px;margin:20px auto;padding:0 16px;color:#172033;background:#f8fafc}
+    textarea,input[type="email"]{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font:inherit;background:white}
+    textarea{height:220px}
+    button{margin:8px 8px 8px 0;padding:10px 14px;border:0;border-radius:8px;background:#2563eb;color:white;cursor:pointer;font-weight:700}
+    button.secondary{background:#475569}
+    button:disabled{background:#94a3b8;cursor:not-allowed}
+    .card{border:1px solid #ddd;border-radius:10px;padding:14px;margin-top:14px;background:white;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+    .muted{color:#64748b;font-size:14px}
+    .status{margin-top:10px;padding:10px;border-radius:8px;background:#eef2ff;color:#3730a3}
+    .success{background:#dcfce7;color:#166534}.error{background:#fee2e2;color:#991b1b}.warning{background:#fef3c7;color:#92400e}
+    label{display:inline-block;margin:8px 12px 8px 0}
+  </style>
 </head>
 <body>
   <h1>Business Rating AI</h1>
-  <p>Run analysis with Data plan or Plus plan, and upgrade with Stripe Checkout.</p>
+  <p>Log in with your email, buy a plan once, then keep using that paid plan without purchasing it again.</p>
+
+  <div class="card">
+    <h2>Login</h2>
+    <p class="muted">Use the same email you used at Stripe Checkout. We check Stripe for an active subscription before charging you again.</p>
+    <label for="email">Email</label>
+    <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+    <div>
+      <button id="loginBtn">Save login</button>
+      <button id="logoutBtn" class="secondary" style="display:none">Log out</button>
+    </div>
+    <div id="loginStatus" class="status warning">Not logged in yet.</div>
+  </div>
 
   <div class="card">
     <strong>Plan</strong><br/>
@@ -16,7 +40,9 @@
     <label><input type="radio" name="plan" value="plus"> Plus plan</label>
     <div>
       <button id="checkoutBtn">Upgrade selected plan</button>
+      <button id="refreshStatusBtn" class="secondary">Refresh plan status</button>
     </div>
+    <div id="planStatus" class="status warning">Log in to check your plan.</div>
   </div>
 
   <div class="card">
@@ -30,29 +56,138 @@
   <div class="card" id="result" style="display:none"></div>
 
 <script>
+const STORAGE_KEY = 'businessRatingAiEmail';
+const emailEl = document.getElementById('email');
+const loginStatusEl = document.getElementById('loginStatus');
+const planStatusEl = document.getElementById('planStatus');
+const logoutBtn = document.getElementById('logoutBtn');
+const checkoutBtn = document.getElementById('checkoutBtn');
+const analyzeBtn = document.getElementById('analyzeBtn');
+
 function selectedPlan(){return document.querySelector('input[name="plan"]:checked').value;}
-
+function savedEmail(){return (localStorage.getItem(STORAGE_KEY)||'').trim().toLowerCase();}
+function typedEmail(){return emailEl.value.trim().toLowerCase();}
+function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
+function setStatus(el,message,type='warning'){el.className=`status ${type}`;el.textContent=message;}
+function requireLogin(){
+  const email = typedEmail() || savedEmail();
+  if(!validEmail(email)){
+    setStatus(loginStatusEl,'Enter your email and click Save login first.','error');
+    return null;
+  }
+  localStorage.setItem(STORAGE_KEY,email);
+  emailEl.value = email;
+  renderLogin();
+  return email;
+}
+function renderLogin(){
+  const email = savedEmail();
+  if(email){
+    emailEl.value = email;
+    logoutBtn.style.display = 'inline-block';
+    setStatus(loginStatusEl,`Logged in as ${email}.`,'success');
+  }else{
+    logoutBtn.style.display = 'none';
+    setStatus(loginStatusEl,'Not logged in yet.','warning');
+  }
+}
+async function postJson(url,body){
+  const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok){throw new Error(data.error||'Request failed');}
+  return data;
+}
+async function refreshPlanStatus(){
+  const email = requireLogin();
+  if(!email) return false;
+  setStatus(planStatusEl,'Checking Stripe subscription status...','warning');
+  try{
+    const data = await postJson('/api/customer-status',{email,plan:selectedPlan()});
+    if(data.hasActivePlan){
+      setStatus(planStatusEl,`Active ${data.plan} subscription found. You can analyze without paying again.`,'success');
+      return true;
+    }
+    setStatus(planStatusEl,`No active ${data.plan} subscription found for ${email}.`,'warning');
+    return false;
+  }catch(err){
+    setStatus(planStatusEl,err.message,'error');
+    return false;
+  }
+}
 async function startCheckout(){
-  const res = await fetch('/api/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plan:selectedPlan()})});
-  const data = await res.json();
-  if(!res.ok){alert(data.error||'Checkout failed');return;}
-  window.location.href = data.url;
+  const email = requireLogin();
+  if(!email) return;
+  checkoutBtn.disabled = true;
+  setStatus(planStatusEl,'Checking existing subscription before Checkout...','warning');
+  try{
+    const data = await postJson('/api/create-checkout-session',{plan:selectedPlan(),email});
+    if(data.alreadySubscribed){
+      setStatus(planStatusEl,data.message || 'You already have this plan.','success');
+      return;
+    }
+    window.location.href = data.url;
+  }catch(err){
+    setStatus(planStatusEl,err.message,'error');
+  }finally{
+    checkoutBtn.disabled = false;
+  }
 }
-
 async function analyze(){
+  const email = requireLogin();
+  if(!email) return;
   const pitch = document.getElementById('pitch').value.trim();
-  const res = await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pitch,plan:selectedPlan()})});
-  const data = await res.json();
   const el = document.getElementById('result');
-  if(!res.ok){el.style.display='block';el.innerHTML=`<h3>Error</h3><p>${data.error||'Unknown error'}</p>`;return;}
-  el.style.display='block';
-  el.innerHTML = `<h2>Score: ${data.score}/100</h2><p><strong>${data.label}</strong> · Plan: ${data.plan} · Words: ${data.wordCount}</p>
-  <h3>Sections</h3><pre>${JSON.stringify(data.sections,null,2)}</pre>
-  <h3>Recommendations</h3><ul>${data.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+  analyzeBtn.disabled = true;
+  try{
+    const data = await postJson('/api/analyze',{pitch,plan:selectedPlan(),email});
+    el.style.display='block';
+    el.innerHTML = `<h2>Score: ${data.score}/100</h2><p><strong>${data.label}</strong> · Plan: ${data.plan} · Words: ${data.wordCount}</p>
+    <h3>Sections</h3><pre>${JSON.stringify(data.sections,null,2)}</pre>
+    <h3>Recommendations</h3><ul>${data.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+  }catch(err){
+    el.style.display='block';
+    el.innerHTML=`<h3>Error</h3><p>${err.message}</p>`;
+    if(/purchase|subscription|plan/i.test(err.message)) setStatus(planStatusEl,err.message,'error');
+  }finally{
+    analyzeBtn.disabled = false;
+  }
+}
+function saveLogin(){
+  const email = typedEmail();
+  if(!validEmail(email)){
+    setStatus(loginStatusEl,'Enter a valid email address.','error');
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY,email);
+  renderLogin();
+  refreshPlanStatus();
+}
+function logout(){
+  localStorage.removeItem(STORAGE_KEY);
+  emailEl.value = '';
+  renderLogin();
+  setStatus(planStatusEl,'Log in to check your plan.','warning');
+}
+function showCheckoutReturnMessage(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('checkout') === 'success'){
+    setStatus(planStatusEl,'Checkout succeeded. Refreshing your Stripe subscription status...','success');
+    refreshPlanStatus();
+  }
+  if(params.get('checkout') === 'cancelled'){
+    setStatus(planStatusEl,'Checkout was cancelled. No charge was completed.','warning');
+  }
 }
 
+document.getElementById('loginBtn').addEventListener('click',saveLogin);
+logoutBtn.addEventListener('click',logout);
+document.getElementById('refreshStatusBtn').addEventListener('click',refreshPlanStatus);
 document.getElementById('checkoutBtn').addEventListener('click',startCheckout);
 document.getElementById('analyzeBtn').addEventListener('click',analyze);
+document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventListener('change',()=>{if(savedEmail()) refreshPlanStatus();}));
+renderLogin();
+showCheckoutReturnMessage();
+if(savedEmail()) refreshPlanStatus();
 </script>
 </body>
 </html>
