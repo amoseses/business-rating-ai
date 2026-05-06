@@ -75,6 +75,7 @@
       <button id="refreshStatusBtn" class="secondary">Refresh plan status</button>
     </div>
     <div id="planStatus" class="status warning">Log in to check your plan.</div>
+    <div id="setupStatus" class="status warning hidden"></div>
   </div>
 
   <div class="card">
@@ -97,6 +98,7 @@ const resetEmailEl = document.getElementById('resetEmail');
 const newPasswordEl = document.getElementById('newPassword');
 const loginStatusEl = document.getElementById('loginStatus');
 const planStatusEl = document.getElementById('planStatus');
+const setupStatusEl = document.getElementById('setupStatus');
 const logoutBtn = document.getElementById('logoutBtn');
 const checkoutBtn = document.getElementById('checkoutBtn');
 const analyzeBtn = document.getElementById('analyzeBtn');
@@ -114,6 +116,26 @@ function typedEmail(){return emailEl.value.trim().toLowerCase();}
 function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
 function setStatus(el,message,type='warning'){el.className=`status ${type}`;el.textContent=message;}
 function setBusy(button,busy){button.disabled = busy;}
+function renderSetupStatus(config){
+  const missing = [];
+  if(!config.stripeSecret || !config.stripeSecret.configured) missing.push('STRIPE_SECRET_KEY');
+  if(!config.prices || !config.prices.data || !config.prices.data.configured) missing.push('STRIPE_DATA_PRICE_ID');
+  if(!config.prices || !config.prices.plus || !config.prices.plus.configured) missing.push('STRIPE_PLUS_PRICE_ID');
+  if(!config.authSecret || !config.authSecret.configured) missing.push('AUTH_SECRET');
+  if(!missing.length){
+    setupStatusEl.classList.add('hidden');
+    return;
+  }
+  setupStatusEl.classList.remove('hidden');
+  setStatus(setupStatusEl,`Vercel setup missing: ${missing.join(', ')}. Add these in Project Settings → Environment Variables for the deployed environment, then redeploy. Stripe checkout/login need the secret key; keep the Stripe variables in place.`,'warning');
+}
+async function loadSetupStatus(){
+  try{
+    const res = await fetch('/api/config-status');
+    if(!res.ok) return;
+    renderSetupStatus(await res.json());
+  }catch(_err){}
+}
 function authHeaders(){return sessionToken ? {Authorization:`Bearer ${sessionToken}`} : {};}
 function storeSession(email, token){
   sessionToken = token;
@@ -124,6 +146,7 @@ function storeSession(email, token){
   storage.setItem(EMAIL_KEY, email);
   emailEl.value = email;
   passwordEl.value = '';
+  loadSetupStatus();
   renderLogin();
 }
 function clearSession(){
@@ -180,7 +203,10 @@ async function postJson(url,body,authorized=false){
   const headers = {'Content-Type':'application/json', ...(authorized ? authHeaders() : {})};
   const res = await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
   const data = await res.json().catch(()=>({}));
-  if(!res.ok){throw new Error(data.error||'Request failed');}
+  if(!res.ok){
+    if(data.error && /Missing .*STRIPE|Stripe secret|STRIPE_.*PRICE|AUTH_SECRET/i.test(data.error)) loadSetupStatus();
+    throw new Error(data.error||'Request failed');
+  }
   return data;
 }
 async function authenticate(endpoint){
@@ -273,6 +299,7 @@ function logout(){
   clearSession();
   emailEl.value = '';
   passwordEl.value = '';
+  loadSetupStatus();
   renderLogin();
   setStatus(planStatusEl,'Log in to check your plan.','warning');
 }
@@ -297,6 +324,7 @@ document.getElementById('refreshStatusBtn').addEventListener('click',refreshPlan
 document.getElementById('checkoutBtn').addEventListener('click',startCheckout);
 document.getElementById('analyzeBtn').addEventListener('click',analyze);
 document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventListener('change',()=>{if(savedEmail() && sessionToken) refreshPlanStatus();}));
+loadSetupStatus();
 renderLogin();
 if(params.get('reset') === '1' && params.get('token')) showResetConfirm();
 else showCheckoutReturnMessage();

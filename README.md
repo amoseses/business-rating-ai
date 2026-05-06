@@ -6,9 +6,9 @@
 3. Run locally: `npm run dev`
 
 ## Vercel env vars
-- `STRIPE_SECRET_KEY` — your Stripe secret key, usually `sk_test_...` or `sk_live_...`. The app trims accidental spaces/quotes and also accepts `STRIPE_SECRET` or `STRIPE_API_KEY` as fallbacks, but `STRIPE_SECRET_KEY` is preferred.
-- `STRIPE_DATA_PRICE_ID` — recurring Stripe Price ID for the Data plan. Prefer `price_...`.
-- `STRIPE_PLUS_PRICE_ID` — recurring Stripe Price ID for the Plus plan. Prefer `price_...`.
+- `STRIPE_SECRET_KEY` — your Stripe secret key, usually `sk_test_...` or `sk_live_...`. The app trims accidental spaces/quotes/full `STRIPE_SECRET_KEY=...` pastes and also accepts `STRIPE_SECRET` or `STRIPE_API_KEY` as fallbacks, but `STRIPE_SECRET_KEY` is preferred.
+- `STRIPE_DATA_PRICE_ID` — recurring Stripe Price ID for the Data plan. Prefer `price_...`. Alias fallbacks are `DATA_PRICE_ID`, `STRIPE_PRICE_ID_DATA`, and `STRIPE_DATA_PLAN_PRICE_ID`.
+- `STRIPE_PLUS_PRICE_ID` — recurring Stripe Price ID for the Plus plan. Prefer `price_...`. Alias fallbacks are `PLUS_PRICE_ID`, `STRIPE_PRICE_ID_PLUS`, and `STRIPE_PLUS_PLAN_PRICE_ID`.
 - `APP_URL` — deployed site URL, with or without a trailing slash.
 - `AUTH_SECRET` — long random string used to sign login sessions.
 - `RESEND_API_KEY` — Resend API key used to send password reset emails.
@@ -16,7 +16,10 @@
 
 If you accidentally paste a Stripe Product ID (`prod_...`) instead of a Price ID, the app will try to use that product's default price. If the product has no default price, set one in Stripe or replace the env var with the recurring `price_...` ID.
 
+The live app now calls `GET /api/config-status` on page load and shows which required Vercel variables are missing. After adding or changing Vercel environment variables, redeploy the site; existing deployments do not automatically pick up new values.
+
 ## Endpoints
+- `GET /api/config-status` to verify the deployed Vercel environment variables without exposing secret values
 - `POST /api/auth-signup` with `{ email, password }`
 - `POST /api/auth-login` with `{ email, password }`
 - `POST /api/auth-request-reset` with `{ email }`

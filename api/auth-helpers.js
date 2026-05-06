@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { findCustomerByEmail, getOrigin, isValidEmail, normalizeEmail } = require('./stripe-helpers');
+const { findCustomerByEmail, getEnvValue, getOrigin, isValidEmail, normalizeEmail } = require('./stripe-helpers');
 
 const PASSWORD_MIN_LENGTH = 8;
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -14,9 +14,10 @@ function jsonBase64url(value) {
 }
 
 function getAuthSecret() {
-  const secret = (process.env.AUTH_SECRET || process.env.SESSION_SECRET || process.env.STRIPE_SECRET_KEY || '').trim();
+  const found = getEnvValue(['AUTH_SECRET', 'SESSION_SECRET', 'STRIPE_SECRET_KEY', 'STRIPE_SECRET', 'STRIPE_API_KEY']);
+  const secret = found && found.value;
   if (!secret) {
-    const error = new Error('Missing AUTH_SECRET. Add a long random AUTH_SECRET environment variable.');
+    const error = new Error('Missing AUTH_SECRET. Add a long random AUTH_SECRET environment variable in Vercel, then redeploy.');
     error.statusCode = 500;
     throw error;
   }

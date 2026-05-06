@@ -3,37 +3,94 @@ const Stripe = require('stripe');
 const PLANS = {
   data: {
     name: 'Data plan',
-    envVar: 'STRIPE_DATA_PRICE_ID'
+    envVar: 'STRIPE_DATA_PRICE_ID',
+    aliases: ['DATA_PRICE_ID', 'STRIPE_PRICE_ID_DATA', 'STRIPE_DATA_PLAN_PRICE_ID']
   },
   plus: {
     name: 'Plus plan',
-    envVar: 'STRIPE_PLUS_PRICE_ID'
+    envVar: 'STRIPE_PLUS_PRICE_ID',
+    aliases: ['PLUS_PRICE_ID', 'STRIPE_PRICE_ID_PLUS', 'STRIPE_PLUS_PLAN_PRICE_ID']
   }
 };
+
+const STRIPE_SECRET_ENV_NAMES = ['STRIPE_SECRET_KEY', 'STRIPE_SECRET', 'STRIPE_API_KEY'];
 
 function normalizePlan(plan) {
   return plan === 'plus' ? 'plus' : 'data';
 }
 
-function getStripeSecret() {
-  const candidates = [
-    ['STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY],
-    ['STRIPE_SECRET', process.env.STRIPE_SECRET],
-    ['STRIPE_API_KEY', process.env.STRIPE_API_KEY]
-  ];
-  const found = candidates.find(([, value]) => String(value || '').trim());
+function normalizeEnvName(name) {
+  return String(name || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
 
-  if (!found) {
-    const error = new Error('Missing Stripe secret key. Add STRIPE_SECRET_KEY in your environment variables.');
-    error.statusCode = 500;
-    throw error;
+function unwrapEnvValue(value, envNames = []) {
+  let cleaned = String(value || '').replace(/^\uFEFF/, '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+  cleaned = cleaned.replace(/^export\s+/i, '').trim();
+
+  const normalizedNames = envNames.map(normalizeEnvName);
+  const equalsIndex = cleaned.indexOf('=');
+  if (equalsIndex > 0) {
+    const possibleName = cleaned.slice(0, equalsIndex).trim();
+    if (normalizedNames.includes(normalizeEnvName(possibleName))) {
+      cleaned = cleaned.slice(equalsIndex + 1).trim();
+    }
   }
 
-  const [envName, rawSecret] = found;
-  const secret = String(rawSecret).trim().replace(/^['\"]|['\"]$/g, '');
+  while ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+
+  return cleaned;
+}
+
+function getEnvValue(envNames) {
+  const normalizedNames = envNames.map(normalizeEnvName);
+  const exactName = envNames.find((name) => String(process.env[name] || '').trim());
+  if (exactName) {
+    return {
+      name: exactName,
+      value: unwrapEnvValue(process.env[exactName], envNames),
+      matchedBy: 'exact'
+    };
+  }
+
+  const fuzzyName = Object.keys(process.env).find((name) => {
+    return normalizedNames.includes(normalizeEnvName(name)) && String(process.env[name] || '').trim();
+  });
+
+  if (!fuzzyName) return null;
+
+  return {
+    name: fuzzyName,
+    value: unwrapEnvValue(process.env[fuzzyName], envNames),
+    matchedBy: 'normalized'
+  };
+}
+
+function missingEnvError(message, setupHint = true) {
+  const suffix = setupHint
+    ? ' In Vercel, add it under Project Settings → Environment Variables for the environment you deploy (Production/Preview/Development), then redeploy.'
+    : '';
+  const error = new Error(`${message}${suffix}`);
+  error.statusCode = 500;
+  return error;
+}
+
+function getStripeSecret() {
+  const found = getEnvValue(STRIPE_SECRET_ENV_NAMES);
+
+  if (!found || !found.value) {
+    throw missingEnvError('Missing Stripe secret key. Add STRIPE_SECRET_KEY with your Stripe sk_test_... or sk_live_... value.');
+  }
+
+  const secret = found.value;
 
   if (!secret.startsWith('sk_') && !secret.startsWith('rk_')) {
-    const error = new Error(`${envName} must be a Stripe secret key that starts with sk_ (or a restricted key that starts with rk_), not a publishable key or price/product ID.`);
+    const pastedWholeLine = secret.includes('STRIPE_SECRET_KEY=');
+    const hint = pastedWholeLine
+      ? ' Paste only the key value, not the full STRIPE_SECRET_KEY=... line.'
+      : ' Do not use a publishable pk_ key, product prod_ ID, or price_ ID here.';
+    const error = new Error(`${found.name} must be a Stripe secret key that starts with sk_ (or a restricted key that starts with rk_).${hint}`);
     error.statusCode = 500;
     throw error;
   }
@@ -54,18 +111,26 @@ function isValidEmail(email) {
 }
 
 function getOrigin(req) {
-  return (req.headers.origin || process.env.APP_URL || '').replace(/\/$/, '');
+  const rawOrigin = req.headers.origin || process.env.APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || '';
+  if (!rawOrigin) return '';
+  const origin = String(rawOrigin).trim().replace(/\/$/, '');
+  return /^https?:\/\//i.test(origin) ? origin : `https://${origin}`;
+}
+
+function getPlanEnvValue(plan) {
+  const normalizedPlan = normalizePlan(plan);
+  const envNames = [PLANS[normalizedPlan].envVar, ...(PLANS[normalizedPlan].aliases || [])];
+  return getEnvValue(envNames);
 }
 
 async function resolvePriceId(stripe, plan) {
   const normalizedPlan = normalizePlan(plan);
   const envVar = PLANS[normalizedPlan].envVar;
-  const configuredId = process.env[envVar];
+  const found = getPlanEnvValue(normalizedPlan);
+  const configuredId = found && found.value;
 
   if (!configuredId) {
-    const error = new Error(`Missing ${envVar}`);
-    error.statusCode = 500;
-    throw error;
+    throw missingEnvError(`Missing ${envVar}. Add the recurring Stripe Price ID for the ${PLANS[normalizedPlan].name}.`);
   }
 
   if (configuredId.startsWith('price_')) {
@@ -77,7 +142,7 @@ async function resolvePriceId(stripe, plan) {
     const defaultPrice = product && product.default_price;
 
     if (!defaultPrice) {
-      const error = new Error(`${envVar} is a product ID (${configuredId}), but that product has no default price. Use a Stripe price_ ID or set a default price on the product.`);
+      const error = new Error(`${found.name} is a product ID (${configuredId}), but that product has no default price. Use a Stripe price_ ID or set a default price on the product.`);
       error.statusCode = 500;
       throw error;
     }
@@ -89,7 +154,7 @@ async function resolvePriceId(stripe, plan) {
     return defaultPrice.id;
   }
 
-  const error = new Error(`${envVar} must be a Stripe price_ ID. Product prod_ IDs are only supported when the product has a default price.`);
+  const error = new Error(`${found.name} must be a Stripe price_ ID. Product prod_ IDs are only supported when the product has a default price.`);
   error.statusCode = 500;
   throw error;
 }
@@ -142,20 +207,48 @@ async function getCustomerPlanStatus(stripe, email, plan) {
   };
 }
 
+function envPresence(envNames) {
+  const found = getEnvValue(envNames);
+  return {
+    configured: Boolean(found && found.value),
+    name: found ? found.name : envNames[0],
+    matchedBy: found ? found.matchedBy : null
+  };
+}
+
+function getSetupStatus() {
+  return {
+    stripeSecret: envPresence(STRIPE_SECRET_ENV_NAMES),
+    prices: Object.fromEntries(Object.keys(PLANS).map((plan) => {
+      const config = PLANS[plan];
+      return [plan, envPresence([config.envVar, ...(config.aliases || [])])];
+    })),
+    authSecret: envPresence(['AUTH_SECRET', 'SESSION_SECRET', ...STRIPE_SECRET_ENV_NAMES]),
+    appUrl: envPresence(['APP_URL', 'VERCEL_PROJECT_PRODUCTION_URL']),
+    resend: envPresence(['RESEND_API_KEY'])
+  };
+}
+
 function sendError(res, error) {
   return res.status(error.statusCode || 500).json({ error: error.message || 'Unexpected server error' });
 }
 
 module.exports = {
   PLANS,
+  STRIPE_SECRET_ENV_NAMES,
   findCustomerByEmail,
   getCustomerPlanStatus,
+  getEnvValue,
   getOrigin,
+  getPlanEnvValue,
+  getSetupStatus,
   getStripe,
   getStripeSecret,
   isValidEmail,
   normalizeEmail,
+  normalizeEnvName,
   normalizePlan,
   resolvePriceId,
-  sendError
+  sendError,
+  unwrapEnvValue
 };
