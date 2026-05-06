@@ -1,3 +1,4 @@
+const { requireAuth } = require('./auth-helpers');
 const {
   findCustomerByEmail,
   getCustomerPlanStatus,
@@ -16,6 +17,7 @@ module.exports = async (req, res) => {
     const { plan, email } = req.body || {};
     const normalizedPlan = normalizePlan(plan);
     const normalizedEmail = normalizeEmail(email);
+    requireAuth(req, normalizedEmail);
     const origin = getOrigin(req);
 
     if (!origin) return res.status(500).json({ error: 'Missing APP_URL or request origin' });

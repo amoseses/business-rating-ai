@@ -1,4 +1,5 @@
 const { analyzePitch } = require('../lib/analyze');
+const { requireAuth } = require('./auth-helpers');
 const { getCustomerPlanStatus, getStripe, normalizePlan, sendError } = require('./stripe-helpers');
 
 module.exports = async (req, res) => {
@@ -7,6 +8,7 @@ module.exports = async (req, res) => {
   try {
     const { pitch, plan, email } = req.body || {};
     const normalizedPlan = normalizePlan(plan);
+    requireAuth(req, email);
     const stripe = getStripe();
     const status = await getCustomerPlanStatus(stripe, email, normalizedPlan);
 

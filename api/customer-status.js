@@ -1,3 +1,4 @@
+const { requireAuth } = require('./auth-helpers');
 const { getCustomerPlanStatus, getStripe, normalizePlan, sendError } = require('./stripe-helpers');
 
 module.exports = async (req, res) => {
@@ -7,6 +8,7 @@ module.exports = async (req, res) => {
     const stripe = getStripe();
     const { email, plan } = req.body || {};
     const normalizedPlan = normalizePlan(plan);
+    requireAuth(req, email);
     const status = await getCustomerPlanStatus(stripe, email, normalizedPlan);
 
     return res.status(200).json({
