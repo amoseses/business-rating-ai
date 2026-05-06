@@ -15,15 +15,34 @@ function normalizePlan(plan) {
   return plan === 'plus' ? 'plus' : 'data';
 }
 
-function getStripe() {
-  const secret = process.env.STRIPE_SECRET_KEY;
-  if (!secret) {
-    const error = new Error('Missing STRIPE_SECRET_KEY');
+function getStripeSecret() {
+  const candidates = [
+    ['STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY],
+    ['STRIPE_SECRET', process.env.STRIPE_SECRET],
+    ['STRIPE_API_KEY', process.env.STRIPE_API_KEY]
+  ];
+  const found = candidates.find(([, value]) => String(value || '').trim());
+
+  if (!found) {
+    const error = new Error('Missing Stripe secret key. Add STRIPE_SECRET_KEY in your environment variables.');
     error.statusCode = 500;
     throw error;
   }
 
-  return new Stripe(secret);
+  const [envName, rawSecret] = found;
+  const secret = String(rawSecret).trim().replace(/^['\"]|['\"]$/g, '');
+
+  if (!secret.startsWith('sk_') && !secret.startsWith('rk_')) {
+    const error = new Error(`${envName} must be a Stripe secret key that starts with sk_ (or a restricted key that starts with rk_), not a publishable key or price/product ID.`);
+    error.statusCode = 500;
+    throw error;
+  }
+
+  return secret;
+}
+
+function getStripe() {
+  return new Stripe(getStripeSecret());
 }
 
 function normalizeEmail(email) {
@@ -133,6 +152,7 @@ module.exports = {
   getCustomerPlanStatus,
   getOrigin,
   getStripe,
+  getStripeSecret,
   isValidEmail,
   normalizeEmail,
   normalizePlan,
