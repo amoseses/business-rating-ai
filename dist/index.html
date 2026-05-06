@@ -1,0 +1,334 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Business Rating AI</title>
+  <style>
+    body{font-family:Arial;max-width:900px;margin:20px auto;padding:0 16px;color:#172033;background:#f8fafc}
+    textarea,input[type="email"],input[type="password"]{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font:inherit;background:white}
+    textarea{height:220px}
+    button{margin:8px 8px 8px 0;padding:10px 14px;border:0;border-radius:8px;background:#2563eb;color:white;cursor:pointer;font-weight:700}
+    button.secondary{background:#475569}
+    button.link{background:transparent;color:#2563eb;padding:0;margin:8px 0;text-decoration:underline}
+    button:disabled{background:#94a3b8;cursor:not-allowed}
+    .card{border:1px solid #ddd;border-radius:10px;padding:14px;margin-top:14px;background:white;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+    .muted{color:#64748b;font-size:14px}
+    .status{margin-top:10px;padding:10px;border-radius:8px;background:#eef2ff;color:#3730a3}
+    .success{background:#dcfce7;color:#166534}.error{background:#fee2e2;color:#991b1b}.warning{background:#fef3c7;color:#92400e}
+    label{display:inline-block;margin:8px 12px 8px 0;font-weight:700}
+    .plan-label{font-weight:400}
+    .auth-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <h1>Business Rating AI</h1>
+  <p>Log in with your email and password, buy a plan once, then keep using that paid plan without purchasing it again.</p>
+
+  <div class="card">
+    <h2>Login</h2>
+    <p class="muted">Create an account or log in with the same email you use at Stripe Checkout. Your browser can save the password if you allow it.</p>
+
+    <div id="authForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="At least 8 characters" autocomplete="current-password" />
+
+      <label class="plan-label"><input id="rememberMe" type="checkbox" checked> Keep me logged in on this browser</label>
+
+      <div class="auth-row">
+        <button id="loginBtn">Log in</button>
+        <button id="signupBtn" class="secondary">Create account</button>
+        <button id="forgotBtn" class="link" type="button">Forgot password?</button>
+        <button id="logoutBtn" class="secondary hidden" type="button">Log out</button>
+      </div>
+    </div>
+
+    <div id="resetForm" class="hidden">
+      <label for="resetEmail">Email</label>
+      <input id="resetEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+
+      <div id="newPasswordWrap" class="hidden">
+        <label for="newPassword">New password</label>
+        <input id="newPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+      </div>
+
+      <div class="auth-row">
+        <button id="requestResetBtn">Send reset email</button>
+        <button id="confirmResetBtn" class="hidden">Save new password</button>
+        <button id="backToLoginBtn" class="secondary" type="button">Back to login</button>
+      </div>
+    </div>
+
+    <div id="loginStatus" class="status warning">Not logged in yet.</div>
+  </div>
+
+  <div class="card">
+    <strong>Plan</strong><br/>
+    <label class="plan-label"><input type="radio" name="plan" value="data" checked> Data plan</label>
+    <label class="plan-label"><input type="radio" name="plan" value="plus"> Plus plan</label>
+    <div>
+      <button id="checkoutBtn">Upgrade selected plan</button>
+      <button id="refreshStatusBtn" class="secondary">Refresh plan status</button>
+    </div>
+    <div id="planStatus" class="status warning">Log in to check your plan.</div>
+    <div id="setupStatus" class="status warning hidden"></div>
+  </div>
+
+  <div class="card">
+    <label for="pitch">Pitch text</label>
+    <textarea id="pitch" placeholder="Paste your business pitch..."></textarea>
+    <div>
+      <button id="analyzeBtn">Analyze</button>
+    </div>
+  </div>
+
+  <div class="card" id="result" style="display:none"></div>
+
+<script>
+const EMAIL_KEY = 'businessRatingAiEmail';
+const TOKEN_KEY = 'businessRatingAiToken';
+const emailEl = document.getElementById('email');
+const passwordEl = document.getElementById('password');
+const rememberMeEl = document.getElementById('rememberMe');
+const resetEmailEl = document.getElementById('resetEmail');
+const newPasswordEl = document.getElementById('newPassword');
+const loginStatusEl = document.getElementById('loginStatus');
+const planStatusEl = document.getElementById('planStatus');
+const setupStatusEl = document.getElementById('setupStatus');
+const logoutBtn = document.getElementById('logoutBtn');
+const checkoutBtn = document.getElementById('checkoutBtn');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const authForm = document.getElementById('authForm');
+const resetForm = document.getElementById('resetForm');
+const newPasswordWrap = document.getElementById('newPasswordWrap');
+const requestResetBtn = document.getElementById('requestResetBtn');
+const confirmResetBtn = document.getElementById('confirmResetBtn');
+const params = new URLSearchParams(window.location.search);
+let sessionToken = sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || '';
+
+function selectedPlan(){return document.querySelector('input[name="plan"]:checked').value;}
+function savedEmail(){return (localStorage.getItem(EMAIL_KEY)||sessionStorage.getItem(EMAIL_KEY)||'').trim().toLowerCase();}
+function typedEmail(){return emailEl.value.trim().toLowerCase();}
+function validEmail(email){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);}
+function setStatus(el,message,type='warning'){el.className=`status ${type}`;el.textContent=message;}
+function setBusy(button,busy){button.disabled = busy;}
+function renderSetupStatus(config){
+  const missing = [];
+  if(!config.stripeSecret || !config.stripeSecret.configured) missing.push('STRIPE_SECRET_KEY');
+  if(!config.prices || !config.prices.data || !config.prices.data.configured) missing.push('STRIPE_DATA_PRICE_ID');
+  if(!config.prices || !config.prices.plus || !config.prices.plus.configured) missing.push('STRIPE_PLUS_PRICE_ID');
+  if(!config.authSecret || !config.authSecret.configured) missing.push('AUTH_SECRET');
+  if(!missing.length){
+    setupStatusEl.classList.add('hidden');
+    return;
+  }
+  setupStatusEl.classList.remove('hidden');
+  setStatus(setupStatusEl,`Vercel setup missing: ${missing.join(', ')}. Add these in Project Settings → Environment Variables for the deployed environment, then redeploy. Stripe checkout/login need the secret key; keep the Stripe variables in place.`,'warning');
+}
+async function loadSetupStatus(){
+  try{
+    const res = await fetch('/api/config-status');
+    if(!res.ok) return;
+    renderSetupStatus(await res.json());
+  }catch(_err){}
+}
+function authHeaders(){return sessionToken ? {Authorization:`Bearer ${sessionToken}`} : {};}
+function storeSession(email, token){
+  sessionToken = token;
+  const storage = rememberMeEl.checked ? localStorage : sessionStorage;
+  localStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(EMAIL_KEY); sessionStorage.removeItem(EMAIL_KEY);
+  storage.setItem(TOKEN_KEY, token);
+  storage.setItem(EMAIL_KEY, email);
+  emailEl.value = email;
+  passwordEl.value = '';
+  loadSetupStatus();
+  renderLogin();
+}
+function clearSession(){
+  sessionToken = '';
+  localStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(EMAIL_KEY); sessionStorage.removeItem(EMAIL_KEY);
+}
+function requireLogin(){
+  const email = typedEmail() || savedEmail();
+  if(!validEmail(email) || !sessionToken){
+    setStatus(loginStatusEl,'Log in with your email and password first.','error');
+    return null;
+  }
+  emailEl.value = email;
+  return email;
+}
+function renderLogin(){
+  const email = savedEmail();
+  if(email && sessionToken){
+    emailEl.value = email;
+    logoutBtn.classList.remove('hidden');
+    setStatus(loginStatusEl,`Logged in as ${email}.`,'success');
+  }else{
+    logoutBtn.classList.add('hidden');
+    setStatus(loginStatusEl,'Not logged in yet.','warning');
+  }
+}
+function showLoginForm(){
+  authForm.classList.remove('hidden');
+  resetForm.classList.add('hidden');
+  newPasswordWrap.classList.add('hidden');
+  requestResetBtn.classList.remove('hidden');
+  confirmResetBtn.classList.add('hidden');
+}
+function showResetRequest(){
+  resetEmailEl.value = typedEmail() || savedEmail();
+  authForm.classList.add('hidden');
+  resetForm.classList.remove('hidden');
+  newPasswordWrap.classList.add('hidden');
+  requestResetBtn.classList.remove('hidden');
+  confirmResetBtn.classList.add('hidden');
+  setStatus(loginStatusEl,'Enter your email and we will send a password reset link.','warning');
+}
+function showResetConfirm(){
+  resetEmailEl.value = (params.get('email') || '').trim().toLowerCase();
+  authForm.classList.add('hidden');
+  resetForm.classList.remove('hidden');
+  newPasswordWrap.classList.remove('hidden');
+  requestResetBtn.classList.add('hidden');
+  confirmResetBtn.classList.remove('hidden');
+  setStatus(loginStatusEl,'Enter a new password to finish resetting your account.','warning');
+}
+async function postJson(url,body,authorized=false){
+  const headers = {'Content-Type':'application/json', ...(authorized ? authHeaders() : {})};
+  const res = await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok){
+    if(data.error && /Missing .*STRIPE|Stripe secret|STRIPE_.*PRICE|AUTH_SECRET/i.test(data.error)) loadSetupStatus();
+    throw new Error(data.error||'Request failed');
+  }
+  return data;
+}
+async function authenticate(endpoint){
+  const email = typedEmail();
+  const password = passwordEl.value;
+  if(!validEmail(email)){setStatus(loginStatusEl,'Enter a valid email address.','error');return;}
+  if(password.length < 8){setStatus(loginStatusEl,'Password must be at least 8 characters.','error');return;}
+  const button = endpoint === '/api/auth-login' ? document.getElementById('loginBtn') : document.getElementById('signupBtn');
+  setBusy(button,true);
+  try{
+    const data = await postJson(endpoint,{email,password});
+    storeSession(data.email,data.token);
+    setStatus(loginStatusEl,endpoint === '/api/auth-login' ? `Logged in as ${data.email}.` : `Account created for ${data.email}.`,'success');
+    refreshPlanStatus();
+  }catch(err){setStatus(loginStatusEl,err.message,'error');}
+  finally{setBusy(button,false);}
+}
+async function requestPasswordReset(){
+  const email = resetEmailEl.value.trim().toLowerCase();
+  if(!validEmail(email)){setStatus(loginStatusEl,'Enter a valid email address.','error');return;}
+  setBusy(requestResetBtn,true);
+  try{
+    const data = await postJson('/api/auth-request-reset',{email});
+    setStatus(loginStatusEl,data.message || 'Password reset email sent.','success');
+  }catch(err){setStatus(loginStatusEl,err.message,'error');}
+  finally{setBusy(requestResetBtn,false);}
+}
+async function confirmPasswordReset(){
+  const email = resetEmailEl.value.trim().toLowerCase();
+  const token = params.get('token') || '';
+  const password = newPasswordEl.value;
+  if(!validEmail(email)){setStatus(loginStatusEl,'Enter a valid email address.','error');return;}
+  if(password.length < 8){setStatus(loginStatusEl,'Password must be at least 8 characters.','error');return;}
+  setBusy(confirmResetBtn,true);
+  try{
+    const data = await postJson('/api/auth-reset-password',{email,token,password});
+    storeSession(data.email,data.token);
+    showLoginForm();
+    setStatus(loginStatusEl,'Password reset. You are logged in now.','success');
+    window.history.replaceState({},document.title,window.location.pathname);
+    refreshPlanStatus();
+  }catch(err){setStatus(loginStatusEl,err.message,'error');}
+  finally{setBusy(confirmResetBtn,false);}
+}
+async function refreshPlanStatus(){
+  const email = requireLogin();
+  if(!email) return false;
+  setStatus(planStatusEl,'Checking Stripe subscription status...','warning');
+  try{
+    const data = await postJson('/api/customer-status',{email,plan:selectedPlan()},true);
+    if(data.hasActivePlan){
+      setStatus(planStatusEl,`Active ${data.plan} subscription found. You can analyze without paying again.`,'success');
+      return true;
+    }
+    setStatus(planStatusEl,`No active ${data.plan} subscription found for ${email}.`,'warning');
+    return false;
+  }catch(err){setStatus(planStatusEl,err.message,'error');return false;}
+}
+async function startCheckout(){
+  const email = requireLogin();
+  if(!email) return;
+  checkoutBtn.disabled = true;
+  setStatus(planStatusEl,'Checking existing subscription before Checkout...','warning');
+  try{
+    const data = await postJson('/api/create-checkout-session',{plan:selectedPlan(),email},true);
+    if(data.alreadySubscribed){setStatus(planStatusEl,data.message || 'You already have this plan.','success');return;}
+    window.location.href = data.url;
+  }catch(err){setStatus(planStatusEl,err.message,'error');}
+  finally{checkoutBtn.disabled = false;}
+}
+async function analyze(){
+  const email = requireLogin();
+  if(!email) return;
+  const pitch = document.getElementById('pitch').value.trim();
+  const el = document.getElementById('result');
+  analyzeBtn.disabled = true;
+  try{
+    const data = await postJson('/api/analyze',{pitch,plan:selectedPlan(),email},true);
+    el.style.display='block';
+    el.innerHTML = `<h2>Score: ${data.score}/100</h2><p><strong>${data.label}</strong> · Plan: ${data.plan} · Words: ${data.wordCount}</p>
+    <h3>Sections</h3><pre>${JSON.stringify(data.sections,null,2)}</pre>
+    <h3>Recommendations</h3><ul>${data.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+  }catch(err){
+    el.style.display='block';
+    el.innerHTML=`<h3>Error</h3><p>${err.message}</p>`;
+    if(/purchase|subscription|plan|log in/i.test(err.message)) setStatus(planStatusEl,err.message,'error');
+  }finally{analyzeBtn.disabled = false;}
+}
+function logout(){
+  clearSession();
+  emailEl.value = '';
+  passwordEl.value = '';
+  loadSetupStatus();
+  renderLogin();
+  setStatus(planStatusEl,'Log in to check your plan.','warning');
+}
+function showCheckoutReturnMessage(){
+  if(params.get('checkout') === 'success'){
+    setStatus(planStatusEl,'Checkout succeeded. Refreshing your Stripe subscription status...','success');
+    refreshPlanStatus();
+  }
+  if(params.get('checkout') === 'cancelled'){
+    setStatus(planStatusEl,'Checkout was cancelled. No charge was completed.','warning');
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click',()=>authenticate('/api/auth-login'));
+document.getElementById('signupBtn').addEventListener('click',()=>authenticate('/api/auth-signup'));
+document.getElementById('forgotBtn').addEventListener('click',showResetRequest);
+document.getElementById('backToLoginBtn').addEventListener('click',showLoginForm);
+document.getElementById('requestResetBtn').addEventListener('click',requestPasswordReset);
+document.getElementById('confirmResetBtn').addEventListener('click',confirmPasswordReset);
+logoutBtn.addEventListener('click',logout);
+document.getElementById('refreshStatusBtn').addEventListener('click',refreshPlanStatus);
+document.getElementById('checkoutBtn').addEventListener('click',startCheckout);
+document.getElementById('analyzeBtn').addEventListener('click',analyze);
+document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventListener('change',()=>{if(savedEmail() && sessionToken) refreshPlanStatus();}));
+loadSetupStatus();
+renderLogin();
+if(params.get('reset') === '1' && params.get('token')) showResetConfirm();
+else showCheckoutReturnMessage();
+if(savedEmail() && sessionToken) refreshPlanStatus();
+</script>
+</body>
+</html>
