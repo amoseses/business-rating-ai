@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Business Rating AI</title>
   <style>
-    :root{--bg:#f3f6ff;--surface:#ffffff;--surface-soft:#f8faff;--text:#0f172a;--muted:#64748b;--primary:#2563eb;--primary-2:#1d4ed8;--secondary:#475569;--border:#dbe4f3;--shadow:0 16px 40px rgba(30,41,59,.12)}
+    :root{--bg:#f3f6ff;--surface:#ffffff;--surface-soft:#f8faff;--text:#0f172a;--muted:#64748b;--primary:#2563eb;--primary-2:#1d4ed8;--secondary:#475569;--border:#dbe4f3;--shadow:0 16px 40px rgba(30,41,59,.12);--accent:#22d3ee;--accent-2:#6366f1}
     *{box-sizing:border-box}
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:960px;margin:28px auto;padding:0 18px;color:var(--text);background:radial-gradient(circle at 0% 0%,#dbeafe 0,#f3f6ff 32%,#eef2ff 100%);line-height:1.45}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:960px;margin:28px auto;padding:0 18px;color:var(--text);background:radial-gradient(circle at 0% 0%,#dbeafe 0,#f3f6ff 32%,#eef2ff 100%);line-height:1.45;position:relative}
+    body:before{content:'';position:fixed;inset:-20vh -20vw auto auto;width:42vw;height:42vw;background:radial-gradient(circle,#a5b4fc 0%,rgba(165,180,252,0) 70%);z-index:-1;pointer-events:none;filter:blur(6px)}
     h1,h2{margin:.2rem 0 .7rem} h1{font-size:2rem;letter-spacing:-.02em} h2{font-size:1.25rem}
     p{margin:.2rem 0 1rem}
     textarea,input[type="email"],input[type="password"]{width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 12px;font:inherit;background:#fff;transition:border-color .16s,box-shadow .16s}
@@ -18,7 +19,8 @@
     button.secondary{background:linear-gradient(180deg,#64748b,var(--secondary));box-shadow:0 4px 12px rgba(71,85,105,.2)}
     button.link{background:transparent;color:var(--primary);padding:0;margin:8px 0;text-decoration:underline;box-shadow:none}
     button:disabled{background:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none}
-    .hero{background:linear-gradient(125deg,#0f172a,#1e3a8a);color:#fff;border-radius:18px;padding:24px 22px;box-shadow:var(--shadow);margin-bottom:16px}
+    .hero{background:linear-gradient(125deg,#0f172a,#1e3a8a 60%,#0ea5e9);color:#fff;border-radius:18px;padding:24px 22px;box-shadow:var(--shadow);margin-bottom:16px;position:relative;overflow:hidden}
+    .hero:after{content:'';position:absolute;right:-80px;top:-80px;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,.35),rgba(255,255,255,0) 70%)}
     .hero p{opacity:.92;margin:0}
     .card{border:1px solid var(--border);border-radius:16px;padding:18px;margin-top:16px;background:linear-gradient(180deg,var(--surface),var(--surface-soft));box-shadow:var(--shadow);backdrop-filter:blur(2px)}
     .muted{color:var(--muted);font-size:14px}
@@ -28,12 +30,21 @@
     .plan-label{font-weight:500}
     .auth-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .hidden{display:none}
+    .hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:700;letter-spacing:.01em}
+    .card:hover{transform:translateY(-1px);transition:transform .15s ease}
+    .textarea-hint{margin-top:8px;font-size:12px;color:var(--muted)}
   </style>
 </head>
 <body>
   <header class="hero">
     <h1>Business Rating AI</h1>
     <p>Log in with your email and password, buy a plan once, then keep using that paid plan without purchasing it again.</p>
+    <div class="hero-badges">
+      <span class="hero-badge">⚡ Instant AI scoring</span>
+      <span class="hero-badge">🔒 Secure account access</span>
+      <span class="hero-badge">📈 Actionable feedback</span>
+    </div>
   </header>
 
   <div class="card">
@@ -94,6 +105,7 @@
     <div>
       <button id="analyzeBtn">Analyze</button>
     </div>
+    <div class="textarea-hint">Tip: Include your market, traction, revenue model, and differentiation for richer feedback.</div>
   </div>
 
   <div class="card" id="result" style="display:none"></div>
