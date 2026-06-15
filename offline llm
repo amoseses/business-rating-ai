@@ -1,0 +1,1265 @@
+'use strict';
+
+/*
+  AstraPitch Offline Pitch Model
+  No API.
+  No web connection.
+  Runs directly in browser JavaScript.
+
+  Usage:
+
+  const offlineLLM = AstraPitchOfflineModel.create();
+  const result = offlineLLM.analyze({
+    pitch: "Paste pitch here...",
+    mode: "plus",
+    persona: "seedvc",
+    industry: "Marketplace",
+    stage: "Seed"
+  });
+
+  console.log(result);
+*/
+
+const AstraPitchOfflineModel = (() => {
+  const SAMPLE_PITCH = {
+    title: 'Airbnb-style marketplace pitch',
+    industry: 'Marketplace',
+    stage: 'Seed',
+    text:
+      'Airbnb lets travelers book rooms and spare spaces from local hosts instead of relying only on hotels. ' +
+      'The problem is simple: during major events, hotels become expensive or sold out while many residents have unused space. ' +
+      'Hosts earn money from space they already have, guests get more affordable and local places to stay, and Airbnb takes a commission on each booking. ' +
+      'The marketplace creates trust through profiles, reviews, payments, and a simple booking flow. ' +
+      'Early demand is strongest around conferences and high-compression travel events, giving us a focused go-to-market wedge. ' +
+      'We are raising capital to grow host supply, increase booking volume, improve trust and safety, and become the default marketplace for unique short-term stays.'
+  };
+
+  const TERMS = {
+    problem: [
+      'problem',
+      'pain',
+      'waste',
+      'manual',
+      'expensive',
+      'slow',
+      'fragmented',
+      'inefficient',
+      'risk',
+      'delay',
+      'shortage',
+      'sold out',
+      'compliance',
+      'missed',
+      'cost',
+      'broken',
+      'confusing',
+      'outdated',
+      'unreliable',
+      'hard to'
+    ],
+
+    solution: [
+      'solution',
+      'platform',
+      'software',
+      'tool',
+      'marketplace',
+      'system',
+      'automates',
+      'automation',
+      'enables',
+      'helps',
+      'connects',
+      'predicts',
+      'workflow',
+      'dashboard',
+      'assistant',
+      'engine',
+      'app',
+      'product',
+      'integrates'
+    ],
+
+    market: [
+      'market',
+      'tam',
+      'sam',
+      'som',
+      'customer',
+      'customers',
+      'buyer',
+      'buyers',
+      'segment',
+      'industry',
+      'wedge',
+      'beachhead',
+      'enterprise',
+      'smb',
+      'consumer',
+      'vertical',
+      'category',
+      'addressable',
+      'global',
+      'local'
+    ],
+
+    traction: [
+      'users',
+      'customers',
+      'revenue',
+      'mrr',
+      'arr',
+      'pilot',
+      'pilots',
+      'paid',
+      'bookings',
+      'retention',
+      'growth',
+      'waitlist',
+      'partnership',
+      'usage',
+      'conversion',
+      'loi',
+      'lois',
+      'contract',
+      'contracts',
+      'pipeline',
+      'beta',
+      'adopters',
+      'active',
+      'month-over-month',
+      'mom'
+    ],
+
+    business: [
+      'pricing',
+      'subscription',
+      'commission',
+      'margin',
+      'revenue model',
+      'per seat',
+      'per location',
+      'usage-based',
+      'takes a',
+      'transaction',
+      'saas',
+      'fee',
+      'license',
+      'freemium',
+      'gross margin',
+      'payback',
+      'ltv',
+      'cac'
+    ],
+
+    moat: [
+      'moat',
+      'defensible',
+      'proprietary',
+      'unique',
+      'advantage',
+      'network effects',
+      'data advantage',
+      'switching costs',
+      'integrations',
+      'patent',
+      'workflow data',
+      'brand',
+      'distribution',
+      'exclusive',
+      'hard to copy',
+      'compounding'
+    ],
+
+    team: [
+      'founder',
+      'founders',
+      'team',
+      'experience',
+      'built',
+      'domain',
+      'advisor',
+      'operator',
+      'technical',
+      'sales',
+      'background',
+      'engineer',
+      'designer',
+      'researcher',
+      'previously',
+      'expertise'
+    ],
+
+    ask: [
+      'raising',
+      'investment',
+      'capital',
+      'funding',
+      'round',
+      'ask',
+      'runway',
+      'hire',
+      'scale',
+      'expand',
+      'seed',
+      'pre-seed',
+      'series a',
+      'milestone',
+      'use of funds'
+    ],
+
+    hype: [
+      'revolutionary',
+      'game-changing',
+      'world-changing',
+      'disrupt',
+      'disruptive',
+      'everyone',
+      'massive',
+      'huge',
+      'best',
+      'leading',
+      'ultimate',
+      'next generation',
+      'cutting-edge',
+      'unicorn',
+      'explode',
+      'dominate'
+    ],
+
+    vague: [
+      'many industries',
+      'everyone',
+      'businesses',
+      'users',
+      'things',
+      'stuff',
+      'very large',
+      'soon',
+      'eventually',
+      'figuring out',
+      'all-in-one',
+      'lots of',
+      'various',
+      'multiple verticals',
+      'anyone can use'
+    ]
+  };
+
+  const FEATURE_NAMES = [
+    'wordScore',
+    'problem',
+    'solution',
+    'market',
+    'business',
+    'traction',
+    'moat',
+    'team',
+    'ask',
+    'metrics',
+    'specificity',
+    'structure',
+    'clarity',
+    'hypePenalty',
+    'vaguePenalty'
+  ];
+
+  const INDUSTRIES = [
+    'AI SaaS',
+    'Fintech',
+    'HealthTech',
+    'EdTech',
+    'ClimateTech',
+    'Cybersecurity',
+    'Marketplace',
+    'Ecommerce',
+    'Robotics',
+    'AgTech',
+    'PropTech',
+    'Logistics',
+    'LegalTech',
+    'HRTech',
+    'Consumer'
+  ];
+
+  const STAGES = ['Idea', 'Pre-seed', 'Seed', 'Series A'];
+
+  const INDUSTRY_TARGETS = {
+    'AI SaaS': 'revenue teams',
+    Fintech: 'small businesses',
+    HealthTech: 'clinic operators',
+    EdTech: 'school districts',
+    ClimateTech: 'facility managers',
+    Cybersecurity: 'security teams',
+    Marketplace: 'local buyers and sellers',
+    Ecommerce: 'online merchants',
+    Robotics: 'warehouse operators',
+    AgTech: 'farm managers',
+    PropTech: 'property managers',
+    Logistics: 'dispatch teams',
+    LegalTech: 'law firms',
+    HRTech: 'people teams',
+    Consumer: 'busy families'
+  };
+
+  const INDUSTRY_PROBLEMS = {
+    'AI SaaS': 'manual analysis slows decisions and hides important customer signals',
+    Fintech: 'cash-flow tools are fragmented and expensive for smaller companies',
+    HealthTech: 'patients wait too long while clinics waste staff hours on manual intake',
+    EdTech: 'teachers lack real-time visibility into which students are falling behind',
+    ClimateTech: 'buildings waste energy because teams cannot see where losses happen',
+    Cybersecurity: 'mid-market teams miss threats because alerts are noisy and disconnected',
+    Marketplace: 'supply and demand are fragmented across trust-poor channels',
+    Ecommerce: 'merchants lose revenue because inventory, ads, and support are disconnected',
+    Robotics: 'operators still rely on unsafe repetitive manual handling',
+    AgTech: 'growers lack accurate field-level forecasts and waste inputs',
+    PropTech: 'maintenance teams lose time coordinating tenants, vendors, and owners',
+    Logistics: 'dispatchers still use spreadsheets and calls to handle route exceptions',
+    LegalTech: 'legal teams spend expensive hours reviewing routine documents',
+    HRTech: 'hiring teams lose candidates because screening and follow-up are slow',
+    Consumer: 'people struggle to coordinate daily services through scattered apps'
+  };
+
+  const INDUSTRY_SOLUTIONS = {
+    'AI SaaS': 'an AI workflow platform that summarizes signals and recommends next actions',
+    Fintech: 'a finance dashboard that forecasts cash flow and automates collections',
+    HealthTech: 'a patient intake and triage platform integrated into clinic workflows',
+    EdTech: 'a learning analytics tool that flags risk and recommends interventions',
+    ClimateTech: 'a building intelligence platform that detects energy waste in real time',
+    Cybersecurity: 'a threat-prioritization engine that connects alerts to business risk',
+    Marketplace: 'a trusted marketplace with profiles, payments, reviews, and matching',
+    Ecommerce: 'an operating system for inventory, ads, and customer support decisions',
+    Robotics: 'a modular robot that automates repetitive material movement',
+    AgTech: 'a predictive field analytics platform for input planning and yield risk',
+    PropTech: 'a maintenance coordination platform with vendor routing and status tracking',
+    Logistics: 'a dispatch automation layer for assignment, rerouting, and exception handling',
+    LegalTech: 'a contract review assistant that highlights risk and drafts revisions',
+    HRTech: 'a hiring workflow platform that scores candidates and automates follow-up',
+    Consumer: 'a mobile marketplace that helps families book trusted local services'
+  };
+
+  const TRACTION_LINES = [
+    '12 paid pilots, $18k in monthly recurring revenue, and 21% month-over-month usage growth',
+    '47 paying customers, 82% logo retention, and a repeatable outbound sales motion',
+    '3 enterprise pilots, a $240k contracted pipeline, and usage expanding across teams',
+    '1,900 beta users, 38% weekly active usage, and strong referral-driven growth',
+    '8 design partners, signed LOIs, and clear conversion milestones for the next quarter',
+    '620 weekly active users, 31% repeat usage, and a waitlist growing through referrals',
+    'five paid pilots, $11k monthly revenue, and signed expansion interest from two accounts',
+    '22 paying SMB customers, 74% monthly retention, and usage increasing inside accounts'
+  ];
+
+  function create() {
+    const rows = buildTrainingDatabase();
+    const model = trainModel(rows);
+
+    return {
+      rows,
+      model,
+      sample: SAMPLE_PITCH,
+
+      analyze({
+        pitch,
+        mode = 'plus',
+        persona = 'seedvc',
+        industry = 'General',
+        stage = 'Pre-seed'
+      }) {
+        const cleanPitch = String(pitch || '').trim();
+
+        if (mode === 'basic') {
+          return analyzeBasic(cleanPitch, { persona, industry, stage });
+        }
+
+        if (mode === 'plus') {
+          return analyzePlus(cleanPitch, model, rows, { persona, industry, stage });
+        }
+
+        return {
+          mode: 'pro',
+          score: null,
+          label: 'Under construction',
+          confidence: 'None',
+          memo:
+            'Pro is reserved for a future hosted LLM/API. No external model is called in this offline build.',
+          sections: {},
+          redFlags: ['Pro mode is not active yet.'],
+          missingProof: ['Use Basic or Plus for offline scoring.'],
+          why: ['Pro intentionally does not run any external API yet.'],
+          questions: ['Which hosted model will Pro use?', 'Will Pro save analyses server-side?'],
+          deck: [],
+          neighbors: []
+        };
+      },
+
+      rewrite({
+        pitch,
+        persona = 'seedvc',
+        industry = 'General',
+        stage = 'Pre-seed'
+      }) {
+        const analysis = analyzePlus(String(pitch || ''), model, rows, {
+          persona,
+          industry,
+          stage
+        });
+
+        return generateRewrite(String(pitch || ''), analysis, {
+          persona,
+          industry,
+          stage
+        });
+      },
+
+      nearest(pitch, k = 5) {
+        return nearestExamples(String(pitch || ''), rows, k);
+      }
+    };
+  }
+
+  function buildTrainingDatabase() {
+    const rows = [];
+    let id = 1;
+
+    for (const industry of INDUSTRIES) {
+      const target = INDUSTRY_TARGETS[industry];
+      const problem = INDUSTRY_PROBLEMS[industry];
+      const solution = INDUSTRY_SOLUTIONS[industry];
+
+      for (let i = 0; i < 12; i++) {
+        rows.push({
+          id: id++,
+          tier: 'poor',
+          rating: 8 + (i % 12),
+          industry,
+          stage: 'Idea',
+          pitch:
+            `We are making a revolutionary platform for ${industry}. ` +
+            `It can help everyone and change the world. ` +
+            `The market is very large and we are still figuring out the customer, pricing, and launch plan. ` +
+            `We believe investors should join early because this could become huge.`
+        });
+
+        rows.push({
+          id: id++,
+          tier: 'weak',
+          rating: 25 + (i % 15),
+          industry,
+          stage: 'Idea',
+          pitch:
+            `We are building software for ${target}. ` +
+            `The idea is to make work easier and save time. ` +
+            `The product is early and we do not yet have clear traction, pricing, or a focused customer segment, ` +
+            `but the opportunity seems large.`
+        });
+
+        rows.push({
+          id: id++,
+          tier: 'fair',
+          rating: 44 + (i % 14),
+          industry,
+          stage: 'Pre-seed',
+          pitch:
+            `We help ${target} solve a real problem: ${problem}. ` +
+            `Our solution is ${solution}. ` +
+            `The product is in pilot testing and early users say it saves time, ` +
+            `but we still need stronger retention data, clearer pricing, and a sharper go-to-market wedge.`
+        });
+
+        rows.push({
+          id: id++,
+          tier: 'solid',
+          rating: 62 + (i % 12),
+          industry,
+          stage: 'Pre-seed',
+          pitch:
+            `We help ${target} address ${problem}. ` +
+            `Our solution is ${solution}. ` +
+            `The product integrates with existing tools, gives managers measurable visibility, and uses a subscription model. ` +
+            `We have early pilots, customer interviews, and a focused wedge in the ${industry} market. ` +
+            `We are raising capital to improve onboarding, convert pilots, and scale sales.`
+        });
+
+        rows.push({
+          id: id++,
+          tier: 'strong',
+          rating: 76 + (i % 9),
+          industry,
+          stage: 'Seed',
+          pitch:
+            `We help ${target} fix ${problem}. ` +
+            `Our solution is ${solution}. ` +
+            `Customers use it because it reduces manual work, improves decisions, and connects directly into their existing workflows. ` +
+            `We have ${TRACTION_LINES[i % TRACTION_LINES.length]}. ` +
+            `The model is subscription-based with strong expansion potential, and our advantage comes from workflow data, integrations, and domain-specific automation. ` +
+            `We are raising $1.2M to hire engineering and sales, expand pilots, and reach $100k MRR.`
+        });
+
+        rows.push({
+          id: id++,
+          tier: 'excellent',
+          rating: 88 + (i % 8),
+          industry,
+          stage: 'Seed',
+          pitch:
+            `We help ${target} solve ${problem}. ` +
+            `Our product is ${solution}, focused first on a narrow beachhead where the pain is urgent and budgets are clear. ` +
+            `We have ${TRACTION_LINES[(i + 2) % TRACTION_LINES.length]}. ` +
+            `The business model is a high-margin subscription or transaction fee, with expansion through integrations and network effects. ` +
+            `The team combines technical execution, domain experience, and early sales learning. ` +
+            `We are raising $2M to scale the repeatable channel, deepen the proprietary data advantage, and reach the next financing milestone.`
+        });
+      }
+    }
+
+    rows.push({
+      id: id++,
+      tier: 'excellent',
+      rating: 94,
+      industry: SAMPLE_PITCH.industry,
+      stage: SAMPLE_PITCH.stage,
+      pitch: SAMPLE_PITCH.text
+    });
+
+    return rows;
+  }
+
+  function analyzeBasic(pitch, context) {
+    const quality = analyzeInputQuality(pitch);
+
+    if (quality.lowSignal) {
+      const score = quality.gibberish ? 8 : clamp(14 + quality.wordCount, 8, 30);
+      return buildAnalysis({
+        mode: 'basic',
+        score,
+        pitch,
+        quality,
+        features: featureVector(pitch),
+        neighbors: [],
+        context
+      });
+    }
+
+    const score = basicScore(pitch);
+
+    return buildAnalysis({
+      mode: 'basic',
+      score,
+      pitch,
+      quality,
+      features: featureVector(pitch),
+      neighbors: [],
+      context
+    });
+  }
+
+  function analyzePlus(pitch, model, rows, context) {
+    const quality = analyzeInputQuality(pitch);
+
+    if (quality.lowSignal) {
+      const score = quality.gibberish ? 6 : clamp(12 + quality.wordCount, 8, 28);
+
+      return buildAnalysis({
+        mode: 'plus',
+        score,
+        pitch,
+        quality,
+        features: featureVector(pitch),
+        neighbors: [],
+        context
+      });
+    }
+
+    const features = featureVector(pitch);
+    const x = [1].concat(vectorToArray(features));
+
+    const learnedScore = clamp(dot(model.weights, x) * 100, 1, 99);
+    const neighbors = nearestExamples(pitch, rows, 5);
+
+    const neighborWeightSum =
+      neighbors.reduce((sum, item) => sum + item.similarity, 0) || 1;
+
+    const neighborScore =
+      neighbors.reduce((sum, item) => sum + item.rating * item.similarity, 0) /
+      neighborWeightSum;
+
+    const heuristicScore = basicScore(pitch);
+
+    let finalScore =
+      learnedScore * 0.5 +
+      neighborScore * 0.25 +
+      heuristicScore * 0.25;
+
+    const sections = sectionScores(pitch);
+
+    if (sections.Traction < 25) finalScore = Math.min(finalScore, 62);
+    if (sections['Business model'] < 25) finalScore = Math.min(finalScore, 68);
+    if (sections.Problem < 25 || sections.Solution < 25) finalScore = Math.min(finalScore, 58);
+    if (features.hypePenalty > 0.45 && features.specificity < 0.35) {
+      finalScore = Math.min(finalScore, 45);
+    }
+
+    return buildAnalysis({
+      mode: 'plus',
+      score: clamp(finalScore, 1, 99),
+      pitch,
+      quality,
+      features,
+      neighbors,
+      context
+    });
+  }
+
+  function buildAnalysis({
+    mode,
+    score,
+    pitch,
+    quality,
+    features,
+    neighbors,
+    context
+  }) {
+    const roundedScore = round(score);
+    const sections = sectionScores(pitch);
+
+    const missingSections = Object.entries(sections)
+      .filter(([, value]) => value < 35)
+      .map(([name]) => name);
+
+    const redFlags = [];
+    const missingProof = [];
+
+    if (quality.gibberish) {
+      redFlags.push('The input looks like random text rather than a business pitch.');
+    }
+
+    if (quality.tooShort) {
+      redFlags.push('The pitch is too short to judge seriously.');
+    }
+
+    if (quality.repeated) {
+      redFlags.push('The pitch repeats too much language and lacks meaningful signal.');
+    }
+
+    if (sections.Traction < 35) {
+      redFlags.push('Traction is weak or missing.');
+      missingProof.push(
+        'Add users, revenue, pilots, retention, bookings, signed LOIs, or growth rate.'
+      );
+    }
+
+    if (sections['Business model'] < 35) {
+      redFlags.push('The revenue model is unclear.');
+      missingProof.push(
+        'State pricing, commission, subscription, usage-based model, margin, or transaction economics.'
+      );
+    }
+
+    if (sections.Market < 35) {
+      missingProof.push(
+        'Name the exact target customer, beachhead market, or TAM/SAM/SOM.'
+      );
+    }
+
+    if (sections.Moat < 35) {
+      missingProof.push(
+        'Explain why competitors cannot easily copy this.'
+      );
+    }
+
+    if (sections.Ask < 35) {
+      missingProof.push(
+        'State how much you are raising and what milestone the capital reaches.'
+      );
+    }
+
+    if (features.hypePenalty > 0.45 && features.specificity < 0.35) {
+      redFlags.push(
+        'The pitch relies heavily on hype language without enough proof.'
+      );
+    }
+
+    if (features.vaguePenalty > 0.45) {
+      redFlags.push(
+        'The pitch is too broad or vague about customer, market, and execution.'
+      );
+    }
+
+    if (!redFlags.length) {
+      redFlags.push(
+        'No major red flag, but investors will still pressure-test traction, market size, and defensibility.'
+      );
+    }
+
+    if (!missingProof.length) {
+      missingProof.push(
+        'Add one harder metric: retention, CAC, payback period, gross margin, or contracted pipeline.'
+      );
+    }
+
+    const label = getLabel(roundedScore);
+    const confidence = getConfidence(quality);
+
+    const why = explainScore({
+      score: roundedScore,
+      sections,
+      quality,
+      features
+    });
+
+    const questions = makeInvestorQuestions({
+      sections,
+      persona: context.persona,
+      industry: context.industry,
+      stage: context.stage
+    });
+
+    const deck = makeDeckBullets({
+      pitch,
+      sections,
+      industry: context.industry,
+      stage: context.stage
+    });
+
+    const memo = makeMemo({
+      mode,
+      score: roundedScore,
+      label,
+      sections,
+      confidence,
+      persona: context.persona,
+      stage: context.stage,
+      industry: context.industry
+    });
+
+    return {
+      mode,
+      score: roundedScore,
+      label,
+      confidence,
+      memo,
+      sections,
+      redFlags,
+      missingProof,
+      why,
+      questions,
+      deck,
+      neighbors: neighbors || [],
+      missingSections,
+      quality,
+      features
+    };
+  }
+
+  function basicScore(text) {
+    const quality = analyzeInputQuality(text);
+
+    if (quality.lowSignal) {
+      return quality.gibberish ? 8 : clamp(14 + quality.wordCount, 8, 30);
+    }
+
+    const f = featureVector(text);
+
+    let score = 8;
+
+    score += 13 * f.problem;
+    score += 12 * f.solution;
+    score += 11 * f.market;
+    score += 10 * f.business;
+    score += 16 * f.traction;
+    score += 9 * f.moat;
+    score += 8 * f.team;
+    score += 7 * f.ask;
+    score += 8 * f.metrics;
+    score += 8 * f.clarity;
+    score += 8 * f.wordScore;
+    score += 9 * f.specificity;
+    score += 7 * f.structure;
+
+    score -= 10 * f.hypePenalty;
+    score -= 12 * f.vaguePenalty;
+
+    return clamp(score, 1, 96);
+  }
+
+  function featureVector(text) {
+    const wc = wordCount(text);
+    const sc = sentenceCount(text);
+    const avgSentence = wc / sc;
+    const metrics = moneyCount(text);
+
+    const p = countMatches(text, TERMS.problem);
+    const s = countMatches(text, TERMS.solution);
+    const m = countMatches(text, TERMS.market);
+    const b = countMatches(text, TERMS.business);
+    const t = countMatches(text, TERMS.traction);
+    const moat = countMatches(text, TERMS.moat);
+    const team = countMatches(text, TERMS.team);
+    const ask = countMatches(text, TERMS.ask);
+    const hype = countMatches(text, TERMS.hype);
+    const vague = countMatches(text, TERMS.vague);
+
+    const structureCount = [p, s, m, b, t, moat, team, ask].filter(
+      value => value > 0
+    ).length;
+
+    const wordScore =
+      wc < 35
+        ? wc / 35
+        : wc <= 220
+          ? 1
+          : clamp(1 - (wc - 220) / 420, 0.35, 1);
+
+    const clarity = clamp(1 - Math.abs(avgSentence - 19) / 28, 0, 1);
+
+    const specificity = clamp(
+      metrics * 0.18 +
+        (t > 0 ? 0.22 : 0) +
+        (b > 0 ? 0.16 : 0) +
+        (m > 0 ? 0.13 : 0) +
+        (moat > 0 ? 0.13 : 0) +
+        (ask > 0 ? 0.08 : 0),
+      0,
+      1
+    );
+
+    return {
+      wordScore,
+      problem: clamp(p / 3, 0, 1),
+      solution: clamp(s / 3, 0, 1),
+      market: clamp(m / 3, 0, 1),
+      business: clamp(b / 2, 0, 1),
+      traction: clamp(t / 3, 0, 1),
+      moat: clamp(moat / 2, 0, 1),
+      team: clamp(team / 2, 0, 1),
+      ask: clamp(ask / 2, 0, 1),
+      metrics: clamp(metrics / 5, 0, 1),
+      specificity,
+      structure: structureCount / 8,
+      clarity,
+      hypePenalty: clamp(hype / 5, 0, 1),
+      vaguePenalty: clamp(vague / 4, 0, 1)
+    };
+  }
+
+  function analyzeInputQuality(text) {
+    const raw = String(text || '').trim();
+    const tokens = tokenize(raw);
+    const letters = (raw.match(/[a-z]/gi) || []).length;
+    const vowels = (raw.match(/[aeiou]/gi) || []).length;
+    const spaces = (raw.match(/\s/g) || []).length;
+    const wc = tokens.length;
+    const ratio = uniqueRatio(tokens);
+    const vowelRatio = letters ? vowels / letters : 0;
+
+    const knownBusinessHits = Object.keys(TERMS)
+      .filter(key => !['hype', 'vague'].includes(key))
+      .reduce((sum, key) => sum + countMatches(raw, TERMS[key]), 0);
+
+    const weirdSingleToken =
+      wc <= 2 &&
+      letters >= 5 &&
+      spaces === 0 &&
+      knownBusinessHits === 0;
+
+    const tooShort = wc < 18;
+
+    const gibberish =
+      weirdSingleToken ||
+      (letters > 0 &&
+        (vowelRatio < 0.18 || vowelRatio > 0.72) &&
+        knownBusinessHits === 0 &&
+        wc < 8);
+
+    const repeated = tokens.length > 8 && ratio < 0.35;
+
+    let quality = 100;
+
+    if (tooShort) quality -= 45;
+    if (wc < 8) quality -= 30;
+    if (gibberish) quality -= 65;
+    if (repeated) quality -= 35;
+    if (knownBusinessHits === 0) quality -= 30;
+
+    return {
+      rawLength: raw.length,
+      wordCount: wc,
+      uniqueRatio: ratio,
+      tooShort,
+      gibberish,
+      repeated,
+      knownBusinessHits,
+      quality: clamp(quality, 0, 100),
+      lowSignal: quality < 45 || gibberish
+    };
+  }
+
+  function sectionScores(text) {
+    const f = featureVector(text);
+
+    return {
+      Problem: round(f.problem * 100),
+      Solution: round(f.solution * 100),
+      Market: round(f.market * 100),
+      'Business model': round(f.business * 100),
+      Traction: round(f.traction * 100),
+      Moat: round(f.moat * 100),
+      Team: round(f.team * 100),
+      Ask: round(f.ask * 100)
+    };
+  }
+
+  function explainScore({ score, sections, quality, features }) {
+    const why = [];
+
+    if (quality.gibberish || quality.tooShort) {
+      why.push('Low-signal input triggered the quality guardrail.');
+      return why;
+    }
+
+    if (score >= 70) {
+      why.push(
+        'The pitch includes multiple investor-relevant signals instead of only generic claims.'
+      );
+    }
+
+    if (sections.Problem >= 55 && sections.Solution >= 55) {
+      why.push('Problem and solution are both identifiable.');
+    }
+
+    if (sections.Traction >= 55) {
+      why.push('There is some evidence of market pull or early validation.');
+    }
+
+    if (sections.Traction < 35) {
+      why.push('Score is capped because traction or proof is missing or vague.');
+    }
+
+    if (sections.Moat < 35) {
+      why.push('Defensibility is not yet clear enough for a strong investor score.');
+    }
+
+    if (features.hypePenalty > 0.4 && features.specificity < 0.35) {
+      why.push('Hype language is hurting the score because it is not backed by proof.');
+    }
+
+    if (features.structure >= 0.75) {
+      why.push('The pitch covers most of the core investor sections.');
+    }
+
+    if (!why.length) {
+      why.push('The score comes from section coverage, specificity, metrics, and clarity.');
+    }
+
+    return why;
+  }
+
+  function makeMemo({
+    mode,
+    score,
+    label,
+    sections,
+    confidence,
+    persona,
+    stage,
+    industry
+  }) {
+    const personaLine =
+      {
+        friendly:
+          'An angel investor would likely focus on whether the founder insight and customer pain feel credible.',
+        seedvc:
+          'A seed VC would focus on whether this can become a venture-scale company with proof of pull.',
+        b2b:
+          'A B2B investor would pressure-test buyer urgency, sales cycle, pricing power, and retention.',
+        consumer:
+          'A consumer investor would pressure-test acquisition loops, retention, trust, and repeat behavior.'
+      }[persona] ||
+      'An investor would pressure-test the clarity of the opportunity and the proof behind it.';
+
+    const modeLine =
+      mode === 'plus'
+        ? 'The offline trained model'
+        : 'The basic rubric';
+
+    const strong = Object.entries(sections)
+      .filter(([, value]) => value >= 65)
+      .map(([name]) => name.toLowerCase())
+      .slice(0, 3);
+
+    const weak = Object.entries(sections)
+      .filter(([, value]) => value < 40)
+      .map(([name]) => name.toLowerCase())
+      .slice(0, 3);
+
+    return (
+      `${modeLine} gives this ${industry || 'startup'} pitch a ${score}/100 (${label}) ` +
+      `with ${confidence.toLowerCase()} confidence for the ${stage || 'current'} stage. ` +
+      `${personaLine} ` +
+      `Strongest areas: ${strong.length ? strong.join(', ') : 'not enough yet'}. ` +
+      `Weakest areas: ${weak.length ? weak.join(', ') : 'mostly complete'}. ` +
+      `The next improvement should be adding concrete proof, not more hype.`
+    );
+  }
+
+  function makeInvestorQuestions({ sections, persona, industry, stage }) {
+    const questions = [];
+
+    if (sections.Traction < 55) {
+      questions.push('What evidence proves customers want this now?');
+    }
+
+    if (sections.Market < 55) {
+      questions.push('Who is the first narrow customer segment and why now?');
+    }
+
+    if (sections['Business model'] < 55) {
+      questions.push('How exactly do you make money and what are the margins?');
+    }
+
+    if (sections.Moat < 55) {
+      questions.push('Why will this be hard to copy after competitors notice it?');
+    }
+
+    if (persona === 'b2b') {
+      questions.push(
+        'Who signs the contract, what budget does it come from, and how long is the sales cycle?'
+      );
+    }
+
+    if (persona === 'consumer') {
+      questions.push('What acquisition loop makes growth cheaper over time?');
+    }
+
+    if (persona === 'friendly') {
+      questions.push('What founder insight makes you unusually likely to solve this?');
+    }
+
+    questions.push(
+      `What milestone should a ${stage || 'startup'} ${industry || 'company'} reach before the next financing round?`
+    );
+
+    return dedupe(questions).slice(0, 5);
+  }
+
+  function makeDeckBullets({ pitch, sections, industry, stage }) {
+    return [
+      'Title: one-line description of what the company does.',
+      'Problem: painful, specific, and urgent customer problem.',
+      'Solution: simple product explanation with clear user benefit.',
+      `Market: first beachhead in ${industry || 'the target market'} plus larger expansion path.`,
+      'Traction: strongest metric, pilot, revenue, usage, booking, or waitlist proof.',
+      'Business model: pricing, margin, commission, or subscription mechanics.',
+      'Competition/moat: why you win and why it gets stronger over time.',
+      `Team/ask: why this team, how much you are raising, and the ${stage || 'next'} milestone.`
+    ];
+  }
+
+  function generateRewrite(pitch, analysis, context) {
+    const industry = context.industry || 'target';
+    const stage = context.stage || 'current';
+    const persona = context.persona || 'seedvc';
+
+    const missing = analysis.missingProof.slice(0, 3).join(' ');
+
+    const personaHint =
+      persona === 'b2b'
+        ? 'For a B2B investor, make the buyer, budget, sales cycle, retention, and pricing power obvious.'
+        : persona === 'consumer'
+          ? 'For a consumer investor, make acquisition, retention, repeat behavior, and trust obvious.'
+          : persona === 'friendly'
+            ? 'For an angel investor, make the founder insight and customer pain memorable.'
+            : 'For a seed VC, make the scale, pull, wedge, and financing milestone obvious.';
+
+    return (
+      `We help a focused group of ${industry} customers solve a painful, urgent problem with a product that is easier, faster, and more measurable than the current workaround.\n\n` +
+      `The sharper version of this pitch should lead with the customer pain, explain the product in one sentence, and then prove demand with concrete evidence. ` +
+      `For this ${stage} stage company, the strongest next version should include traction such as users, revenue, paid pilots, retention, booking volume, signed LOIs, or growth rate.\n\n` +
+      `Business model: state whether revenue comes from subscription, commission, usage-based pricing, services, or transaction fees. Include one metric that shows pricing power, margin potential, or payback.\n\n` +
+      `Moat: explain why the company gets harder to copy over time through data, workflow integration, network effects, brand trust, switching costs, or distribution.\n\n` +
+      `Ask: state the amount being raised and the milestone it unlocks over the next 12–18 months.\n\n` +
+      `${personaHint}\n\n` +
+      `Specific missing proof to add: ${missing || 'Add one harder metric and one clearer customer proof point.'}`
+    );
+  }
+
+  function nearestExamples(text, rows, k = 5) {
+    const input = vectorToArray(featureVector(text));
+
+    return rows
+      .map(row => ({
+        ...row,
+        similarity: cosine(input, vectorToArray(featureVector(row.pitch)))
+      }))
+      .filter(row => Number.isFinite(row.similarity))
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, k);
+  }
+
+  function trainModel(rows) {
+    const X = rows.map(row => [1].concat(vectorToArray(featureVector(row.pitch))));
+    const y = rows.map(row => row.rating / 100);
+
+    const n = X[0].length;
+    const lambda = 0.12;
+
+    const XtX = Array.from({ length: n }, () => Array(n).fill(0));
+    const Xty = Array(n).fill(0);
+
+    for (let i = 0; i < X.length; i++) {
+      for (let a = 0; a < n; a++) {
+        Xty[a] += X[i][a] * y[i];
+
+        for (let b = 0; b < n; b++) {
+          XtX[a][b] += X[i][a] * X[i][b];
+        }
+      }
+    }
+
+    for (let i = 1; i < n; i++) {
+      XtX[i][i] += lambda;
+    }
+
+    const weights = solveLinearSystem(XtX, Xty);
+
+    return {
+      weights,
+      featureNames: ['bias'].concat(FEATURE_NAMES)
+    };
+  }
+
+  function solveLinearSystem(A, b) {
+    const n = b.length;
+    const M = A.map((row, i) => row.slice().concat([b[i]]));
+
+    for (let col = 0; col < n; col++) {
+      let pivot = col;
+
+      for (let r = col + 1; r < n; r++) {
+        if (Math.abs(M[r][col]) > Math.abs(M[pivot][col])) {
+          pivot = r;
+        }
+      }
+
+      if (Math.abs(M[pivot][col]) < 1e-9) {
+        continue;
+      }
+
+      [M[col], M[pivot]] = [M[pivot], M[col]];
+
+      const div = M[col][col];
+
+      for (let c = col; c <= n; c++) {
+        M[col][c] /= div;
+      }
+
+      for (let r = 0; r < n; r++) {
+        if (r === col) continue;
+
+        const factor = M[r][col];
+
+        for (let c = col; c <= n; c++) {
+          M[r][c] -= factor * M[col][c];
+        }
+      }
+    }
+
+    return M.map(row => row[n] || 0);
+  }
+
+  function vectorToArray(features) {
+    return FEATURE_NAMES.map(name => features[name] || 0);
+  }
+
+  function tokenize(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9%$\.\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  function textLower(text) {
+    return String(text || '').toLowerCase();
+  }
+
+  function countMatches(text, terms) {
+    const lower = textLower(text);
+
+    return terms.reduce((count, term) => {
+      return count + (lower.includes(term) ? 1 : 0);
+    }, 0);
+  }
+
+  function moneyCount(text) {
+    return (
+      String(text || '').match(
+        /\$\s?\d|\d+\s?(k|m|b|million|billion)|\d+%/gi
+      ) || []
+    ).length;
+  }
+
+  function sentenceCount(text) {
+    return Math.max(1, (String(text || '').match(/[.!?]+/g) || []).length);
+  }
+
+  function wordCount(text) {
+    return tokenize(text).length;
+  }
+
+  function uniqueRatio(tokens) {
+    return tokens.length ? new Set(tokens).size / tokens.length : 0;
+  }
+
+  function cosine(a, b) {
+    const denominator = Math.sqrt(dot(a, a)) * Math.sqrt(dot(b, b));
+
+    if (!denominator) return 0;
+
+    return dot(a, b) / denominator;
+  }
+
+  function dot(a, b) {
+    let sum = 0;
+
+    for (let i = 0; i < a.length; i++) {
+      sum += a[i] * b[i];
+    }
+
+    return sum;
+  }
+
+  function getConfidence(quality) {
+    if (quality.gibberish || quality.wordCount < 18) return 'Low';
+    if (quality.wordCount >= 90 && quality.knownBusinessHits >= 5) return 'High';
+    if (quality.wordCount >= 45 && quality.knownBusinessHits >= 3) return 'Medium';
+    return 'Low';
+  }
+
+  function getLabel(score) {
+    if (score >= 85) return 'Investor-ready';
+    if (score >= 70) return 'Strong but improvable';
+    if (score >= 52) return 'Promising but incomplete';
+    if (score >= 30) return 'Early / weak';
+    return 'Not pitch-ready';
+  }
+
+  function dedupe(items) {
+    return Array.from(new Set(items.filter(Boolean)));
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function round(value) {
+    return Math.round(Number.isFinite(value) ? value : 0);
+  }
+
+  return {
+    create
+  };
+})();
+
+/* Optional global instance */
+const offlineLLM = AstraPitchOfflineModel.create();
