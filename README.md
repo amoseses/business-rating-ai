@@ -1,4 +1,4 @@
-# Business Rating AI (Vercel + Stripe)
+# Business Rating AI (Vercel + Stripe + Supabase)
 
 ## Setup
 1. Install: `npm install`
@@ -6,33 +6,115 @@
 3. Run locally: `npm run dev`
 
 ## Vercel env vars
-- `STRIPE_SECRET_KEY` — your Stripe secret key, usually `sk_test_...` or `sk_live_...`. The app trims accidental spaces/quotes/full `STRIPE_SECRET_KEY=...` pastes and also accepts `STRIPE_SECRET` or `STRIPE_API_KEY` as fallbacks, but `STRIPE_SECRET_KEY` is preferred.
-- `STRIPE_DATA_PRICE_ID` — recurring Stripe Price ID for the Data plan. Prefer `price_...`. Alias fallbacks are `DATA_PRICE_ID`, `STRIPE_PRICE_ID_DATA`, and `STRIPE_DATA_PLAN_PRICE_ID`.
-- `STRIPE_PLUS_PRICE_ID` — recurring Stripe Price ID for the Plus plan. Prefer `price_...`. Alias fallbacks are `PLUS_PRICE_ID`, `STRIPE_PRICE_ID_PLUS`, and `STRIPE_PLUS_PLAN_PRICE_ID`.
-- `APP_URL` — deployed site URL, with or without a trailing slash.
+- `STRIPE_SECRET_KEY` — your Stripe secret key, usually `sk_test_...` or `sk_live_...`.
+- `STRIPE_DATA_PRICE_ID` — recurring Stripe Price ID for the Data plan.
+- `STRIPE_PLUS_PRICE_ID` — recurring Stripe Price ID for the Plus plan.
+- `APP_URL` — deployed site URL.
 - `AUTH_SECRET` — long random string used to sign login sessions.
 - `RESEND_API_KEY` — Resend API key used to send password reset emails.
-- `FROM_EMAIL` — verified sender address for password reset emails, for example `Business Rating AI <noreply@example.com>`.
+- `FROM_EMAIL` — verified sender address for password reset emails.
 
-If you accidentally paste a Stripe Product ID (`prod_...`) instead of a Price ID, the app will try to use that product's default price. If the product has no default price, set one in Stripe or replace the env var with the recurring `price_...` ID.
+### Optional (Analytics, Monitoring, Evaluations)
+- `SUPABASE_URL` — Supabase project URL (from Project Settings > API)
+- `SUPABASE_SERVICE_KEY` — Supabase service role key (backend only)
+- `SUPABASE_ANON_KEY` — Supabase anon/public key
+- `ADMIN_API_KEY` — Random key to protect admin/evaluation endpoints
 
-The live app now calls `GET /api/config-status` on page load and shows which required Vercel variables are missing. After adding or changing Vercel environment variables, redeploy the site; existing deployments do not automatically pick up new values.
+## New Features (v1.1.0)
+
+### Analytics & User Tracking
+- Event tracking via Supabase `analytics_events` table
+- Tracks: page views, analysis completions, auth events, errors
+- Non-blocking: silently drops events if Supabase is not configured
+
+### Error Logging
+- Structured error logging to Supabase `error_logs` table
+- Captures: error type, message, stack trace, endpoint, user, severity
+- Severity levels: debug, info, warning, error, critical
+- Supports marking errors as resolved
+
+### Performance Monitoring
+- Automatic response time tracking for all API handlers
+- Wraps handlers via `withPerformanceTracking()`
+- Records: endpoint, method, response time, status code, user
+- Summary statistics: avg, p50, p95, p99
+
+### Scoring Consistency
+- Multi-pass normalization pipeline (6 passes):
+  1. Word count penalty (short pitches)
+  2. Section score balance (variance penalty/consistency bonus)
+  3. Red flag de-duplication and penalty
+  4. Missing proof penalty
+  5. Plan-specific adjustments (Plus boost)
+  6. Clamp to 1-99 range
+- Deterministic pitch hashing for deduplication
+- Score similarity comparison for A/B testing
+
+### Test Evaluation Suite
+- Pre-defined test pitches across 6 types: SaaS, hardware, marketplace, biotech, consumer app, weak pitch
+- CLI runner: `npm run evaluate`
+- API endpoints for programmatic evaluation
+- Results stored in Supabase `evaluation_results` table
+
+### Rate Limiting
+- Per-email analysis rate limit: 20 requests/minute
+- Auth rate limit: 10 requests/minute
+- General API rate limit: 60 requests/minute
+- Returns 429 with retry-after headers
+
+### Caching
+- In-memory result cache (10 min TTL, 200 entries max)
+- MD5-based cache keys for pitch deduplication
+- Cache hit/miss tracking
+
+### Backup & Security
+- Input sanitization (HTML tag removal, shell metacharacter removal)
+- Sanitize objects recursively
+- JSON export for analysis data backup
+- Secure API key generation and hashing
+- CSP header generation
+- Environment variable validation
 
 ## Endpoints
-- `GET /api/config-status` to verify the deployed Vercel environment variables without exposing secret values
-- `POST /api/auth-signup` with `{ email, password }`
-- `POST /api/auth-login` with `{ email, password }`
-- `POST /api/auth-request-reset` with `{ email }`
-- `POST /api/auth-reset-password` with `{ email, token, password }`
-- `POST /api/analyze` with `{ pitch, plan, email }` and `Authorization: Bearer <token>`
-- `POST /api/create-checkout-session` with `{ plan, email }` and `Authorization: Bearer <token>`
-- `POST /api/customer-status` with `{ plan, email }` and `Authorization: Bearer <token>`
+- `GET /api/config-status` — verify deployed environment variables
+- `POST /api/auth-signup` — `{ email, password }`
+- `POST /api/auth-login` — `{ email, password }`
+- `POST /api/auth-request-reset` — `{ email }`
+- `POST /api/auth-reset-password` — `{ email, token, password }`
+- `POST /api/analyze` — `{ pitch, plan, email }` (requires Bearer token)
+- `POST /api/create-checkout-session` — `{ plan, email }` (requires Bearer token)
+- `POST /api/customer-status` — `{ plan, email }` (requires Bearer token)
+
+### New Endpoints
+- `POST /api/analytics` — Track client-side event `{ eventName, properties? }`
+- `GET /api/analytics` — Analytics summary (requires `ADMIN_API_KEY`)
+- `POST /api/evaluate` — Run evaluation suite or single test (requires `ADMIN_API_KEY`)
+- `GET /api/evaluate` — Get evaluation history (requires `ADMIN_API_KEY`)
+- `GET /api/evaluation-results` — Detailed results with per-type stats (requires `ADMIN_API_KEY`)
+- `DELETE /api/evaluation-results` — Clear history (requires `ADMIN_API_KEY`)
+- `GET /api/admin/analytics-summary` — Full admin dashboard data (requires `ADMIN_API_KEY`)
+
+## Evaluation Suite
+```bash
+# Run all evaluations (data plan)
+npm run evaluate
+
+# Run with specific plan
+node scripts/run-evaluations.js --plan plus
+
+# Run specific pitch types
+node scripts/run-evaluations.js --types saas,marketplace
+
+# Skip persisting to Supabase
+node scripts/run-evaluations.js --no-persist
+
+# System health check
+npm run check
+```
+
+## Supabase Setup
+See `SUPABASE_SETUP.md` for table schemas, indexes, and RLS policies.
 
 Plans supported:
 - `data`
 - `plus`
-
-## Login, password reset, and duplicate purchase prevention
-The frontend now uses email/password accounts with browser password-manager autocomplete support and an optional "keep me logged in" session. Password hashes and reset-token hashes are stored on the matching Stripe Customer metadata, so no separate database is required for this app. Password reset requests send an email through Resend with a one-hour reset link.
-
-Before creating a Checkout Session or running an analysis, the API requires the signed login token and checks Stripe for an active or trialing subscription for that email and selected plan. If the subscription already exists, Checkout is skipped so the customer does not pay for the same plan again.
