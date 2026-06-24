@@ -3,61 +3,68 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Business Rating AI</title>
+  <title>AstraPitch — AI Pitch Scoring</title>
   <style>
-    :root{--bg:#f4f7fb;--surface:#ffffff;--surface-soft:#f9fbff;--text:#0f172a;--muted:#5b6b82;--primary:#1e40af;--primary-2:#1d4ed8;--secondary:#334155;--border:#d8e1ee;--shadow:0 16px 40px rgba(15,23,42,.08)}
+    :root{--bg:#f4f7fb;--surface:#ffffff;--surface-soft:#f9fbff;--text:#0f172a;--muted:#5b6b82;--primary:#1e40af;--primary-2:#1d4ed8;--secondary:#334155;--border:#d8e1ee;--shadow:0 16px 40px rgba(15,23,42,.08);--accent:#f59e0b;--accent-2:#d97706}
     *{box-sizing:border-box}
     body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:1120px;margin:0 auto;padding:28px 18px 42px;color:var(--text);background:linear-gradient(180deg,#eff5ff,#f8fbff 220px,var(--bg));line-height:1.45}
-    h1,h2{margin:.2rem 0 .7rem} h1{font-size:2rem;letter-spacing:-.02em} h2{font-size:1.15rem}
+    h1,h2{margin:.2rem 0 .7rem} h1{font-size:2.2rem;letter-spacing:-.03em} h2{font-size:1.2rem}
     p{margin:.2rem 0 1rem}
     textarea,input[type="email"],input[type="password"]{width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 12px;font:inherit;background:#fff;transition:border-color .16s,box-shadow .16s}
     textarea:focus,input:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
     textarea{height:220px;resize:vertical;min-height:160px}
-    button{margin:8px 8px 8px 0;padding:10px 14px;border:0;border-radius:10px;background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff;cursor:pointer;font-weight:700;transition:transform .1s,filter .15s,box-shadow .15s;box-shadow:0 6px 14px rgba(37,99,235,.22)}
-    button:hover{filter:brightness(1.04);transform:translateY(-1px)} button:active{transform:translateY(0)}
-    button.secondary{background:linear-gradient(180deg,#64748b,var(--secondary));box-shadow:0 4px 12px rgba(71,85,105,.2)}
+    button{margin:8px 8px 8px 0;padding:10px 18px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff;cursor:pointer;font-weight:700;transition:transform .12s,filter .15s,box-shadow .15s;box-shadow:0 8px 18px rgba(37,99,235,.25)}
+    button:hover{filter:brightness(1.05);transform:translateY(-1px)} button:active{transform:translateY(0)}
+    button.secondary{background:linear-gradient(180deg,#64748b,var(--secondary));box-shadow:0 6px 14px rgba(71,85,105,.2)}
     button.link{background:transparent;color:var(--primary);padding:0;margin:8px 0;text-decoration:underline;box-shadow:none}
     button:disabled{background:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none}
-    .hero{background:linear-gradient(140deg,#0b1d45,#1f3f95 55%,#335dbb);color:#fff;border-radius:20px;padding:28px 24px;box-shadow:var(--shadow);margin-bottom:18px}
-    .hero p{opacity:.9;margin:0}
-    .layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .hero{background:linear-gradient(140deg,#0b1d45,#1f3f95 55%,#335dbb);color:#fff;border-radius:22px;padding:30px 26px;box-shadow:var(--shadow);margin-bottom:20px;position:relative;overflow:hidden}
+    .hero p{opacity:.92;margin:0}
+    .layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}
     .full{grid-column:1 / -1}
-    .card{border:1px solid var(--border);border-radius:16px;padding:18px;background:linear-gradient(180deg,var(--surface),var(--surface-soft));box-shadow:var(--shadow)}
+    .card{border:1px solid var(--border);border-radius:18px;padding:20px;background:linear-gradient(180deg,var(--surface),var(--surface-soft));box-shadow:var(--shadow);transition:transform .15s ease}
+    .card:hover{transform:translateY(-2px)}
     .muted{color:var(--muted);font-size:14px}
-    .status{margin-top:12px;padding:10px 12px;border-radius:10px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe}
+    .status{margin-top:12px;padding:12px 14px;border-radius:12px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;font-weight:600}
     .success{background:#dcfce7;color:#166534;border-color:#86efac}.error{background:#fee2e2;color:#991b1b;border-color:#fca5a5}.warning{background:#fef3c7;color:#92400e;border-color:#fcd34d}
-    label{display:inline-block;margin:8px 12px 8px 0;font-weight:700}
+    label{display:inline-block;margin:8px 14px 8px 0;font-weight:700}
     .plan-label{font-weight:500}
     .auth-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .hidden{display:none}
-    .hero-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:end}
-    .hero-meta{display:grid;gap:8px}
-    .hero-meta div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 10px;font-size:12px;font-weight:600}
-    .card:hover{transform:translateY(-1px);transition:transform .15s ease}
-    .textarea-hint{margin-top:8px;font-size:12px;color:var(--muted)}
-    #result pre{white-space:pre-wrap;word-break:break-word;background:#f0f5ff;border:1px solid var(--border);padding:12px;border-radius:10px}
+    .hero-grid{display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:end}
+    .hero-meta{display:grid;gap:10px}
+    .hero-meta div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:10px 12px;font-size:13px;font-weight:700;letter-spacing:.01em}
+    .textarea-hint{margin-top:10px;font-size:13px;color:var(--muted)}
+    #result pre{white-space:pre-wrap;word-break:break-word;background:#f0f5ff;border:1px solid var(--border);padding:14px;border-radius:12px}
     @media (max-width:900px){.layout,.hero-grid{grid-template-columns:1fr}.full{grid-column:auto}}
+    .cta{background:linear-gradient(180deg,var(--accent),var(--accent-2));box-shadow:0 8px 22px rgba(217,119,6,.3)}
+    .cta:hover{filter:brightness(1.05)}
+    .result-card{border:1px solid var(--border);border-radius:18px;padding:22px;background:linear-gradient(180deg,#fff,#f8faff);box-shadow:var(--shadow)}
+    .score-ring{width:110px;height:110px;border-radius:50%;border:8px solid #93c5fd;display:grid;place-items:center;font-size:2rem;font-weight:900;color:var(--primary);background:#eef2ff;margin:0 auto 14px}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;box-shadow:var(--shadow)}
+    .section{margin:10px 0;padding:10px 12px;border-radius:10px;background:#f8faff;border:1px solid var(--border)}
+    .recommendation{padding:8px 10px;border-radius:8px;background:#fff;border:1px solid var(--border);margin:6px 0}
   </style>
 </head>
 <body>
   <header class="hero">
     <div class="hero-grid">
       <div>
-        <h1>Business Rating AI</h1>
-        <p>Sign in, manage your plan, and get instant scoring with practical recommendations for your business pitch.</p>
+        <h1>AstraPitch</h1>
+        <p>Instant AI scoring for your business pitch — section-level feedback and plan-aware results in seconds.</p>
       </div>
       <div class="hero-meta">
-        <div>AI scoring with section-level feedback</div>
-        <div>Secure account and password reset flow</div>
-        <div>Plan-aware analysis access via Stripe</div>
+        <div>⚡ 60-second analysis</div>
+        <div>🔒 Secure login & password reset</div>
+        <div>📈 Actionable, plan-aware feedback</div>
       </div>
     </div>
   </header>
 
   <main class="layout">
   <div class="card">
-    <h2>Login</h2>
-    <p class="muted">Create an account or log in with the same email you use at Stripe Checkout. Your browser can save the password if you allow it.</p>
+    <h2>Account</h2>
+    <p class="muted">Create an AstraPitch account or log in. Use the same email you use at Stripe Checkout. Your browser can save your password.</p>
 
     <div id="authForm">
       <label for="email">Email</label>
@@ -92,7 +99,7 @@
       </div>
     </div>
 
-    <div id="loginStatus" class="status warning">Not logged in yet.</div>
+    <div id="loginStatus" class="status warning" aria-live="polite">Not logged in yet.</div>
   </div>
 
   <div class="card">
@@ -109,14 +116,15 @@
 
   <div class="card full">
     <label for="pitch">Pitch text</label>
-    <textarea id="pitch" placeholder="Paste your business pitch..."></textarea>
+    <textarea id="pitch" placeholder="Paste your business pitch here..."></textarea>
     <div>
-      <button id="analyzeBtn">Analyze</button>
+      <button id="analyzeBtn" class="cta">Score my pitch</button>
+      <button id="clearBtn" class="secondary hidden" type="button">Clear</button>
     </div>
-    <div class="textarea-hint">Tip: Include your market, traction, revenue model, and differentiation for richer feedback.</div>
+    <div class="textarea-hint">Tip: include your market, traction, revenue model, and differentiation for a stronger analysis.</div>
   </div>
 
-  <div class="card full" id="result" style="display:none"></div>
+  <div class="card full result-card" id="result" style="display:none" aria-live="polite"></div>
   </main>
 
 <script>
@@ -133,6 +141,7 @@ const setupStatusEl = document.getElementById('setupStatus');
 const logoutBtn = document.getElementById('logoutBtn');
 const checkoutBtn = document.getElementById('checkoutBtn');
 const analyzeBtn = document.getElementById('analyzeBtn');
+const clearBtn = document.getElementById('clearBtn');
 const authForm = document.getElementById('authForm');
 const resetForm = document.getElementById('resetForm');
 const newPasswordWrap = document.getElementById('newPasswordWrap');
@@ -158,7 +167,7 @@ function renderSetupStatus(config){
     return;
   }
   setupStatusEl.classList.remove('hidden');
-  setStatus(setupStatusEl,`Vercel setup missing: ${missing.join(', ')}. Add these in Project Settings → Environment Variables for the deployed environment, then redeploy. Stripe checkout/login need the secret key; keep the Stripe variables in place.`,'warning');
+  setStatus(setupStatusEl,`Vercel setup missing: ${missing.join(', ')}. Add these in Project Settings → Environment Variables for the deployed environment, then redeploy.`,'warning');
 }
 async function loadSetupStatus(){
   try{
@@ -309,21 +318,43 @@ async function startCheckout(){
   }catch(err){setStatus(planStatusEl,err.message,'error');}
   finally{checkoutBtn.disabled = false;}
 }
+function renderResult(data){
+  const el = document.getElementById('result');
+  el.style.display='block';
+  const scoreColor = data.score >= 80 ? '#16a34a' : data.score >= 60 ? '#d97706' : '#dc2626';
+  const sections = (data.sections || []).map(s => `<div class="section"><strong>${s.name}</strong>: ${s.score}/100 — ${s.feedback || ''}</div>`).join('');
+  const recs = (data.recommendations || []).map(r => `<div class="recommendation">• ${r}</div>`).join('');
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+      <div>
+        <h2 style="margin:.2rem 0 .4rem">Pitch analysis complete</h2>
+        <div class="badge">Plan: ${data.plan || selectedPlan()}</div>
+      </div>
+      <div class="score-ring" style="border-color:${scoreColor};color:${scoreColor}">${data.score}/100</div>
+    </div>
+    <p><strong>${data.label || ''}</strong> · Words: ${data.wordCount || 0}</p>
+    <h3>Sections</h3>
+    ${sections || '<p class="muted">No section details available.</p>'}
+    <h3>Recommendations</h3>
+    ${recs || '<p class="muted">No recommendations for this score.</p>'}
+  `;
+}
 async function analyze(){
   const email = requireLogin();
   if(!email) return;
   const pitch = document.getElementById('pitch').value.trim();
   const el = document.getElementById('result');
   analyzeBtn.disabled = true;
+  clearBtn.classList.add('hidden');
+  el.style.display='block';
+  el.innerHTML = `<div class="result-card"><h2>Scoring your pitch...</h2><p class="muted">This usually takes a few seconds.</p></div>`;
   try{
     const data = await postJson('/api/analyze',{pitch,plan:selectedPlan(),email},true);
-    el.style.display='block';
-    el.innerHTML = `<h2>Score: ${data.score}/100</h2><p><strong>${data.label}</strong> · Plan: ${data.plan} · Words: ${data.wordCount}</p>
-    <h3>Sections</h3><pre>${JSON.stringify(data.sections,null,2)}</pre>
-    <h3>Recommendations</h3><ul>${data.recommendations.map(r=>`<li>${r}</li>`).join('')}</ul>`;
+    renderResult(data);
+    clearBtn.classList.remove('hidden');
   }catch(err){
     el.style.display='block';
-    el.innerHTML=`<h3>Error</h3><p>${err.message}</p>`;
+    el.innerHTML=`<div class="result-card"><h3>Analysis failed</h3><p>${err.message}</p></div>`;
     if(/purchase|subscription|plan|log in/i.test(err.message)) setStatus(planStatusEl,err.message,'error');
   }finally{analyzeBtn.disabled = false;}
 }
@@ -334,6 +365,8 @@ function logout(){
   loadSetupStatus();
   renderLogin();
   setStatus(planStatusEl,'Log in to check your plan.','warning');
+  document.getElementById('result').style.display='none';
+  clearBtn.classList.add('hidden');
 }
 function showCheckoutReturnMessage(){
   if(params.get('checkout') === 'success'){
@@ -355,6 +388,11 @@ logoutBtn.addEventListener('click',logout);
 document.getElementById('refreshStatusBtn').addEventListener('click',refreshPlanStatus);
 document.getElementById('checkoutBtn').addEventListener('click',startCheckout);
 document.getElementById('analyzeBtn').addEventListener('click',analyze);
+clearBtn.addEventListener('click',()=>{
+  document.getElementById('pitch').value='';
+  document.getElementById('result').style.display='none';
+  clearBtn.classList.add('hidden');
+});
 document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventListener('change',()=>{if(savedEmail() && sessionToken) refreshPlanStatus();}));
 loadSetupStatus();
 renderLogin();

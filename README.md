@@ -1,4 +1,6 @@
-# Business Rating AI (Vercel + Stripe + Supabase)
+# AstraPitch
+
+Instant AI scoring for startup pitches — powered by Vercel, Stripe, and Supabase.
 
 ## Setup
 1. Install: `npm install`
