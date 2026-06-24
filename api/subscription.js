@@ -9,9 +9,7 @@ const {
   sendError
 } = require('./stripe-helpers');
 
-module.exports = async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
+async function handleCreateCheckoutSession(req, res) {
   try {
     const stripe = getStripe();
     const { plan, email } = req.body || {};
@@ -49,4 +47,37 @@ module.exports = async (req, res) => {
   } catch (error) {
     return sendError(res, error);
   }
+}
+
+async function handleCustomerStatus(req, res) {
+  try {
+    const stripe = getStripe();
+    const { email, plan } = req.body || {};
+    const normalizedPlan = normalizePlan(plan);
+    requireAuth(req, email);
+    const status = await getCustomerPlanStatus(stripe, email, normalizedPlan);
+
+    return res.status(200).json({
+      email: status.email,
+      plan: normalizedPlan,
+      hasActivePlan: status.hasActivePlan,
+      subscriptionStatus: status.subscription ? status.subscription.status : null
+    });
+  } catch (error) {
+    return sendError(res, error);
+  }
+}
+
+module.exports = async (req, res) => {
+  const action = req.query.action || (req.method === 'POST' ? 'create-checkout-session' : 'customer-status');
+
+  if (action === 'create-checkout-session' && req.method === 'POST') {
+    return handleCreateCheckoutSession(req, res);
+  }
+
+  if (action === 'customer-status' && req.method === 'POST') {
+    return handleCustomerStatus(req, res);
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
 };

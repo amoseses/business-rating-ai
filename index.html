@@ -245,12 +245,13 @@ async function authenticate(endpoint){
   const password = passwordEl.value;
   if(!validEmail(email)){setStatus(loginStatusEl,'Enter a valid email address.','error');return;}
   if(password.length < 8){setStatus(loginStatusEl,'Password must be at least 8 characters.','error');return;}
-  const button = endpoint === '/api/auth-login' ? document.getElementById('loginBtn') : document.getElementById('signupBtn');
+  const isSignup = endpoint.includes('action=signup');
+  const button = isSignup ? document.getElementById('signupBtn') : document.getElementById('loginBtn');
   setBusy(button,true);
   try{
     const data = await postJson(endpoint,{email,password});
     storeSession(data.email,data.token);
-    setStatus(loginStatusEl,endpoint === '/api/auth-login' ? `Logged in as ${data.email}.` : `Account created for ${data.email}.`,'success');
+    setStatus(loginStatusEl,isSignup ? `Account created for ${data.email}.` : `Logged in as ${data.email}.`,'success');
     refreshPlanStatus();
   }catch(err){setStatus(loginStatusEl,err.message,'error');}
   finally{setBusy(button,false);}
@@ -260,7 +261,7 @@ async function requestPasswordReset(){
   if(!validEmail(email)){setStatus(loginStatusEl,'Enter a valid email address.','error');return;}
   setBusy(requestResetBtn,true);
   try{
-    const data = await postJson('/api/auth-request-reset',{email});
+    const data = await postJson('/api/auth?action=request-reset',{email});
     setStatus(loginStatusEl,data.message || 'Password reset email sent.','success');
   }catch(err){setStatus(loginStatusEl,err.message,'error');}
   finally{setBusy(requestResetBtn,false);}
@@ -273,7 +274,7 @@ async function confirmPasswordReset(){
   if(password.length < 8){setStatus(loginStatusEl,'Password must be at least 8 characters.','error');return;}
   setBusy(confirmResetBtn,true);
   try{
-    const data = await postJson('/api/auth-reset-password',{email,token,password});
+    const data = await postJson('/api/auth?action=reset-password',{email,token,password});
     storeSession(data.email,data.token);
     showLoginForm();
     setStatus(loginStatusEl,'Password reset. You are logged in now.','success');
@@ -287,7 +288,7 @@ async function refreshPlanStatus(){
   if(!email) return false;
   setStatus(planStatusEl,'Checking Stripe subscription status...','warning');
   try{
-    const data = await postJson('/api/customer-status',{email,plan:selectedPlan()},true);
+    const data = await postJson('/api/subscription?action=customer-status',{email,plan:selectedPlan()},true);
     if(data.hasActivePlan){
       setStatus(planStatusEl,`Active ${data.plan} subscription found. You can analyze without paying again.`,'success');
       return true;
@@ -302,7 +303,7 @@ async function startCheckout(){
   checkoutBtn.disabled = true;
   setStatus(planStatusEl,'Checking existing subscription before Checkout...','warning');
   try{
-    const data = await postJson('/api/create-checkout-session',{plan:selectedPlan(),email},true);
+    const data = await postJson('/api/subscription?action=create-checkout-session',{plan:selectedPlan(),email},true);
     if(data.alreadySubscribed){setStatus(planStatusEl,data.message || 'You already have this plan.','success');return;}
     window.location.href = data.url;
   }catch(err){setStatus(planStatusEl,err.message,'error');}
@@ -344,8 +345,8 @@ function showCheckoutReturnMessage(){
   }
 }
 
-document.getElementById('loginBtn').addEventListener('click',()=>authenticate('/api/auth-login'));
-document.getElementById('signupBtn').addEventListener('click',()=>authenticate('/api/auth-signup'));
+document.getElementById('loginBtn').addEventListener('click',()=>authenticate('/api/auth?action=login'));
+document.getElementById('signupBtn').addEventListener('click',()=>authenticate('/api/auth?action=signup'));
 document.getElementById('forgotBtn').addEventListener('click',showResetRequest);
 document.getElementById('backToLoginBtn').addEventListener('click',showLoginForm);
 document.getElementById('requestResetBtn').addEventListener('click',requestPasswordReset);

@@ -76,23 +76,32 @@
 - Environment variable validation
 
 ## Endpoints
-- `GET /api/config-status` — verify deployed environment variables
-- `POST /api/auth-signup` — `{ email, password }`
-- `POST /api/auth-login` — `{ email, password }`
-- `POST /api/auth-request-reset` — `{ email }`
-- `POST /api/auth-reset-password` — `{ email, token, password }`
-- `POST /api/analyze` — `{ pitch, plan, email }` (requires Bearer token)
-- `POST /api/create-checkout-session` — `{ plan, email }` (requires Bearer token)
-- `POST /api/customer-status` — `{ plan, email }` (requires Bearer token)
 
-### New Endpoints
+### Auth (consolidated)
+
+All auth flows now use `/api/auth` with an `action` query parameter to keep serverless functions under Vercel's free limit.
+
+- `GET /api/config-status` — verify deployed environment variables
+- `POST /api/auth?action=login` — `{ email, password }`
+- `POST /api/auth?action=signup` — `{ email, password }`
+- `POST /api/auth?action=request-reset` — `{ email }`
+- `POST /api/auth?action=reset-password` — `{ email, token, password }`
+- `POST /api/analyze` — `{ pitch, plan, email }` (requires Bearer token)
+
+### Subscription (consolidated)
+
+- `POST /api/subscription?action=create-checkout-session` — `{ plan, email }` (requires Bearer token)
+- `POST /api/subscription?action=customer-status` — `{ plan, email }` (requires Bearer token)
+
+### Admin / Evaluation (consolidated)
+
+- `GET /api/admin?path=analytics-summary` — Admin analytics dashboard (requires `ADMIN_API_KEY`)
+- `POST /api/admin?path=evaluate` — Run evaluation suite or single test (requires `ADMIN_API_KEY`)
+- `GET /api/admin?path=evaluate` — Get evaluation history (requires `ADMIN_API_KEY`)
+- `GET /api/admin?path=evaluation-results` — Detailed results with per-type stats (requires `ADMIN_API_KEY`)
+- `DELETE /api/admin?path=evaluation-results` — Clear history (requires `ADMIN_API_KEY`)
 - `POST /api/analytics` — Track client-side event `{ eventName, properties? }`
 - `GET /api/analytics` — Analytics summary (requires `ADMIN_API_KEY`)
-- `POST /api/evaluate` — Run evaluation suite or single test (requires `ADMIN_API_KEY`)
-- `GET /api/evaluate` — Get evaluation history (requires `ADMIN_API_KEY`)
-- `GET /api/evaluation-results` — Detailed results with per-type stats (requires `ADMIN_API_KEY`)
-- `DELETE /api/evaluation-results` — Clear history (requires `ADMIN_API_KEY`)
-- `GET /api/admin/analytics-summary` — Full admin dashboard data (requires `ADMIN_API_KEY`)
 
 ## Evaluation Suite
 ```bash
