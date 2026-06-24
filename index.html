@@ -5,58 +5,173 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AstraPitch — AI Pitch Scoring</title>
   <style>
-    :root{--bg:#f4f7fb;--surface:#ffffff;--surface-soft:#f9fbff;--text:#0f172a;--muted:#5b6b82;--primary:#1e40af;--primary-2:#1d4ed8;--secondary:#334155;--border:#d8e1ee;--shadow:0 16px 40px rgba(15,23,42,.08);--accent:#f59e0b;--accent-2:#d97706}
+    :root{
+      --bg:#f8fafc;
+      --surface:#ffffff;
+      --surface-soft:#f1f5f9;
+      --text:#0f172a;
+      --muted:#64748b;
+      --primary:#2563eb;
+      --primary-2:#1d4ed8;
+      --secondary:#475569;
+      --border:#e2e8f0;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --accent:#f59e0b;
+      --accent-2:#d97706;
+      --success:#16a34a;
+      --warning:#d97706;
+      --danger:#dc2626;
+      --info:#3b82f6
+    }
     *{box-sizing:border-box}
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:1120px;margin:0 auto;padding:28px 18px 42px;color:var(--text);background:linear-gradient(180deg,#eff5ff,#f8fbff 220px,var(--bg));line-height:1.45}
-    h1,h2{margin:.2rem 0 .7rem} h1{font-size:2.2rem;letter-spacing:-.03em} h2{font-size:1.2rem}
-    p{margin:.2rem 0 1rem}
-    textarea,input[type="email"],input[type="password"]{width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 12px;font:inherit;background:#fff;transition:border-color .16s,box-shadow .16s}
-    textarea:focus,input:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.18)}
-    textarea{height:220px;resize:vertical;min-height:160px}
-    button{margin:8px 8px 8px 0;padding:10px 18px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff;cursor:pointer;font-weight:700;transition:transform .12s,filter .15s,box-shadow .15s;box-shadow:0 8px 18px rgba(37,99,235,.25)}
-    button:hover{filter:brightness(1.05);transform:translateY(-1px)} button:active{transform:translateY(0)}
-    button.secondary{background:linear-gradient(180deg,#64748b,var(--secondary));box-shadow:0 6px 14px rgba(71,85,105,.2)}
-    button.link{background:transparent;color:var(--primary);padding:0;margin:8px 0;text-decoration:underline;box-shadow:none}
-    button:disabled{background:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none}
-    .hero{background:linear-gradient(140deg,#0b1d45,#1f3f95 55%,#335dbb);color:#fff;border-radius:22px;padding:30px 26px;box-shadow:var(--shadow);margin-bottom:20px;position:relative;overflow:hidden}
-    .hero p{opacity:.92;margin:0}
+    html,body{margin:0;padding:0}
+    body{
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background:linear-gradient(180deg,#eff6ff 0%,#ffffff 40%,#f8fafc 100%);
+      color:var(--text);
+      line-height:1.6;
+      -webkit-font-smoothing:antialiased
+    }
+    .container{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+    h1{font-size:2.4rem;letter-spacing:-.04em;margin:0 0 10px;line-height:1.1}
+    h2{font-size:1.35rem;margin:0 0 12px;letter-spacing:-.01em}
+    p{margin:0 0 16px}
+
+    .hero{
+      position:relative;
+      overflow:hidden;
+      border-radius:24px;
+      padding:34px 28px;
+      background:
+        radial-gradient(1200px 600px at 10% -20%, rgba(37,99,235,.18), transparent 60%),
+        linear-gradient(135deg, #0b1d45 0%, #1e3a8a 55%, #2563eb 100%);
+      color:#fff;
+      box-shadow: var(--shadow);
+      margin-bottom:22px
+    }
+    .hero p{opacity:.92;max-width:640px;margin:0}
+    .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:end}
+    .hero-meta{display:grid;gap:10px}
+    .hero-meta div{
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.22);
+      border-radius:14px;
+      padding:12px 14px;
+      font-weight:700;
+      font-size:14px;
+      letter-spacing:.01em
+    }
+    .hero-badge{
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.28);
+      border-radius:999px;
+      padding:8px 14px;
+      font-size:13px;
+      font-weight:800;
+      letter-spacing:.02em;
+      backdrop-filter: blur(4px)
+    }
+
     .layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}
     .full{grid-column:1 / -1}
-    .card{border:1px solid var(--border);border-radius:18px;padding:20px;background:linear-gradient(180deg,var(--surface),var(--surface-soft));box-shadow:var(--shadow);transition:transform .15s ease}
-    .card:hover{transform:translateY(-2px)}
-    .muted{color:var(--muted);font-size:14px}
-    .status{margin-top:12px;padding:12px 14px;border-radius:12px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;font-weight:600}
-    .success{background:#dcfce7;color:#166534;border-color:#86efac}.error{background:#fee2e2;color:#991b1b;border-color:#fca5a5}.warning{background:#fef3c7;color:#92400e;border-color:#fcd34d}
-    label{display:inline-block;margin:8px 14px 8px 0;font-weight:700}
-    .plan-label{font-weight:500}
+
+    .card{
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:22px;
+      background:linear-gradient(180deg,var(--surface),var(--surface-soft));
+      box-shadow:var(--shadow);
+      transition:transform .18s ease, box-shadow .18s ease
+    }
+    .card:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(15,23,42,.10)}
+
+    .muted{color:var(--muted);font-size:14.5px}
+    .status{
+      margin-top:14px;padding:12px 14px;border-radius:14px;
+      background:#eef2ff;color:#312e81;border:1px solid #c7d2fe;font-weight:700;font-size:14px
+    }
+    .success{background:#dcfce7;color:#166534;border-color:#86efac}
+    .error{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+    .warning{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+
+    label{display:inline-block;margin:10px 14px 10px 0;font-weight:800;font-size:14px;letter-spacing:.01em}
+    .plan-label{font-weight:600}
+
+    input[type="email"],input[type="password"],textarea{
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px 14px;
+      font:inherit;
+      background:#fff;
+      transition:border-color .18s,box-shadow .18s
+    }
+    textarea{height:220px;resize:vertical;min-height:160px}
+    input:focus,textarea:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 4px rgba(59,130,246,.15)}
+
+    button{
+      margin:8px 10px 8px 0;padding:12px 18px;border:0;border-radius:14px;
+      background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff;
+      cursor:pointer;font-weight:800;letter-spacing:.01em;
+      transition:transform .12s,filter .15s,box-shadow .15s;
+      box-shadow:0 10px 22px rgba(37,99,235,.25)
+    }
+    button:hover{filter:brightness(1.06);transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+    button.secondary{background:linear-gradient(180deg,#64748b,var(--secondary));box-shadow:0 8px 18px rgba(71,85,105,.22)}
+    button.link{background:transparent;color:var(--primary);padding:0;margin:10px 0;text-decoration:underline;box-shadow:none}
+    button:disabled{background:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none}
+
     .auth-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .hidden{display:none}
-    .hero-grid{display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:end}
-    .hero-meta{display:grid;gap:10px}
-    .hero-meta div{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:10px 12px;font-size:13px;font-weight:700;letter-spacing:.01em}
-    .textarea-hint{margin-top:10px;font-size:13px;color:var(--muted)}
-    #result pre{white-space:pre-wrap;word-break:break-word;background:#f0f5ff;border:1px solid var(--border);padding:14px;border-radius:12px}
-    @media (max-width:900px){.layout,.hero-grid{grid-template-columns:1fr}.full{grid-column:auto}}
-    .cta{background:linear-gradient(180deg,var(--accent),var(--accent-2));box-shadow:0 8px 22px rgba(217,119,6,.3)}
-    .cta:hover{filter:brightness(1.05)}
-    .result-card{border:1px solid var(--border);border-radius:18px;padding:22px;background:linear-gradient(180deg,#fff,#f8faff);box-shadow:var(--shadow)}
-    .score-ring{width:110px;height:110px;border-radius:50%;border:8px solid #93c5fd;display:grid;place-items:center;font-size:2rem;font-weight:900;color:var(--primary);background:#eef2ff;margin:0 auto 14px}
-    .badge{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;box-shadow:var(--shadow)}
-    .section{margin:10px 0;padding:10px 12px;border-radius:10px;background:#f8faff;border:1px solid var(--border)}
-    .recommendation{padding:8px 10px;border-radius:8px;background:#fff;border:1px solid var(--border);margin:6px 0}
+
+    .textarea-hint{margin-top:10px;font-size:13.5px;color:var(--muted)}
+    #result pre{white-space:pre-wrap;word-break:break-word;background:#f8fafc;border:1px solid var(--border);padding:16px;border-radius:14px}
+
+    @media (max-width:900px){
+      .layout,.hero-grid{grid-template-columns:1fr}
+      .full{grid-column:auto}
+      h1{font-size:2rem}
+    }
+
+    .cta{
+      background:linear-gradient(180deg,var(--accent),var(--accent-2));
+      box-shadow:0 12px 26px rgba(217,119,6,.35)
+    }
+    .cta:hover{filter:brightness(1.06)}
+
+    .result-card{
+      border:1px solid var(--border);border-radius:22px;padding:24px;
+      background:linear-gradient(180deg,#ffffff,#f8fafc);
+      box-shadow:var(--shadow)
+    }
+    .score-ring{
+      width:120px;height:120px;border-radius:50%;border:10px solid #93c5fd;
+      display:grid;place-items:center;font-size:2.2rem;font-weight:900;color:var(--primary);
+      background:#eef2ff;margin:0 auto 16px
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;background:#fff;
+      border:1px solid var(--border);border-radius:999px;padding:8px 14px;
+      font-size:13px;font-weight:800;box-shadow:var(--shadow)
+    }
+    .section{margin:12px 0;padding:12px 14px;border-radius:12px;background:#f8fafc;border:1px solid var(--border)}
+    .recommendation{padding:10px 12px;border-radius:12px;background:#fff;border:1px solid var(--border);margin:8px 0}
   </style>
 </head>
 <body>
+  <div class="container">
   <header class="hero">
     <div class="hero-grid">
       <div>
-        <h1>AstraPitch</h1>
+        <h1 style="color:#fff">AstraPitch</h1>
         <p>Instant AI scoring for your business pitch — section-level feedback and plan-aware results in seconds.</p>
       </div>
       <div class="hero-meta">
-        <div style="color:#fbbf24;font-weight:700">Fast scoring</div>
-        <div style="color:#60a5fa;font-weight:700">Secure account</div>
-        <div style="color:#34d399;font-weight:700">Plan-aware feedback</div>
+        <div style="color:#fbbf24;font-weight:800">Fast scoring</div>
+        <div style="color:#60a5fa;font-weight:800">Secure account</div>
+        <div style="color:#34d399;font-weight:800">Plan-aware feedback</div>
       </div>
     </div>
   </header>
@@ -126,6 +241,7 @@
 
   <div class="card full result-card" id="result" style="display:none" aria-live="polite"></div>
   </main>
+  </div>
 
 <script>
 const EMAIL_KEY = 'businessRatingAiEmail';
@@ -162,10 +278,7 @@ function renderSetupStatus(config){
   if(!config.prices || !config.prices.data || !config.prices.data.configured) missing.push('STRIPE_DATA_PRICE_ID');
   if(!config.prices || !config.prices.plus || !config.prices.plus.configured) missing.push('STRIPE_PLUS_PRICE_ID');
   if(!config.authSecret || !config.authSecret.configured) missing.push('AUTH_SECRET');
-  if(!missing.length){
-    setupStatusEl.classList.add('hidden');
-    return;
-  }
+  if(!missing.length){setupStatusEl.classList.add('hidden');return;}
   setupStatusEl.classList.remove('hidden');
   setStatus(setupStatusEl,`Vercel setup missing: ${missing.join(', ')}. Add these in Project Settings → Environment Variables for the deployed environment, then redeploy.`,'warning');
 }
@@ -184,10 +297,8 @@ function storeSession(email, token){
   localStorage.removeItem(EMAIL_KEY); sessionStorage.removeItem(EMAIL_KEY);
   storage.setItem(TOKEN_KEY, token);
   storage.setItem(EMAIL_KEY, email);
-  emailEl.value = email;
-  passwordEl.value = '';
-  loadSetupStatus();
-  renderLogin();
+  emailEl.value = email; passwordEl.value = '';
+  loadSetupStatus(); renderLogin();
 }
 function clearSession(){
   sessionToken = '';
@@ -196,62 +307,39 @@ function clearSession(){
 }
 function requireLogin(){
   const email = typedEmail() || savedEmail();
-  if(!validEmail(email) || !sessionToken){
-    setStatus(loginStatusEl,'Log in with your email and password first.','error');
-    return null;
-  }
-  emailEl.value = email;
-  return email;
+  if(!validEmail(email) || !sessionToken){setStatus(loginStatusEl,'Log in with your email and password first.','error');return null;}
+  emailEl.value = email; return email;
 }
 function renderLogin(){
   const email = savedEmail();
-  if(email && sessionToken){
-    emailEl.value = email;
-    logoutBtn.classList.remove('hidden');
-    setStatus(loginStatusEl,`Logged in as ${email}.`,'success');
-  }else{
-    logoutBtn.classList.add('hidden');
-    setStatus(loginStatusEl,'Not logged in yet.','warning');
-  }
+  if(email && sessionToken){emailEl.value = email; logoutBtn.classList.remove('hidden'); setStatus(loginStatusEl,`Logged in as ${email}.`,'success');}
+  else{logoutBtn.classList.add('hidden'); setStatus(loginStatusEl,'Not logged in yet.','warning');}
 }
 function showLoginForm(){
-  authForm.classList.remove('hidden');
-  resetForm.classList.add('hidden');
-  newPasswordWrap.classList.add('hidden');
-  requestResetBtn.classList.remove('hidden');
-  confirmResetBtn.classList.add('hidden');
+  authForm.classList.remove('hidden'); resetForm.classList.add('hidden');
+  newPasswordWrap.classList.add('hidden'); requestResetBtn.classList.remove('hidden'); confirmResetBtn.classList.add('hidden');
 }
 function showResetRequest(){
   resetEmailEl.value = typedEmail() || savedEmail();
-  authForm.classList.add('hidden');
-  resetForm.classList.remove('hidden');
-  newPasswordWrap.classList.add('hidden');
-  requestResetBtn.classList.remove('hidden');
-  confirmResetBtn.classList.add('hidden');
+  authForm.classList.add('hidden'); resetForm.classList.remove('hidden');
+  newPasswordWrap.classList.add('hidden'); requestResetBtn.classList.remove('hidden'); confirmResetBtn.classList.add('hidden');
   setStatus(loginStatusEl,'Enter your email and we will send a password reset link.','warning');
 }
 function showResetConfirm(){
   resetEmailEl.value = (params.get('email') || '').trim().toLowerCase();
-  authForm.classList.add('hidden');
-  resetForm.classList.remove('hidden');
-  newPasswordWrap.classList.remove('hidden');
-  requestResetBtn.classList.add('hidden');
-  confirmResetBtn.classList.remove('hidden');
+  authForm.classList.add('hidden'); resetForm.classList.remove('hidden');
+  newPasswordWrap.classList.remove('hidden'); requestResetBtn.classList.add('hidden'); confirmResetBtn.classList.remove('hidden');
   setStatus(loginStatusEl,'Enter a new password to finish resetting your account.','warning');
 }
 async function postJson(url,body,authorized=false){
   const headers = {'Content-Type':'application/json', ...(authorized ? authHeaders() : {})};
   const res = await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
   const data = await res.json().catch(()=>({}));
-  if(!res.ok){
-    if(data.error && /Missing .*STRIPE|Stripe secret|STRIPE_.*PRICE|AUTH_SECRET/i.test(data.error)) loadSetupStatus();
-    throw new Error(data.error||'Request failed');
-  }
+  if(!res.ok){if(data.error && /Missing .*STRIPE|Stripe secret|STRIPE_.*PRICE|AUTH_SECRET/i.test(data.error)) loadSetupStatus(); throw new Error(data.error||'Request failed');}
   return data;
 }
 async function authenticate(endpoint){
-  const email = typedEmail();
-  const password = passwordEl.value;
+  const email = typedEmail(); const password = passwordEl.value;
   if(!validEmail(email)){setStatus(loginStatusEl,'Enter a valid email address.','error');return;}
   if(password.length < 8){setStatus(loginStatusEl,'Password must be at least 8 characters.','error');return;}
   const isSignup = endpoint.includes('action=signup');
@@ -276,16 +364,13 @@ async function requestPasswordReset(){
   finally{setBusy(requestResetBtn,false);}
 }
 async function confirmPasswordReset(){
-  const email = resetEmailEl.value.trim().toLowerCase();
-  const token = params.get('token') || '';
-  const password = newPasswordEl.value;
+  const email = resetEmailEl.value.trim().toLowerCase(); const token = params.get('token') || ''; const password = newPasswordEl.value;
   if(!validEmail(email)){setStatus(loginStatusEl,'Enter a valid email address.','error');return;}
   if(password.length < 8){setStatus(loginStatusEl,'Password must be at least 8 characters.','error');return;}
   setBusy(confirmResetBtn,true);
   try{
     const data = await postJson('/api/auth?action=reset-password',{email,token,password});
-    storeSession(data.email,data.token);
-    showLoginForm();
+    storeSession(data.email,data.token); showLoginForm();
     setStatus(loginStatusEl,'Password reset. You are logged in now.','success');
     window.history.replaceState({},document.title,window.location.pathname);
     refreshPlanStatus();
@@ -293,22 +378,16 @@ async function confirmPasswordReset(){
   finally{setBusy(confirmResetBtn,false);}
 }
 async function refreshPlanStatus(){
-  const email = requireLogin();
-  if(!email) return false;
+  const email = requireLogin(); if(!email) return false;
   setStatus(planStatusEl,'Checking Stripe subscription status...','warning');
   try{
     const data = await postJson('/api/subscription?action=customer-status',{email,plan:selectedPlan()},true);
-    if(data.hasActivePlan){
-      setStatus(planStatusEl,`Active ${data.plan} subscription found. You can analyze without paying again.`,'success');
-      return true;
-    }
-    setStatus(planStatusEl,`No active ${data.plan} subscription found for ${email}.`,'warning');
-    return false;
+    if(data.hasActivePlan){setStatus(planStatusEl,`Active ${data.plan} subscription found. You can analyze without paying again.`,'success');return true;}
+    setStatus(planStatusEl,`No active ${data.plan} subscription found for ${email}.`,'warning'); return false;
   }catch(err){setStatus(planStatusEl,err.message,'error');return false;}
 }
 async function startCheckout(){
-  const email = requireLogin();
-  if(!email) return;
+  const email = requireLogin(); if(!email) return;
   checkoutBtn.disabled = true;
   setStatus(planStatusEl,'Checking existing subscription before Checkout...','warning');
   try{
@@ -319,17 +398,13 @@ async function startCheckout(){
   finally{checkoutBtn.disabled = false;}
 }
 function renderResult(data){
-  const el = document.getElementById('result');
-  el.style.display='block';
+  const el = document.getElementById('result'); el.style.display='block';
   const scoreColor = data.score >= 80 ? '#16a34a' : data.score >= 60 ? '#d97706' : '#dc2626';
   const sections = (data.sections || []).map(s => `<div class="section"><strong>${s.name}</strong>: ${s.score}/100 — ${s.feedback || ''}</div>`).join('');
   const recs = (data.recommendations || []).map(r => `<div class="recommendation">• ${r}</div>`).join('');
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">
-      <div>
-        <h2 style="margin:.2rem 0 .4rem">Pitch analysis complete</h2>
-        <div class="badge">Plan: ${data.plan || selectedPlan()}</div>
-      </div>
+      <div><h2 style="margin:.2rem 0 .4rem">Pitch analysis complete</h2><div class="badge">Plan: ${data.plan || selectedPlan()}</div></div>
       <div class="score-ring" style="border-color:${scoreColor};color:${scoreColor}">${data.score}/100</div>
     </div>
     <p><strong>${data.label || ''}</strong> · Words: ${data.wordCount || 0}</p>
@@ -340,42 +415,26 @@ function renderResult(data){
   `;
 }
 async function analyze(){
-  const email = requireLogin();
-  if(!email) return;
-  const pitch = document.getElementById('pitch').value.trim();
-  const el = document.getElementById('result');
-  analyzeBtn.disabled = true;
-  clearBtn.classList.add('hidden');
-  el.style.display='block';
-  el.innerHTML = `<div class="result-card"><h2>Scoring your pitch...</h2><p class="muted">This usually takes a few seconds.</p></div>`;
+  const email = requireLogin(); if(!email) return;
+  const pitch = document.getElementById('pitch').value.trim(); const el = document.getElementById('result');
+  analyzeBtn.disabled = true; clearBtn.classList.add('hidden');
+  el.style.display='block'; el.innerHTML = `<div class="result-card"><h2>Scoring your pitch...</h2><p class="muted">This usually takes a few seconds.</p></div>`;
   try{
     const data = await postJson('/api/analyze',{pitch,plan:selectedPlan(),email},true);
-    renderResult(data);
-    clearBtn.classList.remove('hidden');
+    renderResult(data); clearBtn.classList.remove('hidden');
   }catch(err){
-    el.style.display='block';
-    el.innerHTML=`<div class="result-card"><h3>Analysis failed</h3><p>${err.message}</p></div>`;
+    el.style.display='block'; el.innerHTML=`<div class="result-card"><h3>Analysis failed</h3><p>${err.message}</p></div>`;
     if(/purchase|subscription|plan|log in/i.test(err.message)) setStatus(planStatusEl,err.message,'error');
   }finally{analyzeBtn.disabled = false;}
 }
 function logout(){
-  clearSession();
-  emailEl.value = '';
-  passwordEl.value = '';
-  loadSetupStatus();
-  renderLogin();
+  clearSession(); emailEl.value=''; passwordEl.value=''; loadSetupStatus(); renderLogin();
   setStatus(planStatusEl,'Log in to check your plan.','warning');
-  document.getElementById('result').style.display='none';
-  clearBtn.classList.add('hidden');
+  document.getElementById('result').style.display='none'; clearBtn.classList.add('hidden');
 }
 function showCheckoutReturnMessage(){
-  if(params.get('checkout') === 'success'){
-    setStatus(planStatusEl,'Checkout succeeded. Refreshing your Stripe subscription status...','success');
-    refreshPlanStatus();
-  }
-  if(params.get('checkout') === 'cancelled'){
-    setStatus(planStatusEl,'Checkout was cancelled. No charge was completed.','warning');
-  }
+  if(params.get('checkout') === 'success'){setStatus(planStatusEl,'Checkout succeeded. Refreshing your Stripe subscription status...','success'); refreshPlanStatus();}
+  if(params.get('checkout') === 'cancelled'){setStatus(planStatusEl,'Checkout was cancelled. No charge was completed.','warning');}
 }
 
 document.getElementById('loginBtn').addEventListener('click',()=>authenticate('/api/auth?action=login'));
@@ -388,14 +447,9 @@ logoutBtn.addEventListener('click',logout);
 document.getElementById('refreshStatusBtn').addEventListener('click',refreshPlanStatus);
 document.getElementById('checkoutBtn').addEventListener('click',startCheckout);
 document.getElementById('analyzeBtn').addEventListener('click',analyze);
-clearBtn.addEventListener('click',()=>{
-  document.getElementById('pitch').value='';
-  document.getElementById('result').style.display='none';
-  clearBtn.classList.add('hidden');
-});
+clearBtn.addEventListener('click',()=>{ document.getElementById('pitch').value=''; document.getElementById('result').style.display='none'; clearBtn.classList.add('hidden'); });
 document.querySelectorAll('input[name="plan"]').forEach(input=>input.addEventListener('change',()=>{if(savedEmail() && sessionToken) refreshPlanStatus();}));
-loadSetupStatus();
-renderLogin();
+loadSetupStatus(); renderLogin();
 if(params.get('reset') === '1' && params.get('token')) showResetConfirm();
 else showCheckoutReturnMessage();
 if(savedEmail() && sessionToken) refreshPlanStatus();
