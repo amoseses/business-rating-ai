@@ -4,7 +4,7 @@ Instant AI scoring for startup pitches — powered by Vercel, Stripe, and Supaba
 
 ## Admin dashboard
 
-Open `/admin.html` on your deployed domain, or open `admin.html` locally. Log in with your `ADMIN_API_KEY`.
+Visit `/admin` on your deployed domain. The `/api/admin` endpoint serves the admin dashboard HTML in the browser and returns JSON for API clients. Log in with your `ADMIN_API_KEY`.
 
 ## Setup
 1. Install: `npm install`
