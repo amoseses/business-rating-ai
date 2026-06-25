@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const { getEvaluationHistory, getLatestEvaluationSummary, TEST_PITCHES } = require('../lib/evaluations');
 const { getSupabase } = require('../lib/supabase');
 const { sendError } = require('./stripe-helpers');
@@ -198,21 +200,35 @@ async function handleEvaluationResultsDelete(req, res) {
 }
 
 module.exports = async (req, res) => {
-  const path = req.query.path || (req.method === 'GET' && !req.query.action ? 'evaluation-results' : 'evaluate');
+  const accept = (req.headers['accept'] || '').toLowerCase();
+  const isHtml = req.method === 'GET' && (!req.query.path || req.query.path === 'evaluation-results') && accept.includes('text/html');
 
-  if (path === 'evaluation-results') {
+  if (isHtml) {
+    try {
+      const htmlPath = path.join(__dirname, '..', 'admin.html');
+      const html = fs.readFileSync(htmlPath, 'utf8');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.status(200).send(html);
+    } catch (error) {
+      return sendError(res, error);
+    }
+  }
+
+  const pathParam = req.query.path || (req.method === 'GET' && !req.query.action ? 'evaluation-results' : 'evaluate');
+
+  if (pathParam === 'evaluation-results') {
     if (req.method === 'GET') return handleEvaluationResultsGet(req, res);
     if (req.method === 'DELETE') return handleEvaluationResultsDelete(req, res);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (path === 'evaluate') {
+  if (pathParam === 'evaluate') {
     if (req.method === 'POST') return handleEvaluateRun(req, res);
     if (req.method === 'GET') return handleEvaluateGet(req, res);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (path === 'analytics-summary') {
+  if (pathParam === 'analytics-summary') {
     if (req.method === 'GET') return handleAnalyticsSummary(req, res);
     return res.status(405).json({ error: 'Method not allowed' });
   }
