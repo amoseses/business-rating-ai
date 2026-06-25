@@ -2,6 +2,10 @@
 
 Instant AI scoring for startup pitches — powered by Vercel, Stripe, and Supabase.
 
+## Admin dashboard
+
+Open `/admin.html` on your deployed domain, or open `admin.html` locally. Log in with your `ADMIN_API_KEY`.
+
 ## Setup
 1. Install: `npm install`
 2. Copy `.env.example` to `.env.local` and set Stripe keys.

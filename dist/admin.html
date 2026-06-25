@@ -1,0 +1,220 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AstraPitch — Admin</title>
+  <style>
+    :root{
+      --bg:#f8fafc;--surface:#ffffff;--surface-soft:#f1f5f9;--text:#0f172a;--muted:#64748b;
+      --primary:#2563eb;--primary-2:#1d4ed8;--secondary:#475569;--border:#e2e8f0;
+      --shadow:0 10px 30px rgba(15,23,42,.08);--accent:#f59e0b;--accent-2:#d97706;
+      --success:#16a34a;--warning:#d97706;--danger:#dc2626;--info:#3b82f6
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(180deg,#eff6ff 0%,#ffffff 40%,#f8fafc 100%);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .container{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+    h1{font-size:2rem;letter-spacing:-.03em;margin:0 0 10px}
+    h2{font-size:1.25rem;margin:0 0 12px}
+    p{margin:0 0 16px}
+    .hero{position:relative;overflow:hidden;border-radius:20px;padding:24px 26px;background:linear-gradient(135deg,#0b1d45 0%,#1e3a8a 55%,#2563eb 100%);color:#fff;box-shadow:var(--shadow);margin-bottom:22px}
+    .hero p{opacity:.92;max-width:640px;margin:0}
+    .layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .full{grid-column:1 / -1}
+    .card{border:1px solid var(--border);border-radius:18px;padding:20px;background:linear-gradient(180deg,var(--surface),var(--surface-soft));box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease}
+    .card:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(15,23,42,.10)}
+    .muted{color:var(--muted);font-size:14.5px}
+    .status{margin-top:14px;padding:12px 14px;border-radius:12px;background:#eef2ff;color:#312e81;border:1px solid #c7d2fe;font-weight:700;font-size:14px}
+    .success{background:#dcfce7;color:#166534;border-color:#86efac}
+    .error{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+    .warning{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+    label{display:inline-block;margin:10px 14px 10px 0;font-weight:800;font-size:14px}
+    .plan-label{font-weight:600}
+    input[type="email"],input[type="password"],textarea,select{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font:inherit;background:#fff;transition:border-color .15s,box-shadow .15s}
+    input:focus,textarea:focus,select:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+    button{margin:8px 10px 8px 0;padding:10px 16px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff;cursor:pointer;font-weight:800;transition:transform .12s,filter .15s,box-shadow .15s;box-shadow:0 8px 18px rgba(37,99,235,.25)}
+    button:hover{filter:brightness(1.06);transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+    button.secondary{background:linear-gradient(180deg,#64748b,var(--secondary));box-shadow:0 6px 14px rgba(71,85,105,.2)}
+    button.link{background:transparent;color:var(--primary);padding:0;margin:10px 0;text-decoration:underline;box-shadow:none}
+    button:disabled{background:#94a3b8;box-shadow:none;cursor:not-allowed;transform:none}
+    .auth-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .hidden{display:none}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border)}
+    th{font-weight:800;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+    tr:hover td{background:var(--surface-soft)}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:800;box-shadow:var(--shadow)}
+    .section{margin:10px 0;padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)}
+    .kpi{font-size:1.6rem;font-weight:900;color:var(--primary)}
+    @media (max-width:900px){.layout{grid-template-columns:1fr}.full{grid-column:auto}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <h1 style="color:#fff">AstraPitch Admin</h1>
+      <p>Monitor users, analytics, and evaluations from one dashboard.</p>
+    </header>
+
+    <main class="layout">
+      <div class="card full">
+        <h2>Login</h2>
+        <p class="muted">Enter your admin API key to access the dashboard.</p>
+        <div class="auth-row">
+          <input id="adminKey" type="password" placeholder="Admin API key" />
+          <button id="loginBtn">Login</button>
+        </div>
+        <div id="loginStatus" class="status warning">Not authenticated.</div>
+      </div>
+
+      <div class="card full hidden" id="dashboard">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <h2 style="margin:0">Dashboard</h2>
+          <div class="auth-row">
+            <button id="refreshBtn" class="secondary">Refresh</button>
+            <button id="logoutBtn" class="secondary">Logout</button>
+          </div>
+        </div>
+
+        <div class="layout">
+          <div class="card">
+            <h3>Users</h3>
+            <div class="muted">Total registered users</div>
+            <div class="kpi" id="userCount">—</div>
+          </div>
+          <div class="card">
+            <h3>Sessions</h3>
+            <div class="muted">Active sessions (7d)</div>
+            <div class="kpi" id="sessionCount">—</div>
+          </div>
+          <div class="card">
+            <h3>Analytics events</h3>
+            <div class="muted">Total tracked events</div>
+            <div class="kpi" id="eventCount">—</div>
+          </div>
+          <div class="card">
+            <h3>Errors</h3>
+            <div class="muted">Unresolved errors</div>
+            <div class="kpi" id="errorCount" style="color:var(--danger)">—</div>
+          </div>
+        </div>
+
+        <div class="card full" style="margin-top:18px">
+          <h3>Performance</h3>
+          <div class="layout">
+            <div class="card">
+              <div class="muted">Avg response time</div>
+              <div class="kpi" id="perfAvg">—</div>
+            </div>
+            <div class="card">
+              <div class="muted">P95 response time</div>
+              <div class="kpi" id="perfP95">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card full" style="margin-top:18px">
+          <h3>Evaluation results</h3>
+          <div style="overflow:auto">
+            <table>
+              <thead><tr><th>Test</th><th>Type</th><th>Score</th><th>Time</th><th>Passed</th></tr></thead>
+              <tbody id="evalTable"><tr><td colspan="5" class="muted">Load data to see evaluations.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+const state = {token: localStorage.getItem('astrapitch_admin_token') || ''};
+const els = {
+  key: document.getElementById('adminKey'),
+  loginBtn: document.getElementById('loginBtn'),
+  logoutBtn: document.getElementById('logoutBtn'),
+  refreshBtn: document.getElementById('refreshBtn'),
+  loginStatus: document.getElementById('loginStatus'),
+  dashboard: document.getElementById('dashboard'),
+  userCount: document.getElementById('userCount'),
+  sessionCount: document.getElementById('sessionCount'),
+  eventCount: document.getElementById('eventCount'),
+  errorCount: document.getElementById('errorCount'),
+  perfAvg: document.getElementById('perfAvg'),
+  perfP95: document.getElementById('perfP95'),
+  evalTable: document.getElementById('evalTable')
+};
+
+function authHeaders(){ return state.token ? {Authorization: `Bearer ${state.token}`} : {}; }
+function setStatus(el,msg,type='warning'){ el.className = `status ${type}`; el.textContent = msg; }
+
+async function api(path, opts = {}){
+  const res = await fetch('/api/admin?path=' + path, {method: opts.method || 'GET', headers: {'Content-Type':'application/json', ...(opts.headers || {})}, body: opts.body});
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function login(){
+  const key = els.key.value.trim();
+  if(!key){ setStatus(els.loginStatus, 'Enter admin API key.', 'warning'); return; }
+  try{
+    await api('analytics-summary', {headers: {Authorization: `Bearer ${key}`}});
+    state.token = key;
+    localStorage.setItem('astrapitch_admin_token', key);
+    setStatus(els.loginStatus, 'Authenticated.', 'success');
+    els.dashboard.classList.remove('hidden');
+    loadDashboard();
+  }catch(err){
+    setStatus(els.loginStatus, err.message, 'error');
+  }
+}
+
+function logout(){
+  state.token = '';
+  localStorage.removeItem('astrapitch_admin_token');
+  els.dashboard.classList.add('hidden');
+  setStatus(els.loginStatus, 'Not authenticated.', 'warning');
+}
+
+async function loadDashboard(){
+  try{
+    const [summary, evals, perf] = await Promise.all([
+      api('analytics-summary'),
+      api('evaluate'),
+      api('analytics-summary')
+    ]);
+
+    els.eventCount.textContent = String(summary.totalEvents ?? 0);
+    els.errorCount.textContent = String(summary.unresolvedErrors ?? 0);
+    els.userCount.textContent = String(summary.totalUsers ?? '—');
+    els.sessionCount.textContent = String(summary.activeSessions ?? '—');
+
+    if (perf?.performance) {
+      els.perfAvg.textContent = perf.performance.avg ? `${perf.performance.avg}ms` : '—';
+      els.perfP95.textContent = perf.performance.p95 ? `${perf.performance.p95}ms` : '—';
+    }
+
+    const rows = (evals.history || []).slice(0, 20).map(e => `<tr><td>${escapeHtml(e.test_name || e.id)}</td><td>${escapeHtml(e.pitch_type || '—')}</td><td>${e.actual_score ?? '—'}</td><td>${e.execution_time_ms ?? '—'}ms</td><td>${e.passed ? '✅' : '❌'}</td></tr>`).join('');
+    els.evalTable.innerHTML = rows || '<tr><td colspan="5" class="muted">No evaluations yet.</td></tr>';
+  }catch(err){
+    setStatus(els.loginStatus, err.message, 'error');
+  }
+}
+
+function escapeHtml(str){ return String(str || '').replace(/[<>&"']/g, c => ({'<':'<','>':'>','&':'&','"':'"',"'":'&#39;'}[c])); }
+
+els.loginBtn.addEventListener('click', login);
+els.logoutBtn.addEventListener('click', logout);
+els.refreshBtn.addEventListener('click', loadDashboard);
+els.key.addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
+
+if(state.token){
+  setStatus(els.loginStatus, 'Authenticated.', 'success');
+  els.dashboard.classList.remove('hidden');
+  loadDashboard();
+}
+</script>
+</body>
+</html>
