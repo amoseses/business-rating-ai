@@ -33,21 +33,45 @@ function serveAdminPage(req, res) {
   }
 }
 
+async function safeQuery(label, query, fallback = { data: [], count: 0 }) {
+  try {
+    const result = await query;
+    if (result?.error) {
+      console.warn(`[Admin] ${label} unavailable:`, result.error.message || result.error);
+      return fallback;
+    }
+    return result || fallback;
+  } catch (error) {
+    console.warn(`[Admin] ${label} unavailable:`, error.message);
+    return fallback;
+  }
+}
+
+async function getUserCount(supabase) {
+  const listUsers = supabase?.auth?.admin?.listUsers;
+  if (typeof listUsers !== 'function') return 0;
+  const result = await safeQuery('users', listUsers.call(supabase.auth.admin, { page: 1, perPage: 1 }), { data: { users: [] } });
+  return result?.data?.total || result?.data?.users?.length || 0;
+}
+
 async function handleAnalyticsSummary(req, res) {
   try { requireAdmin(req); } catch (error) { return sendError(res, error); }
   try {
     const supabase = getSupabase();
-    const [eventsResult, errorsResult, perfResult] = await Promise.all([
-      supabase.from('analytics_events').select('*', { count: 'exact', head: true }),
-      supabase.from('error_logs').select('*', { count: 'exact', head: true }).eq('resolved', false),
-      supabase.from('performance_metrics').select('response_time_ms').limit(100)
+    const [eventsResult, errorsResult, perfResult, totalUsers] = await Promise.all([
+      safeQuery('analytics events', supabase.from('analytics_events').select('*', { count: 'exact', head: true })),
+      safeQuery('error logs', supabase.from('error_logs').select('*', { count: 'exact', head: true }).eq('resolved', false)),
+      safeQuery('performance metrics', supabase.from('performance_metrics').select('response_time_ms').limit(100)),
+      getUserCount(supabase)
     ]);
-    const perfTimes = (perfResult.data || []).map(r => r.response_time_ms).sort((a, b) => a - b);
+    const perfTimes = (perfResult.data || []).map(r => Number(r.response_time_ms)).filter(Number.isFinite).sort((a, b) => a - b);
     const n = perfTimes.length;
     return res.status(200).json({
       totalEvents: eventsResult.count || 0,
       unresolvedErrors: errorsResult.count || 0,
-      performance: n > 0 ? { avg: Math.round(perfTimes.reduce((a, b) => a + b, 0) / n), p95: perfTimes[Math.floor(n * 0.95)] || 0, count: n } : { avg: 0, p95: 0, count: 0 }
+      totalUsers,
+      activeSessions: 0,
+      performance: n > 0 ? { avg: Math.round(perfTimes.reduce((a, b) => a + b, 0) / n), p95: perfTimes[Math.min(Math.ceil(n * 0.95) - 1, n - 1)] || 0, count: n } : { avg: 0, p95: 0, count: 0 }
     });
   } catch (error) { return sendError(res, error); }
 }
@@ -138,11 +162,3 @@ module.exports = async (req, res) => {
 
   return res.status(404).json({ error: 'Not found' });
 };
-</parameter>
-<task_progress>
-- [x] Update admin.html with bypass login using admin123
-- [x] Update dist/admin.html to match
-- [ ] Fix api/admin.js syntax errors and keep /admin serving admin.html
-- [ ] Commit changes
-</task_progress>
-</write_to_file>
