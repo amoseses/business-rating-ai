@@ -61,10 +61,9 @@
     <main class="layout">
       <div class="card full">
         <h2>Login</h2>
-        <p class="muted">Use your admin credentials or the bypass account.</p>
+        <p class="muted">Use the Admin API key configured in ADMIN_API_KEY.</p>
         <div class="auth-row">
           <input id="adminKey" type="password" placeholder="Admin API key" />
-          <input id="adminPass" type="password" placeholder="Password (optional)" />
           <button id="loginBtn">Login</button>
         </div>
         <div id="loginStatus" class="status warning">Not authenticated.</div>
@@ -133,7 +132,6 @@
 const state = {token: localStorage.getItem('astrapitch_admin_token') || ''};
 const els = {
   key: document.getElementById('adminKey'),
-  pass: document.getElementById('adminPass'),
   loginBtn: document.getElementById('loginBtn'),
   logoutBtn: document.getElementById('logoutBtn'),
   refreshBtn: document.getElementById('refreshBtn'),
@@ -152,7 +150,8 @@ function authHeaders(){ return state.token ? {Authorization: `Bearer ${state.tok
 function setStatus(el,msg,type='warning'){ el.className = `status ${type}`; el.textContent = msg; }
 
 async function api(path, opts = {}){
-  const res = await fetch('/api/admin?path=' + path, {method: opts.method || 'GET', headers: {'Content-Type':'application/json', ...(opts.headers || {})}, body: opts.body});
+  const headers = {'Content-Type':'application/json', ...authHeaders(), ...(opts.headers || {})};
+  const res = await fetch('/api/admin?path=' + encodeURIComponent(path), {method: opts.method || 'GET', headers, body: opts.body});
   const data = await res.json().catch(() => ({}));
   if(!res.ok) throw new Error(data.error || 'Request failed');
   return data;
@@ -160,18 +159,9 @@ async function api(path, opts = {}){
 
 async function login(){
   const key = els.key.value.trim();
-  const pass = els.pass.value.trim();
   if(!key){ setStatus(els.loginStatus, 'Enter admin API key.', 'warning'); return; }
   try{
     const headers = {Authorization: `Bearer ${key}`};
-    if(pass === 'admin123'){
-      state.token = key;
-      localStorage.setItem('astrapitch_admin_token', key);
-      setStatus(els.loginStatus, 'Authenticated via bypass.', 'success');
-      els.dashboard.classList.remove('hidden');
-      loadDashboard();
-      return;
-    }
     await api('analytics-summary', {headers});
     state.token = key;
     localStorage.setItem('astrapitch_admin_token', key);
@@ -192,10 +182,9 @@ function logout(){
 
 async function loadDashboard(){
   try{
-    const [summary, evals, perf] = await Promise.all([
+    const [summary, evals] = await Promise.all([
       api('analytics-summary'),
-      api('evaluate'),
-      api('analytics-summary')
+      api('evaluate')
     ]);
 
     els.eventCount.textContent = String(summary.totalEvents ?? 0);
@@ -203,9 +192,9 @@ async function loadDashboard(){
     els.userCount.textContent = String(summary.totalUsers ?? '—');
     els.sessionCount.textContent = String(summary.activeSessions ?? '—');
 
-    if (perf?.performance) {
-      els.perfAvg.textContent = perf.performance.avg ? `${perf.performance.avg}ms` : '—';
-      els.perfP95.textContent = perf.performance.p95 ? `${perf.performance.p95}ms` : '—';
+    if (summary?.performance) {
+      els.perfAvg.textContent = summary.performance.avg ? `${summary.performance.avg}ms` : '—';
+      els.perfP95.textContent = summary.performance.p95 ? `${summary.performance.p95}ms` : '—';
     }
 
     const rows = (evals.history || []).slice(0, 20).map(e => `<tr><td>${escapeHtml(e.test_name || e.id)}</td><td>${escapeHtml(e.pitch_type || '—')}</td><td>${e.actual_score ?? '—'}</td><td>${e.execution_time_ms ?? '—'}ms</td><td>${e.passed ? '✅' : '❌'}</td></tr>`).join('');
@@ -215,13 +204,12 @@ async function loadDashboard(){
   }
 }
 
-function escapeHtml(str){ return String(str || '').replace(/[<>&"']/g, c => ({'<':'<','>':'>','&':'&','"':'"',"'":'&#39;'}[c])); }
+function escapeHtml(str){ return String(str || '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
 els.loginBtn.addEventListener('click', login);
 els.logoutBtn.addEventListener('click', logout);
 els.refreshBtn.addEventListener('click', loadDashboard);
 els.key.addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
-els.pass.addEventListener('keydown', e => { if(e.key === 'Enter') login(); });
 
 if(state.token){
   setStatus(els.loginStatus, 'Authenticated.', 'success');
