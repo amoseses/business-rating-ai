@@ -158,6 +158,26 @@
     }
     .section{margin:12px 0;padding:12px 14px;border-radius:12px;background:#f8fafc;border:1px solid var(--border)}
     .recommendation{padding:10px 12px;border-radius:12px;background:#fff;border:1px solid var(--border);margin:8px 0}
+
+    /* Example pitches carousel */
+    .examples-section{margin-top:28px}
+    .examples-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px}
+    .examples-toggle{display:flex;gap:6px}
+    .examples-toggle button{
+      padding:8px 16px;margin:0;border-radius:999px;font-size:13px;
+      background:var(--surface);color:var(--text);border:1px solid var(--border);
+      box-shadow:none;font-weight:700;transition:all .15s
+    }
+    .examples-toggle button:hover{filter:none;background:var(--surface-soft)}
+    .examples-toggle button.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 4px 12px rgba(37,99,235,.3)}
+    .example-pitch{display:none}
+    .example-pitch.active{display:block}
+    .example-pitch .score-ring{width:80px;height:80px;font-size:1.5rem;border-width:8px;margin:0}
+    .example-pitch-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+    .example-pitch-header h3{margin:0;font-size:1.1rem}
+    .example-pitch-text{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.7;color:var(--muted);margin-bottom:14px;max-height:160px;overflow-y:auto}
+    .example-pitch .section{font-size:14px;padding:10px 12px}
+    .example-pitch .recommendation{font-size:14px}
   </style>
 </head>
 <body>
@@ -240,6 +260,101 @@
   </div>
 
   <div class="card full result-card" id="result" style="display:none" aria-live="polite"></div>
+
+  <!-- Example Pitches Section -->
+  <div class="card full examples-section">
+    <div class="examples-header">
+      <div>
+        <h2 style="margin:0 0 4px">Example investment pitches</h2>
+        <p class="muted" style="margin:0">See what AstraPitch scores look like for real startup pitches. Browse examples below.</p>
+      </div>
+      <div class="examples-toggle" id="examplesToggle">
+        <button class="active" data-example="0">SaaS AI</button>
+        <button data-example="1">Fintech</button>
+        <button data-example="2">Marketplace</button>
+      </div>
+    </div>
+
+    <!-- Example: SaaS AI (high score) -->
+    <div class="example-pitch active" data-example="0">
+      <div class="example-pitch-header">
+        <div class="score-ring" style="border-color:#16a34a;color:#16a34a">87/100</div>
+        <div>
+          <h3>CloudSight AI — Enterprise Computer Vision</h3>
+          <div class="badge">Strong pitch · Plan: Plus</div>
+        </div>
+      </div>
+      <div class="example-pitch-text">
+CloudSight AI is a B2B computer vision platform that reduces manufacturing defects by 94% using off-the-shelf cameras and edge inference. We have 17 enterprise contracts totaling $2.8M ARR, with 140% net revenue retention. Our product integrates with existing factory systems in under 48 hours, no custom hardware required. The global computer vision market is $19B and growing at 22% CAGR. We are a team of ex-Tesla and Intel engineers. Raising a $5M Series A to expand sales to automotive and pharmaceutical verticals.
+      </div>
+      <div>
+        <div class="section"><strong>Problem & Solution</strong>: 92/100 — Exceptionally clear problem-solution fit. The 94% defect reduction is a powerful, specific metric.</div>
+        <div class="section"><strong>Market Opportunity</strong>: 88/100 — Well-quantified TAM with credible growth data. Mentioning total addressable market breakdown would strengthen further.</div>
+        <div class="section"><strong>Traction</strong>: 90/100 — Strong revenue and retention metrics. 17 enterprise logos at $2.8M ARR is compelling for Series A.</div>
+        <div class="section"><strong>Business Model</strong>: 85/100 — Clear per-seat licensing model implied. Explicit pricing and gross margin data would add confidence.</div>
+        <div class="section"><strong>Team</strong>: 80/100 — Credible pedigree from top-tier companies. Adding specific relevant achievements would elevate further.</div>
+      </div>
+      <h3 style="font-size:14px;margin:12px 0 8px">Recommendations</h3>
+      <div class="recommendation">• Add your gross margin percentage — investors will want to see unit economics</div>
+      <div class="recommendation">• Specify how you'll use the $5M (hiring, sales, R&D breakdown)</div>
+      <div class="recommendation">• Include a competitive differentiation section comparing vs. legacy inspection systems</div>
+    </div>
+
+    <!-- Example: Fintech (medium score) -->
+    <div class="example-pitch" data-example="1">
+      <div class="example-pitch-header">
+        <div class="score-ring" style="border-color:#d97706;color:#d97706">64/100</div>
+        <div>
+          <h3>PayBridge — Cross-Border Payment Rails for SMBs</h3>
+          <div class="badge">Needs work · Plan: Data</div>
+        </div>
+      </div>
+      <div class="example-pitch-text">
+PayBridge helps small businesses send and receive international payments with lower fees than traditional banks. We use a multi-currency wallet system that settles in real-time. Our beta has 340 users and we process about $50K monthly volume. We charge 0.8% per transaction, which is cheaper than PayPal and Wise. The cross-border payments market is huge. We are based in Toronto and have a team of 5. We need funding to build out our compliance infrastructure and expand to the US market.
+      </div>
+      <div>
+        <div class="section"><strong>Problem & Solution</strong>: 70/100 — The problem is relatable but the solution description is generic. Explain why your multi-currency wallet is technically different.</div>
+        <div class="section"><strong>Market Opportunity</strong>: 55/100 — "Market is huge" is not sufficient. Provide specific TAM, SAM, SOM figures for the SMB cross-border segment.</div>
+        <div class="section"><strong>Traction</strong>: 60/100 — 340 beta users and $50K monthly volume is early-stage traction. Month-over-month growth rate would make this stronger.</div>
+        <div class="section"><strong>Business Model</strong>: 68/100 — 0.8% fee is clear but need to explain customer acquisition cost, lifetime value, and how unit economics improve at scale.</div>
+        <div class="section"><strong>Team</strong>: 50/100 — "Team of 5" without background context. Investors need to know why this team specifically can win in payments.</div>
+      </div>
+      <h3 style="font-size:14px;margin:12px 0 8px">Recommendations</h3>
+      <div class="recommendation">• Add specific market data: global B2B cross-border payments were $29T+ in 2025, SMB share is ~$3T</div>
+      <div class="recommendation">• Show month-over-month growth rate of users and volume — growth matters more than absolute numbers at early stage</div>
+      <div class="recommendation">• Include founding team background — prior fintech experience, exits, or relevant domain expertise</div>
+      <div class="recommendation">• Add your regulatory strategy — how are you handling money transmitter licenses and compliance?</div>
+    </div>
+
+    <!-- Example: Marketplace (lower score) -->
+    <div class="example-pitch" data-example="2">
+      <div class="example-pitch-header">
+        <div class="score-ring" style="border-color:#dc2626;color:#dc2626">42/100</div>
+        <div>
+          <h3>GreenCart — Eco-Friendly Grocery Delivery</h3>
+          <div class="badge">Needs improvement · Plan: Data</div>
+        </div>
+      </div>
+      <div class="example-pitch-text">
+GreenCart delivers organic groceries using electric bikes in urban areas. We want to make sustainable food accessible to everyone. We launched last year and have some customers in Portland. Our app lets people order from local farmers and we deliver within 2 hours. We think people care about the environment and will pay more for eco-friendly delivery. We need money to expand to more cities and buy more bikes. Our team is passionate about sustainability.
+      </div>
+      <div>
+        <div class="section"><strong>Problem & Solution</strong>: 45/100 — Problem is broadly stated without data. How many people actually face this issue? What's wrong with existing grocery delivery options?</div>
+        <div class="section"><strong>Market Opportunity</strong>: 35/100 — No market size, no growth data, no competitive landscape. Investors need to see the addressable market quantified.</div>
+        <div class="section"><strong>Traction</strong>: 30/100 — "Some customers" and "launched last year" are vague. Need specific numbers: users, orders, revenue, retention, delivery times.</div>
+        <div class="section"><strong>Business Model</strong>: 40/100 — No mention of revenue model, margins, delivery fees, or unit economics. How does each order contribute to profitability?</div>
+        <div class="section"><strong>Team</strong>: 45/100 — "Passionate about sustainability" is not enough. What relevant experience does the team have in logistics, grocery, or startups?</div>
+      </div>
+      <h3 style="font-size:14px;margin:12px 0 8px">Recommendations</h3>
+      <div class="recommendation">• Add specific traction numbers: current customers, orders per week, revenue, average order value, retention rate</div>
+      <div class="recommendation">• Quantify the market: US organic food market is ~$70B; online grocery is growing at 15% CAGR. Use this data.</div>
+      <div class="recommendation">• Explain your unit economics: delivery cost per order, average margin, customer acquisition cost, path to profitability</div>
+      <div class="recommendation">• Include team backgrounds: prior startup, logistics, or grocery industry experience — why this team?</div>
+      <div class="recommendation">• Add competitive differentiation: how are you different from Instacart, Amazon Fresh, or local delivery services?</div>
+    </div>
+  </div>
+  <!-- End Example Pitches -->
+
   </main>
   </div>
 
@@ -436,6 +551,17 @@ function showCheckoutReturnMessage(){
   if(params.get('checkout') === 'success'){setStatus(planStatusEl,'Checkout succeeded. Refreshing your Stripe subscription status...','success'); refreshPlanStatus();}
   if(params.get('checkout') === 'cancelled'){setStatus(planStatusEl,'Checkout was cancelled. No charge was completed.','warning');}
 }
+
+// Example pitch toggle
+document.getElementById('examplesToggle').addEventListener('click', function(e){
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  const idx = btn.dataset.example;
+  document.querySelectorAll('#examplesToggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.example-pitch').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.example-pitch[data-example="${idx}"]`).classList.add('active');
+});
 
 document.getElementById('loginBtn').addEventListener('click',()=>authenticate('/api/auth?action=login'));
 document.getElementById('signupBtn').addEventListener('click',()=>authenticate('/api/auth?action=signup'));
