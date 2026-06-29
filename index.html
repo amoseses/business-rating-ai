@@ -162,7 +162,7 @@
     /* Example pitches carousel */
     .examples-section{margin-top:28px}
     .examples-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px}
-    .examples-toggle{display:flex;gap:6px}
+    .examples-toggle{display:flex;gap:6px;flex-wrap:wrap}
     .examples-toggle button{
       padding:8px 16px;margin:0;border-radius:999px;font-size:13px;
       background:var(--surface);color:var(--text);border:1px solid var(--border);
@@ -172,12 +172,16 @@
     .examples-toggle button.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 4px 12px rgba(37,99,235,.3)}
     .example-pitch{display:none}
     .example-pitch.active{display:block}
+    .example-pitch[hidden]{display:none!important}
     .example-pitch .score-ring{width:100px;height:100px;font-size:1.8rem;border-width:8px;margin:0;flex-shrink:0}
     .example-pitch-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
     .example-pitch-header h3{margin:0;font-size:1.1rem}
     .example-pitch-text{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.7;color:var(--muted);margin-bottom:14px;max-height:160px;overflow-y:auto}
     .example-pitch .section{font-size:14px;padding:10px 12px}
+    .example-feedback-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
     .example-pitch .recommendation{font-size:14px}
+    .example-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+    .example-actions button{padding:8px 12px;font-size:13px}
   </style>
 </head>
 <body>
@@ -266,12 +270,12 @@
     <div class="examples-header">
       <div>
         <h2 style="margin:0 0 4px">Example investment pitches</h2>
-        <p class="muted" style="margin:0">See what AstraPitch scores look like for real startup pitches. Browse examples below.</p>
+        <p class="muted" style="margin:0">See what AstraPitch scoring looks like on sample startup pitches. Browse examples below or load one into the analyzer.</p>
       </div>
       <div class="examples-toggle" id="examplesToggle">
-        <button class="active" data-example="0">SaaS AI</button>
-        <button data-example="1">Fintech</button>
-        <button data-example="2">Marketplace</button>
+        <button type="button" class="active" data-example="0" aria-selected="true">SaaS AI</button>
+        <button type="button" data-example="1" aria-selected="false">Fintech</button>
+        <button type="button" data-example="2" aria-selected="false">Marketplace</button>
       </div>
     </div>
 
@@ -297,7 +301,8 @@ We are led by a founding team of ex-Tesla and Intel engineers who have collectiv
 
 We are raising a $5M Series A led by [Lead Investor], with participation from existing angels. The funds will be allocated 40% to expanding our direct sales team from 5 to 18 reps targeting automotive and pharma verticals, 30% to building out our pharma-specific compliance and validation features, 20% to R&D on our next-generation anomaly detection models, and 10% to working capital. The round will extend our runway to 22 months and is sized to reach $12M ARR with 50+ enterprise customers.
       </div>
-      <div>
+      <div class="example-actions"><button type="button" class="secondary use-example-btn">Use this sample pitch</button></div>
+      <div class="example-feedback-grid">
         <div class="section"><strong>Problem & Solution</strong>: 92/100 — Exceptionally clear problem-solution fit. The 94% defect reduction is a powerful, specific metric grounded in real deployments.</div>
         <div class="section"><strong>Market Opportunity</strong>: 88/100 — Well-quantified TAM with credible growth data, segmented by vertical. Could strengthen with a TAM/SAM/SOM breakdown chart.</div>
         <div class="section"><strong>Traction</strong>: 90/100 — Strong revenue and retention with detailed unit economics. $2.8M ARR and 140% NRR at Series A stage is compelling.</div>
@@ -311,7 +316,7 @@ We are raising a $5M Series A led by [Lead Investor], with participation from ex
     </div>
 
     <!-- Example: Fintech (medium score) -->
-    <div class="example-pitch" data-example="1">
+    <div class="example-pitch" data-example="1" hidden>
       <div class="example-pitch-header">
         <div class="score-ring" style="border-color:#d97706;color:#d97706">64/100</div>
         <div>
@@ -334,7 +339,8 @@ We are a team of five based in Toronto. We have a shared background in financial
 
 We are seeking funding to build out our compliance infrastructure, hire a head of regulatory affairs, obtain money transmitter licenses in key US states, and expand our sales team to target the US market more aggressively. We are also exploring partnerships with neobanks and accounting platforms as distribution channels.
       </div>
-      <div>
+      <div class="example-actions"><button type="button" class="secondary use-example-btn">Use this sample pitch</button></div>
+      <div class="example-feedback-grid">
         <div class="section"><strong>Problem & Solution</strong>: 70/100 — The problem is relatable with good quantitative context ($120B inefficiency). The solution description is technically credible but the "how it works" is still somewhat generic.</div>
         <div class="section"><strong>Market Opportunity</strong>: 55/100 — Top-level market data is cited ($150T) but no rigorous TAM/SAM/SOM analysis for the specific SMB sub-segment you can realistically capture.</div>
         <div class="section"><strong>Traction</strong>: 60/100 — 340 beta users and $50K monthly volume is early but credible. The 18% MoM growth is promising — lead with that. Transaction volumes need to accelerate.</div>
@@ -349,7 +355,7 @@ We are seeking funding to build out our compliance infrastructure, hire a head o
     </div>
 
     <!-- Example: Marketplace (lower score) -->
-    <div class="example-pitch" data-example="2">
+    <div class="example-pitch" data-example="2" hidden>
       <div class="example-pitch-header">
         <div class="score-ring" style="border-color:#dc2626;color:#dc2626">42/100</div>
         <div>
@@ -370,7 +376,8 @@ The grocery delivery market is large and growing, especially since the pandemic 
 
 We are looking for funding to expand to more neighborhoods in Portland, purchase additional electric cargo bikes, build out our cold storage infrastructure, and eventually expand to other cities like Seattle and San Francisco that have similar demographics and values. We also want to invest in marketing to grow our customer base beyond the early adopters we have today. We have not yet built detailed financial projections but believe the business can be profitable once we reach scale.
       </div>
-      <div>
+      <div class="example-actions"><button type="button" class="secondary use-example-btn">Use this sample pitch</button></div>
+      <div class="example-feedback-grid">
         <div class="section"><strong>Problem & Solution</strong>: 45/100 — Problem statement is vague with no supporting data. "We want to make food accessible" is not a business problem — what specific pain point does GreenCart solve better than alternatives?</div>
         <div class="section"><strong>Market Opportunity</strong>: 35/100 — No market size data, no growth rates, no competitive landscape. "Grocery delivery is large" means nothing without specific numbers. What is the organic grocery TAM in Portland alone?</div>
         <div class="section"><strong>Traction</strong>: 30/100 — "Some customers" is not an investable metric. How many weekly active users? Orders per week? Revenue? Average order value? Retention rate? Delivery success rate? Nothing quantified.</div>
@@ -584,15 +591,33 @@ function showCheckoutReturnMessage(){
   if(params.get('checkout') === 'cancelled'){setStatus(planStatusEl,'Checkout was cancelled. No charge was completed.','warning');}
 }
 
-// Example pitch toggle
-document.getElementById('examplesToggle').addEventListener('click', function(e){
-  const btn = e.target.closest('button');
+// Example pitch controls
+const examplesToggle = document.getElementById('examplesToggle');
+examplesToggle.addEventListener('click', function(e){
+  const btn = e.target.closest('button[data-example]');
   if(!btn) return;
   const idx = btn.dataset.example;
-  document.querySelectorAll('#examplesToggle button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.example-pitch').forEach(p => p.classList.remove('active'));
-  document.querySelector(`.example-pitch[data-example="${idx}"]`).classList.add('active');
+  document.querySelectorAll('#examplesToggle button').forEach(b => {
+    const active = b === btn;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('.example-pitch').forEach(p => {
+    const active = p.dataset.example === idx;
+    p.classList.toggle('active', active);
+    p.hidden = !active;
+  });
+});
+document.querySelectorAll('.use-example-btn').forEach(button => {
+  button.addEventListener('click', () => {
+    const example = button.closest('.example-pitch');
+    const text = example?.querySelector('.example-pitch-text')?.textContent.trim();
+    const pitchEl = document.getElementById('pitch');
+    if(!text || !pitchEl) return;
+    pitchEl.value = text;
+    pitchEl.focus();
+    pitchEl.scrollIntoView({behavior:'smooth', block:'center'});
+  });
 });
 
 document.getElementById('loginBtn').addEventListener('click',()=>authenticate('/api/auth?action=login'));
