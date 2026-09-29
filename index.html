@@ -21,7 +21,8 @@
       --success:#198754;
       --warning:#a16207;
       --danger:#c43d3d;
-      --info:#3174b8
+      --info:#3174b8;
+      --page-gutter:clamp(18px,3.25vw,68px)
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
@@ -32,15 +33,15 @@
       line-height:1.6;
       -webkit-font-smoothing:antialiased
     }
-    .container{width:100%;max-width:1440px;margin:0 auto;padding:18px 36px 56px}
+    .container{width:100%;margin:0;padding:0 var(--page-gutter) 64px}
     h1{font-size:clamp(2.25rem,4vw,4.25rem);letter-spacing:-.055em;margin:0 0 16px;line-height:1.02}
     h2{font-size:1.25rem;margin:0 0 8px;letter-spacing:-.025em}
     p{margin:0 0 16px}
 
     .hero{
       position:relative;
-      overflow:hidden;border-radius:18px;padding:28px 34px 42px;
-      background:#183e35;color:#fff;margin-bottom:20px
+      overflow:hidden;border-radius:0 0 22px 22px;padding:26px var(--page-gutter) 44px;
+      background:#183e35;color:#fff;margin:0 calc(var(--page-gutter) * -1) 24px
     }
     .hero:after{content:"";position:absolute;width:540px;height:540px;border:1px solid rgba(255,255,255,.12);border-radius:50%;right:-180px;bottom:-405px}
     .hero p{opacity:.8;max-width:610px;margin:0;font-size:1.05rem}
@@ -167,7 +168,7 @@
     .example-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
     .example-actions button{padding:8px 12px;font-size:13px}
     .analyze-card{padding:30px}.analyze-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:12px}.eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:7px}
-    @media (max-width:600px){.container{padding:10px 14px 36px}.hero{padding:22px 20px 30px;border-radius:12px}.hero-meta{grid-template-columns:1fr}.card,.analyze-card{padding:20px}.analyze-heading{display:block}}
+    @media (max-width:600px){.container{padding:0 14px 36px}.hero{padding:22px 14px 30px;border-radius:0 0 14px 14px;margin-bottom:14px}.hero-meta{grid-template-columns:1fr}.card,.analyze-card{padding:20px}.analyze-heading{display:block}}
   </style>
 </head>
 <body>
