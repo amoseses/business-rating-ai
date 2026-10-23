@@ -543,7 +543,12 @@ async function startCheckout(){
 function renderResult(data){
   const el = document.getElementById('result'); el.style.display='block';
   const scoreColor = data.score >= 80 ? '#16a34a' : data.score >= 60 ? '#d97706' : '#dc2626';
-  const sections = (data.sections || []).map(s => `<div class="section"><strong>${s.name}</strong>: ${s.score}/100 — ${s.feedback || ''}</div>`).join('');
+  const sectionItems = Array.isArray(data.sections)
+    ? data.sections
+    : data.sections && typeof data.sections === 'object'
+      ? Object.entries(data.sections).map(([name, score]) => ({ name, score }))
+      : [];
+  const sections = sectionItems.map(s => `<div class="section"><strong>${s.name}</strong>: ${s.score}/100 — ${s.feedback || ''}</div>`).join('');
   const recs = (data.recommendations || []).map(r => `<div class="recommendation">• ${r}</div>`).join('');
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">
