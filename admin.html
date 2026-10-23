@@ -18,22 +18,22 @@
     h1{font-size:2rem;letter-spacing:-.03em;margin:0 0 10px}
     h2{font-size:1.25rem;margin:0 0 12px}
     p{margin:0 0 16px}
-    .hero{position:relative;overflow:hidden;border-radius:20px;padding:24px 26px;background:linear-gradient(135deg,#0b1d45 0%,#1e3a8a 55%,#2563eb 100%);color:#fff;box-shadow:var(--shadow);margin-bottom:22px}
+    .hero{position:relative;overflow:hidden;border-radius:0;padding:24px 26px;background:linear-gradient(135deg,#0b1d45 0%,#1e3a8a 55%,#2563eb 100%);color:#fff;box-shadow:var(--shadow);margin-bottom:22px}
     .hero p{opacity:.92;max-width:640px;margin:0}
     .layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}
     .full{grid-column:1 / -1}
-    .card{border:1px solid var(--border);border-radius:18px;padding:20px;background:linear-gradient(180deg,var(--surface),var(--surface-soft));box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease}
+    .card{border:1px solid var(--border);border-radius:0;padding:20px;background:linear-gradient(180deg,var(--surface),var(--surface-soft));box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease}
     .card:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(15,23,42,.10)}
     .muted{color:var(--muted);font-size:14.5px}
-    .status{margin-top:14px;padding:12px 14px;border-radius:12px;background:#eef2ff;color:#312e81;border:1px solid #c7d2fe;font-weight:700;font-size:14px}
+    .status{margin-top:14px;padding:12px 14px;border-radius:0;background:#eef2ff;color:#312e81;border:1px solid #c7d2fe;font-weight:700;font-size:14px}
     .success{background:#dcfce7;color:#166534;border-color:#86efac}
     .error{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
     .warning{background:#fef3c7;color:#92400e;border-color:#fcd34d}
     label{display:inline-block;margin:10px 14px 10px 0;font-weight:800;font-size:14px}
     .plan-label{font-weight:600}
-    input[type="email"],input[type="password"],textarea,select{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font:inherit;background:#fff;transition:border-color .15s,box-shadow .15s}
+    input[type="email"],input[type="password"],textarea,select{width:100%;border:1px solid var(--border);border-radius:0;padding:10px 12px;font:inherit;background:#fff;transition:border-color .15s,box-shadow .15s}
     input:focus,textarea:focus,select:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
-    button{margin:8px 10px 8px 0;padding:10px 16px;border:0;border-radius:12px;background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff;cursor:pointer;font-weight:800;transition:transform .12s,filter .15s,box-shadow .15s;box-shadow:0 8px 18px rgba(37,99,235,.25)}
+    button{margin:8px 10px 8px 0;padding:10px 16px;border:0;border-radius:0;background:linear-gradient(180deg,var(--primary),var(--primary-2));color:#fff;cursor:pointer;font-weight:800;transition:transform .12s,filter .15s,box-shadow .15s;box-shadow:0 8px 18px rgba(37,99,235,.25)}
     button:hover{filter:brightness(1.06);transform:translateY(-1px)}
     button:active{transform:translateY(0)}
     button.secondary{background:linear-gradient(180deg,#64748b,var(--secondary));box-shadow:0 6px 14px rgba(71,85,105,.2)}
@@ -45,17 +45,48 @@
     th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border)}
     th{font-weight:800;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
     tr:hover td{background:var(--surface-soft)}
-    .badge{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:800;box-shadow:var(--shadow)}
-    .section{margin:10px 0;padding:10px 12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:0;padding:6px 12px;font-size:12px;font-weight:800;box-shadow:var(--shadow)}
+    .section{margin:10px 0;padding:10px 12px;border-radius:0;background:#f8fafc;border:1px solid var(--border)}
     .kpi{font-size:1.6rem;font-weight:900;color:var(--primary)}
     @media (max-width:900px){.layout{grid-template-columns:1fr}.full{grid-column:auto}}
+  
+    /* Match the main app's clean, square-corner interface */
+    :root{
+      --bg:#f4f6f4;--surface:#fff;--surface-soft:#eef2ef;--text:#17211b;--muted:#66736b;
+      --primary:#176348;--primary-2:#124d39;--secondary:#46564d;--border:#d8dfda;
+      --shadow:none;--accent:#176348;--accent-2:#124d39;--success:#237245;--warning:#8b681d;--danger:#a33d32;--info:#176348
+    }
+    body{background:var(--bg);color:var(--text)}
+    .container{max-width:1200px;padding:24px 32px 56px}
+    .hero{background:#173d31;box-shadow:none;border:0;padding:20px 24px;margin-bottom:16px}
+    .layout{gap:16px}
+    .card{background:var(--surface);border:1px solid var(--border);padding:22px;box-shadow:none;transition:none}
+    .card:hover{transform:none;box-shadow:none}
+    h1,h2,h3{color:var(--text)}
+    .muted{color:var(--muted)}
+    .status{background:#eef2ef;color:#34483c;border-color:var(--border);font-size:13px;padding:10px 12px}
+    .status.success{background:#e5f2ea;color:#205c3b;border-color:#c7dfcf}
+    .status.error{background:#f8e8e6;color:#8d3228;border-color:#e8c9c4}
+    .status.warning{background:#f7f0de;color:#765617;border-color:#e8ddb9}
+    input[type="email"],input[type="password"],textarea,select{border-color:#cbd4ce;box-shadow:none}
+    input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(23,99,72,.12)}
+    button{background:var(--primary);box-shadow:none;font-weight:700;transform:none}
+    button:hover{background:var(--primary-2);filter:none;transform:none}
+    button:active{transform:none}
+    button.secondary{background:#e9eeeb;color:#26362d;border:1px solid #d3dbd5;box-shadow:none}
+    button.secondary:hover{background:#dfe7e1}
+    button.link{color:var(--primary)}
+    .badge{background:#f2f5f2;border-color:var(--border);box-shadow:none}
+    .section{background:#f7f9f7}
+    tr:hover td{background:#f2f5f2}
+    @media(max-width:600px){.container{padding:16px 16px 36px}.hero{padding:16px 18px}.card{padding:18px}}
   </style>
 </head>
 <body>
   <div class="container">
     <header class="hero">
       <h1 style="color:#fff">AstraPitch Admin</h1>
-      <p>Monitor users, analytics, and evaluations from one dashboard.</p>
+      
     </header>
 
     <main class="layout">
